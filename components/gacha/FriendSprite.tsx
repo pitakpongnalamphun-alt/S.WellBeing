@@ -3,7 +3,7 @@
 import type { CSSProperties, ReactNode } from "react";
 
 /**
- * เพื่อนปุยทั้ง 14 ตัว วาดมือเป็น SVG — แทนที่ emoji เดิมให้มีชีวิตชีวา
+ * เพื่อนปุยทั้ง 15 ตัว วาดมือเป็น SVG — แทนที่ emoji เดิมให้มีชีวิตชีวา
  * สไตล์เดียวกับน้องปุย (FluffyBuddy): ตัวกลมนุ่ม พาสเทล ตาดำแววมีไฮไลต์
  * แก้มแดง และแต่ละตัว "ดิ้น" ตามนิสัยของตัวเอง (กระต่ายกระดิกหู หมากระดิกหาง
  * สลอธแกว่งช้า ๆ ฯลฯ) — อนิเมชันทั้งหมดปิดอัตโนมัติเมื่อผู้ใช้ตั้ง reduced motion
@@ -33,6 +33,8 @@ export const SPRITE_CSS = `
 @keyframes ff-blink { 0%, 91%, 100% { transform: scaleY(1); } 95% { transform: scaleY(0.12); } }
 @keyframes ff-shimmer { 0%,100% { opacity: 0.4; } 50% { opacity: 0.95; } }
 @keyframes ff-peek { 0%,100% { transform: translateY(0); } 50% { transform: translateY(2.5px); } }
+@keyframes ff-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes ff-wingbeat { 0%,100% { transform: scaleX(1); } 50% { transform: scaleX(0.9); } }
 @keyframes ff-tilt { 0%, 38% { transform: rotate(-4deg); } 50%, 88% { transform: rotate(4deg); } 100% { transform: rotate(-4deg); } }
 .ff-breathe { animation: ff-breathe 5s ease-in-out infinite; transform-origin: 50% 90%; }
 .ff-bob { animation: ff-bob 2.6s ease-in-out infinite; }
@@ -50,6 +52,8 @@ export const SPRITE_CSS = `
 .ff-shimmer { animation: ff-shimmer 2.8s ease-in-out infinite; }
 .ff-peek { animation: ff-peek 3s ease-in-out infinite; }
 .ff-tilt { animation: ff-tilt 5s ease-in-out infinite; }
+.ff-spin { animation: ff-spin 24s linear infinite; }
+.ff-wingbeat { animation: ff-wingbeat 3.8s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) {
   .ffs * { animation: none !important; }
 }
@@ -1519,141 +1523,219 @@ function Fox() {
   );
 }
 
-/** 🦋 น้องผีเสื้อนักเดินทาง — ปีกสี่แผ่นโปร่งแสงซ้อนชั้น มีลายจุดกับเส้นใบปีก
- *  กระพือคนละจังหวะซ้าย-ขวาเล็กน้อยให้ดูมีน้ำหนัก ตัวเป็นปล้องขนปุย
- *  หนวดปลายกลมแกว่งตามลม และมีละอองประกายลอยรอบตัว */
+/** 🦋 น้องผีเสื้อนักเดินทาง — ผีเสื้อตุ๊กตาขนปุย: ตัวกลมนุ่มขอบขนฟู ปีกโปร่งซ้อนสามชั้น
+ *  มีลายตาปีก เกล็ดระยิบ และกระพือแบบมีน้ำหนัก (ปีกล่างตามหลังปีกบนครึ่งจังหวะ) */
 function Butterfly() {
-  // ปีกวาดครั้งเดียวแล้วสะท้อนซ้าย-ขวา เพื่อให้สองข้างสมมาตรเป๊ะ
-  const upperR = "M 52 43 C 61 27 78 19 86.5 28 C 92 34.5 80 53 55.5 56.5 Z";
-  const lowerR = "M 53 58 C 67 57.5 79.5 64 76 74.5 C 72.5 83.5 57.5 75 52.5 66 Z";
-  const upperL = "M 48 43 C 39 27 22 19 13.5 28 C 8 34.5 20 53 44.5 56.5 Z";
-  const lowerL = "M 47 58 C 33 57.5 20.5 64 24 74.5 C 27.5 83.5 42.5 75 47.5 66 Z";
+  // เส้นปีกเขียนครั้งเดียวใช้ซ้ำ 2 ชั้น: ชั้นเบลอ = ขอบขนฟู, ชั้นสี = แผ่นปีกโปร่ง
+  const foreL =
+    "M 48 40 C 44 27 38 17 28 12.5 C 18 8 8 13 6.5 24 C 5 35 9 45 18 51 C 27 56 39 55.5 46 50.5 C 47.6 47.5 48.3 43.5 48 40 Z";
+  const foreR =
+    "M 52 40 C 56 27 62 17 72 12.5 C 82 8 92 13 93.5 24 C 95 35 91 45 82 51 C 73 56 61 55.5 54 50.5 C 52.4 47.5 51.7 43.5 52 40 Z";
+  const hindL =
+    "M 48 54 C 40 55.5 30 58 22.5 63.5 C 14.5 69.5 14 78.5 20.5 82.5 C 27 86.5 38 83.5 43.5 76 C 46.5 71.5 48.4 64 48 54 Z";
+  const hindR =
+    "M 52 54 C 60 55.5 70 58 77.5 63.5 C 85.5 69.5 86 78.5 79.5 82.5 C 73 86.5 62 83.5 56.5 76 C 53.5 71.5 51.6 64 52 54 Z";
+  // ชั้นในของปีก (เยื่อบางกว่า) — ทำให้ปีกดูซ้อนกันหลายชั้นแทนที่จะแบน
+  const foreLIn =
+    "M 47.5 43 C 44.5 33 39 24.5 30.5 20.5 C 22.5 16.8 13.5 20 12.2 28.5 C 11 37 15 44 22 47.8 C 29 51.4 40 50.6 45.5 47 C 47 45.6 47.8 45 47.5 43 Z";
+  const foreRIn =
+    "M 52.5 43 C 55.5 33 61 24.5 69.5 20.5 C 77.5 16.8 86.5 20 87.8 28.5 C 89 37 85 44 78 47.8 C 71 51.4 60 50.6 54.5 47 C 53 45.6 52.2 45 52.5 43 Z";
+  const hindLIn =
+    "M 47.6 58 C 41.5 59 33.5 61.5 27 66 C 20.5 70.5 20 77 24.5 79.8 C 29.5 82.8 36.5 80 40.8 74.2 C 43.5 70.5 47.4 65 47.6 58 Z";
+  const hindRIn =
+    "M 52.4 58 C 58.5 59 66.5 61.5 73 66 C 79.5 70.5 80 77 75.5 79.8 C 70.5 82.8 63.5 80 59.2 74.2 C 56.5 70.5 52.6 65 52.4 58 Z";
+
   return (
     <g>
       <defs>
-        <linearGradient id="ff-butterfly-up" x1="0.15" y1="1" x2="0.9" y2="0">
-          <stop offset="0%" stopColor="#f6d7f2" />
-          <stop offset="38%" stopColor="#d9c2f6" />
-          <stop offset="72%" stopColor="#b7a4f0" />
-          <stop offset="100%" stopColor="#8fd6ee" />
+        <linearGradient id="ff-butterfly-fore" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#fff2fb" />
+          <stop offset="45%" stopColor="#f6d3f0" />
+          <stop offset="100%" stopColor="#cfc6fb" />
         </linearGradient>
-        <linearGradient id="ff-butterfly-low" x1="0.2" y1="0" x2="0.85" y2="1">
-          <stop offset="0%" stopColor="#e7d0fa" />
-          <stop offset="55%" stopColor="#bcb2f2" />
-          <stop offset="100%" stopColor="#9fe0e6" />
+        <linearGradient id="ff-butterfly-hind" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#e7dcff" />
+          <stop offset="100%" stopColor="#ffd7e8" />
         </linearGradient>
-        <linearGradient id="ff-butterfly-body" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#a98ae0" />
-          <stop offset="52%" stopColor="#8f6dcd" />
-          <stop offset="100%" stopColor="#6f4fae" />
-        </linearGradient>
-        <radialGradient id="ff-butterfly-head" cx="0.36" cy="0.3" r="0.86">
-          <stop offset="0%" stopColor="#c6a9f0" />
-          <stop offset="100%" stopColor="#8f6dcd" />
+        <radialGradient id="ff-butterfly-fluff" cx="0.4" cy="0.28" r="0.82">
+          <stop offset="0%" stopColor="#f4eeff" />
+          <stop offset="55%" stopColor="#d6c6f7" />
+          <stop offset="100%" stopColor="#a98fe4" />
         </radialGradient>
-        <linearGradient id="ff-butterfly-sheen" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#ffffff" stopOpacity={0.85} />
-          <stop offset="60%" stopColor="#ffffff" stopOpacity={0.08} />
-          <stop offset="100%" stopColor="#ffffff" stopOpacity={0} />
+        <linearGradient id="ff-butterfly-body" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#cbb8f7" />
+          <stop offset="100%" stopColor="#9b84e2" />
         </linearGradient>
-        <clipPath id="ff-butterfly-clip-ur"><path d={upperR} /></clipPath>
-        <clipPath id="ff-butterfly-clip-ul"><path d={upperL} /></clipPath>
-        <clipPath id="ff-butterfly-clip-lr"><path d={lowerR} /></clipPath>
-        <clipPath id="ff-butterfly-clip-ll"><path d={lowerL} /></clipPath>
+        {/* ฟุ้งขอบปีกให้เป็นขนนุ่ม ๆ ไม่ใช่ขอบคม */}
+        <filter id="ff-butterfly-soft" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur stdDeviation={1.7} />
+        </filter>
       </defs>
 
-      {/* ทั้งตัวลอยขึ้นลงช้า ๆ */}
-      <g className="ff-float" style={{ animationDuration: "4.2s" }}>
-        {/* ---- ปีกซ้าย: พับเข้าหาลำตัว จุดหมุนอยู่ที่อก ---- */}
-        <g className="ff-flap" style={{ transformOrigin: "50px 52px", animationDuration: "2.4s" }}>
-          <path d={lowerL} fill="url(#ff-butterfly-low)" opacity={0.82} />
-          <path d={upperL} fill="url(#ff-butterfly-up)" opacity={0.86} />
-          <g clipPath="url(#ff-butterfly-clip-ul)">
-            {/* ลายจุดโปร่ง + วงตานกยูงเล็ก ๆ */}
-            <circle cx={30} cy={33} r={7.5} fill="#fff" opacity={0.42} />
-            <circle cx={22} cy={41} r={4.6} fill="#fff" opacity={0.32} />
-            <circle cx={34} cy={44} r={3.2} fill="#fff" opacity={0.28} />
-            <circle cx={27} cy={36} r={3.4} fill="#f5b8e4" opacity={0.55} />
-            <circle cx={27} cy={36} r={1.5} fill="#6f4fae" opacity={0.5} />
-            {/* เส้นใบปีกแผ่จากโคน */}
-            <path d="M 47 52 C 38 45 30 36 20 28" stroke="#7a5bb8" strokeWidth={0.9} fill="none" opacity={0.3} />
-            <path d="M 47 53 C 37 50 28 45 16 38" stroke="#7a5bb8" strokeWidth={0.8} fill="none" opacity={0.24} />
-            <path d={upperL} fill="url(#ff-butterfly-sheen)" className="ff-shimmer" />
+      {/* เงานุ่มใต้ตัว — อยู่นิ่งกับที่ ให้รู้ว่าลอยเหนือพื้น */}
+      <ellipse cx={50} cy={94} rx={14} ry={2.6} fill="#8d78d8" opacity={0.14} />
+
+      <g className="ff-float" style={{ animationDuration: "3.8s" }}>
+        {/* ---------- ปีกล่าง: กระพือตามหลังปีกบนนิดหน่อย ให้รู้สึกว่าปีกมีน้ำหนัก ---------- */}
+        <g className="ff-flap" style={{ transformOrigin: "50px 58px", animationDuration: "0.95s", animationDelay: "0.12s" }}>
+          <g className="ff-bob" style={{ animationDuration: "0.95s", animationDelay: "0.12s" }}>
+            <g filter="url(#ff-butterfly-soft)" opacity={0.5}>
+              <path d={hindL} fill="#f8e6f6" stroke="#f8e6f6" strokeWidth={3.4} strokeLinejoin="round" />
+              <path d={hindR} fill="#f8e6f6" stroke="#f8e6f6" strokeWidth={3.4} strokeLinejoin="round" />
+            </g>
+            <path d={hindL} fill="url(#ff-butterfly-hind)" opacity={0.88} />
+            <path d={hindR} fill="url(#ff-butterfly-hind)" opacity={0.88} />
+            <path d={hindLIn} fill="#fff7fc" opacity={0.42} />
+            <path d={hindRIn} fill="#fff7fc" opacity={0.42} />
+            {/* เส้นปีกแผ่ออกจากโคน */}
+            <path
+              d="M 47.5 57 Q 38 62 26 68 M 47.6 61 Q 39 67 24 74 M 47.4 65 Q 40 71 29 79 M 52.5 57 Q 62 62 74 68 M 52.4 61 Q 61 67 76 74 M 52.6 65 Q 60 71 71 79"
+              stroke="#d3b7ea" strokeWidth={0.8} fill="none" strokeLinecap="round" opacity={0.5}
+            />
+            {/* ลายจุดครีมส้มบนปีกล่าง */}
+            <circle cx={25} cy={72} r={3.2} fill="#fff6ec" opacity={0.85} />
+            <circle cx={25} cy={72} r={1.7} fill="#ffcfa0" opacity={0.9} />
+            <circle cx={75} cy={72} r={3.2} fill="#fff6ec" opacity={0.85} />
+            <circle cx={75} cy={72} r={1.7} fill="#ffcfa0" opacity={0.9} />
+            <circle cx={33} cy={79} r={1.8} fill="#ffffff" opacity={0.6} />
+            <circle cx={67} cy={79} r={1.8} fill="#ffffff" opacity={0.6} />
+            {/* ปอยขนริมปีกล่าง */}
+            <path
+              d="M 19 66.5 q -2.8 -0.4 -4.2 -2 M 15 74 q -3 0.6 -4.4 -0.4 M 17.6 81 q -2.4 2 -2.6 4.2 M 25 84 q -0.8 2.4 0.4 4 M 34 83 q 0.2 2.6 1.4 4 M 81 66.5 q 2.8 -0.4 4.2 -2 M 85 74 q 3 0.6 4.4 -0.4 M 82.4 81 q 2.4 2 2.6 4.2 M 75 84 q 0.8 2.4 -0.4 4 M 66 83 q -0.2 2.6 -1.4 4"
+              stroke="#ffffff" strokeWidth={1.1} fill="none" strokeLinecap="round" opacity={0.75}
+            />
+            <circle className="ff-twinkle" style={{ transformOrigin: "22px 76px", animationDelay: "0.7s" }} cx={22} cy={76} r={1.3} fill="#ffffff" />
+            <circle className="ff-twinkle" style={{ transformOrigin: "78px 76px", animationDelay: "1.2s" }} cx={78} cy={76} r={1.3} fill="#ffffff" />
           </g>
-          <g clipPath="url(#ff-butterfly-clip-ll)">
-            <circle cx={33} cy={69} r={4.4} fill="#fff" opacity={0.36} />
-            <circle cx={27} cy={72} r={2.6} fill="#f5b8e4" opacity={0.5} />
-            <path d="M 46 62 C 38 65 32 70 27 76" stroke="#7a5bb8" strokeWidth={0.8} fill="none" opacity={0.26} />
-          </g>
-          <path d={upperL} fill="none" stroke="#8f6dcd" strokeWidth={1.1} opacity={0.45} />
-          <path d={lowerL} fill="none" stroke="#8f6dcd" strokeWidth={1} opacity={0.4} />
         </g>
 
-        {/* ---- ปีกขวา: ช้ากว่านิดหน่อยให้ไม่กระพือพร้อมกันเป๊ะ ---- */}
-        <g className="ff-flap" style={{ transformOrigin: "50px 52px", animationDuration: "2.4s", animationDelay: "-0.5s" }}>
-          <path d={lowerR} fill="url(#ff-butterfly-low)" opacity={0.82} />
-          <path d={upperR} fill="url(#ff-butterfly-up)" opacity={0.86} />
-          <g clipPath="url(#ff-butterfly-clip-ur)">
-            <circle cx={70} cy={33} r={7.5} fill="#fff" opacity={0.42} />
-            <circle cx={78} cy={41} r={4.6} fill="#fff" opacity={0.32} />
-            <circle cx={66} cy={44} r={3.2} fill="#fff" opacity={0.28} />
-            <circle cx={73} cy={36} r={3.4} fill="#f5b8e4" opacity={0.55} />
-            <circle cx={73} cy={36} r={1.5} fill="#6f4fae" opacity={0.5} />
-            <path d="M 53 52 C 62 45 70 36 80 28" stroke="#7a5bb8" strokeWidth={0.9} fill="none" opacity={0.3} />
-            <path d="M 53 53 C 63 50 72 45 84 38" stroke="#7a5bb8" strokeWidth={0.8} fill="none" opacity={0.24} />
-            <path d={upperR} fill="url(#ff-butterfly-sheen)" className="ff-shimmer" style={{ animationDelay: "-1.1s" }} />
+        {/* ---------- ปีกบน: แผ่นใหญ่ ลายตาปีก เกล็ดระยิบ ---------- */}
+        <g className="ff-flap" style={{ transformOrigin: "50px 46px", animationDuration: "0.95s" }}>
+          <g className="ff-bob" style={{ animationDuration: "0.95s" }}>
+            <g filter="url(#ff-butterfly-soft)" opacity={0.5}>
+              <path d={foreL} fill="#fdeaf8" stroke="#fdeaf8" strokeWidth={3.6} strokeLinejoin="round" />
+              <path d={foreR} fill="#fdeaf8" stroke="#fdeaf8" strokeWidth={3.6} strokeLinejoin="round" />
+            </g>
+            <path d={foreL} fill="url(#ff-butterfly-fore)" opacity={0.88} />
+            <path d={foreR} fill="url(#ff-butterfly-fore)" opacity={0.88} />
+            <path d={foreLIn} fill="#fffaff" opacity={0.42} />
+            <path d={foreRIn} fill="#fffaff" opacity={0.42} />
+            {/* เส้นปีกแผ่ออกจากโคน */}
+            <path
+              d="M 47 42 Q 35 32 23 21 M 47 45 Q 33 39 16 31 M 46.6 47.5 Q 32 45.5 13 42 M 46.4 50 Q 33 52 20 50.5 M 53 42 Q 65 32 77 21 M 53 45 Q 67 39 84 31 M 53.4 47.5 Q 68 45.5 87 42 M 53.6 50 Q 67 52 80 50.5"
+              stroke="#cbb0ea" strokeWidth={0.8} fill="none" strokeLinecap="round" opacity={0.5}
+            />
+            {/* ลายตาปีกซ้อนสามชั้น + จุดเล็กเรียงริมปีก */}
+            <circle cx={20} cy={32} r={5.8} fill="#fff8fc" opacity={0.85} />
+            <circle cx={20} cy={32} r={3.7} fill="#f7bcd9" opacity={0.9} />
+            <circle cx={20} cy={32} r={1.6} fill="#b28ae0" opacity={0.85} />
+            <circle cx={18.7} cy={30.7} r={1} fill="#ffffff" opacity={0.9} />
+            <circle cx={80} cy={32} r={5.8} fill="#fff8fc" opacity={0.85} />
+            <circle cx={80} cy={32} r={3.7} fill="#f7bcd9" opacity={0.9} />
+            <circle cx={80} cy={32} r={1.6} fill="#b28ae0" opacity={0.85} />
+            <circle cx={78.7} cy={30.7} r={1} fill="#ffffff" opacity={0.9} />
+            <circle cx={26} cy={19} r={2.2} fill="#ffffff" opacity={0.6} />
+            <circle cx={13} cy={43} r={2} fill="#ffffff" opacity={0.55} />
+            <circle cx={30} cy={45.5} r={1.6} fill="#ffffff" opacity={0.5} />
+            <circle cx={74} cy={19} r={2.2} fill="#ffffff" opacity={0.6} />
+            <circle cx={87} cy={43} r={2} fill="#ffffff" opacity={0.55} />
+            <circle cx={70} cy={45.5} r={1.6} fill="#ffffff" opacity={0.5} />
+            {/* ปอยขนริมปีกบน — ขอบไม่คม ดูนุ่มเหมือนผ้าสำลี */}
+            <path
+              d="M 26.5 13 q -1.4 -2.8 -0.6 -5 M 17.5 15 q -2.4 -2 -2.6 -4.4 M 9.6 21 q -3 -0.8 -4.4 -2.6 M 6.4 30 q -3.1 0.2 -4.6 -1 M 8.6 38.5 q -3 1.2 -4 3.2 M 13.5 46 q -2.6 1.8 -3.2 4 M 73.5 13 q 1.4 -2.8 0.6 -5 M 82.5 15 q 2.4 -2 2.6 -4.4 M 90.4 21 q 3 -0.8 4.4 -2.6 M 93.6 30 q 3.1 0.2 4.6 -1 M 91.4 38.5 q 3 1.2 4 3.2 M 86.5 46 q 2.6 1.8 3.2 4"
+              stroke="#ffffff" strokeWidth={1.1} fill="none" strokeLinecap="round" opacity={0.8}
+            />
+            <circle className="ff-twinkle" style={{ transformOrigin: "31px 26px" }} cx={31} cy={26} r={1.6} fill="#ffffff" />
+            <circle className="ff-twinkle" style={{ transformOrigin: "69px 26px", animationDelay: "0.5s" }} cx={69} cy={26} r={1.6} fill="#ffffff" />
+            <circle className="ff-twinkle" style={{ transformOrigin: "12px 36px", animationDelay: "1s" }} cx={12} cy={36} r={1.3} fill="#fef3c7" />
+            <circle className="ff-twinkle" style={{ transformOrigin: "88px 36px", animationDelay: "1.4s" }} cx={88} cy={36} r={1.3} fill="#fef3c7" />
           </g>
-          <g clipPath="url(#ff-butterfly-clip-lr)">
-            <circle cx={67} cy={69} r={4.4} fill="#fff" opacity={0.36} />
-            <circle cx={73} cy={72} r={2.6} fill="#f5b8e4" opacity={0.5} />
-            <path d="M 54 62 C 62 65 68 70 73 76" stroke="#7a5bb8" strokeWidth={0.8} fill="none" opacity={0.26} />
-          </g>
-          <path d={upperR} fill="none" stroke="#8f6dcd" strokeWidth={1.1} opacity={0.45} />
-          <path d={lowerR} fill="none" stroke="#8f6dcd" strokeWidth={1} opacity={0.4} />
         </g>
 
-        {/* ---- ลำตัวเป็นปล้อง ---- */}
-        <ellipse cx={50} cy={53} rx={5.4} ry={9.6} fill="url(#ff-butterfly-body)" />
-        <ellipse cx={50} cy={65.5} rx={3.9} ry={8.4} fill="url(#ff-butterfly-body)" />
-        {/* ปล้องท้อง */}
-        <path d="M 46.6 62 Q 50 63.4 53.4 62" stroke="#5d4196" strokeWidth={0.9} fill="none" opacity={0.5} />
-        <path d="M 46.9 66 Q 50 67.4 53.1 66" stroke="#5d4196" strokeWidth={0.9} fill="none" opacity={0.5} />
-        <path d="M 47.4 70 Q 50 71.2 52.6 70" stroke="#5d4196" strokeWidth={0.9} fill="none" opacity={0.45} />
-        {/* ขนปุยที่อก */}
-        <path d="M 45.6 48 L 44.2 45.4 M 47.4 46.4 L 46.6 43.4 M 54.4 48 L 55.8 45.4 M 52.6 46.4 L 53.4 43.4"
-          stroke="#b79ae8" strokeWidth={1.1} strokeLinecap="round" opacity={0.75} />
-        {/* แสงตกด้านซ้ายของลำตัว */}
-        <ellipse cx={48.2} cy={50} rx={1.5} ry={5} fill="#e2d1fb" opacity={0.5} />
-
-        {/* ---- หัว + หนวด ---- */}
-        <g className="ff-sway" style={{ transformOrigin: "50px 43px", animationDuration: "5s" }}>
-          <path d="M 46.6 35 C 43 27 38 23 34.4 22.2" stroke="#6f4fae" strokeWidth={1.5} fill="none" strokeLinecap="round" />
-          <path d="M 53.4 35 C 57 27 62 23 65.6 22.2" stroke="#6f4fae" strokeWidth={1.5} fill="none" strokeLinecap="round" />
-          <circle cx={33.6} cy={21.6} r={2.5} fill="#c98ce4" />
-          <circle cx={66.4} cy={21.6} r={2.5} fill="#c98ce4" />
-          <circle cx={33} cy={20.8} r={0.9} fill="#fff" opacity={0.8} />
-          <circle cx={65.8} cy={20.8} r={0.9} fill="#fff" opacity={0.8} />
+        {/* ---------- ตัวตุ๊กตาปุย — ยกตัวเบา ๆ ตามจังหวะปีก ---------- */}
+        <g className="ff-bob" style={{ animationDuration: "0.95s", animationDelay: "0.1s" }}>
+          {/* ท้องปุยเป็นปล้อง แกว่งช้า ๆ */}
+          <g className="ff-wiggle" style={{ transformOrigin: "50px 58px", animationDuration: "3.2s" }}>
+            <path
+              d="M 50 57 C 56.5 57 59.2 62 58.4 68.5 C 57.6 75.5 54.6 82 50 82 C 45.4 82 42.4 75.5 41.6 68.5 C 40.8 62 43.5 57 50 57 Z"
+              fill="url(#ff-butterfly-body)"
+            />
+            <path d="M 42.4 64.5 Q 50 67.6 57.6 64.5 M 43 71 Q 50 74 57 71 M 45 77 Q 50 79.6 55 77" stroke="#e6dbff" strokeWidth={1.2} fill="none" strokeLinecap="round" opacity={0.7} />
+            <ellipse cx={46} cy={65.5} rx={2.4} ry={5.5} fill="#f6f0ff" opacity={0.4} transform="rotate(-8 46 65.5)" />
+            <path
+              d="M 41.8 63 q -2.4 0.8 -3.2 2.6 M 42.6 70 q -2.4 1 -3 2.8 M 44.6 76.5 q -2 1.6 -2.2 3.6 M 58.2 63 q 2.4 0.8 3.2 2.6 M 57.4 70 q 2.4 1 3 2.8 M 55.4 76.5 q 2 1.6 2.2 3.6 M 48.6 81.4 q -0.4 2.4 0.4 4 M 51.4 81.4 q 0.6 2.4 -0.2 3.8"
+              stroke="#b9a2ef" strokeWidth={1.1} fill="none" strokeLinecap="round"
+            />
+          </g>
+          {/* มือปุยจิ๋วสองข้าง ขยับคนละจังหวะ */}
+          <g className="ff-wiggle" style={{ transformOrigin: "42px 58px", animationDuration: "2.8s" }}>
+            <ellipse cx={38.8} cy={61} rx={4.6} ry={3.3} fill="#c3adf0" transform="rotate(26 38.8 61)" />
+            <path d="M 36 62.8 q -1.8 1.2 -2.2 3" stroke="#a88fe6" strokeWidth={1.1} fill="none" strokeLinecap="round" />
+          </g>
+          <g className="ff-wiggle" style={{ transformOrigin: "58px 58px", animationDuration: "2.8s", animationDelay: "1.4s" }}>
+            <ellipse cx={61.2} cy={61} rx={4.6} ry={3.3} fill="#c3adf0" transform="rotate(-26 61.2 61)" />
+            <path d="M 64 62.8 q 1.8 1.2 2.2 3" stroke="#a88fe6" strokeWidth={1.1} fill="none" strokeLinecap="round" />
+          </g>
+          {/* อกขนฟู — ก้อนขนซ้อนกันให้ขอบเป็นหยัก ไม่ใช่วงรีเกลี้ยง */}
+          <g fill="#bfa9ee">
+            <circle cx={40.2} cy={49} r={6} />
+            <circle cx={59.8} cy={49} r={6} />
+            <circle cx={41.4} cy={57.2} r={5.4} />
+            <circle cx={58.6} cy={57.2} r={5.4} />
+            <circle cx={50} cy={61} r={6} />
+          </g>
+          <ellipse cx={50} cy={52} rx={11.5} ry={10.5} fill="url(#ff-butterfly-fluff)" />
+          <ellipse cx={46.5} cy={46.5} rx={7.2} ry={4.2} fill="#f6f0ff" opacity={0.55} transform="rotate(-18 46.5 46.5)" />
+          <ellipse cx={50} cy={59.5} rx={8} ry={3.2} fill="#8f78d6" opacity={0.2} />
+          <path
+            d="M 39.4 46.6 q -2.6 0.4 -4 -1 M 38.6 52.4 q -2.8 0.6 -4.2 -0.6 M 39.8 58.6 q -2.6 1 -3.6 2.8 M 60.6 46.6 q 2.6 0.4 4 -1 M 61.4 52.4 q 2.8 0.6 4.2 -0.6 M 60.2 58.6 q 2.6 1 3.6 2.8 M 45.6 43.2 q 0.6 -2.4 2.4 -3.4 M 52.4 43 q 1 -2.4 2.8 -3.2"
+            stroke="#dccdfa" strokeWidth={1.1} fill="none" strokeLinecap="round"
+          />
+          {/* หัวกลมนุ่ม มีขนฟูรอบกระหม่อมและแก้ม */}
+          <g fill="#c3adf0">
+            <circle cx={41.5} cy={28} r={5} />
+            <circle cx={58.5} cy={28} r={5} />
+            <circle cx={50} cy={24.5} r={5.4} />
+            <circle cx={38.6} cy={35} r={4.6} />
+            <circle cx={61.4} cy={35} r={4.6} />
+          </g>
+          <circle cx={50} cy={33} r={10.5} fill="url(#ff-butterfly-fluff)" />
+          <ellipse cx={46} cy={27.5} rx={6} ry={3.6} fill="#f8f3ff" opacity={0.5} transform="rotate(-20 46 27.5)" />
+          <path
+            d="M 44.5 23.6 q 0.8 -2.4 2.6 -3.4 M 50.4 22.4 q 0.6 -2.4 2.4 -3.2 M 55.6 24 q 1.4 -2.2 3.2 -2.8 M 39.6 39.8 q -2.2 1 -3 2.8 M 60.4 39.8 q 2.2 1 3 2.8"
+            stroke="#dccdfa" strokeWidth={1.1} fill="none" strokeLinecap="round"
+          />
+          {/* หนวดปลายเป็นปอมปุย โยกทีละข้าง */}
+          <g className="ff-wiggle" style={{ transformOrigin: "45.5px 26px", animationDuration: "2.6s" }}>
+            <path d="M 45.5 26 Q 40.5 17.5 36.5 13.5" stroke="#b9a2ef" strokeWidth={2.3} fill="none" strokeLinecap="round" />
+            <circle cx={34.5} cy={10.5} r={3.6} fill="#f7cfe8" />
+            <circle cx={32.4} cy={9.2} r={2} fill="#f7cfe8" />
+            <circle cx={36.4} cy={8.4} r={2.2} fill="#f7cfe8" />
+            <circle cx={33.4} cy={9.4} r={1.1} fill="#ffffff" opacity={0.75} />
+          </g>
+          <g className="ff-wiggle" style={{ transformOrigin: "54.5px 26px", animationDuration: "2.6s", animationDelay: "0.35s" }}>
+            <path d="M 54.5 26 Q 59.5 17.5 63.5 13.5" stroke="#b9a2ef" strokeWidth={2.3} fill="none" strokeLinecap="round" />
+            <circle cx={65.5} cy={10.5} r={3.6} fill="#f7cfe8" />
+            <circle cx={67.6} cy={9.2} r={2} fill="#f7cfe8" />
+            <circle cx={63.6} cy={8.4} r={2.2} fill="#f7cfe8" />
+            <circle cx={66.6} cy={9.4} r={1.1} fill="#ffffff" opacity={0.75} />
+          </g>
+          {/* หน้ายิ้มละมุน */}
+          <GEye cx={45.4} cy={33} r={4.4} delay={0} />
+          <GEye cx={54.6} cy={33} r={4.4} delay={0.15} />
+          <Smile cx={50} cy={39.2} w={5.5} />
+          <Blush cx={41.6} cy={37.4} r={3} />
+          <Blush cx={58.4} cy={37.4} r={3} />
+          <circle cx={50} cy={36.4} r={0.8} fill={FRIEND_INK} opacity={0.4} />
         </g>
-        <circle cx={50} cy={40} r={6.6} fill="url(#ff-butterfly-head)" />
-        <GEye cx={47.4} cy={39.6} r={2.7} />
-        <GEye cx={52.6} cy={39.6} r={2.7} delay={0.35} />
-        <Blush cx={44.6} cy={43} r={2.2} color="#f472b6" opacity={0.45} />
-        <Blush cx={55.4} cy={43} r={2.2} color="#f472b6" opacity={0.45} />
-        <Smile cx={50} cy={44} w={4.4} />
-      </g>
 
-      {/* ละอองประกายรอบตัว — ลอยขึ้นแล้วจางหาย */}
-      <g className="ff-drift" style={{ animationDelay: "-0.4s" }}>
-        <circle cx={17} cy={62} r={1.5} fill="#f0abfc" opacity={0.8} />
-      </g>
-      <g className="ff-drift" style={{ animationDelay: "-1.5s" }}>
-        <circle cx={84} cy={58} r={1.7} fill="#a5b4fc" opacity={0.8} />
-      </g>
-      <g className="ff-twinkle">
-        <path d="M 88 78 l 1.5 3.4 3.4 1.5 -3.4 1.5 -1.5 3.4 -1.5 -3.4 -3.4 -1.5 3.4 -1.5 Z" fill="#fde68a" />
-      </g>
-      <g className="ff-twinkle" style={{ animationDelay: "-0.9s" }}>
-        <path d="M 12 18 l 1.2 2.8 2.8 1.2 -2.8 1.2 -1.2 2.8 -1.2 -2.8 -2.8 -1.2 2.8 -1.2 Z" fill="#f9a8d4" />
+        {/* ละอองแป้งปีกลอยขึ้นเป็นทางบิน */}
+        <g fill="#fbcfe8">
+          <circle className="ff-drift" cx={45} cy={88} r={1.6} style={{ animationDelay: "0s" }} />
+          <circle className="ff-drift" cx={56} cy={90} r={1.2} fill="#ddd6fe" style={{ animationDelay: "0.9s" }} />
+          <path className="ff-drift" fill="#fde68a" style={{ animationDelay: "1.7s" }}
+            d="M 50 84 L 50.8 85.8 L 52.6 86.6 L 50.8 87.4 L 50 89.2 L 49.2 87.4 L 47.4 86.6 L 49.2 85.8 Z" />
+        </g>
       </g>
     </g>
   );
@@ -1743,188 +1825,622 @@ function Whale() {
   );
 }
 
-/** 🐉 มังกรขนปุย — ตัวกลมป้อมน่ากอด ท้องเป็นปล้องนุ่ม
- *  เขา ปีก หูครีบ และหางถูกวาด "ก่อน" ตัว โดยให้โคนของทุกชิ้นจมเข้าไปในลำตัว
- *  ส่วนที่โผล่พ้นเส้นรอบตัวจึงดูงอกออกมาจริง ไม่ลอยแยกเป็นชิ้น ๆ
- *  และพ่นไฟเป็นหัวใจดวงเล็กลอยขึ้นข้างปาก */
+/** 🐉 มังกรขนปุย — มังกรน้อยกึ่งเรียล: หัวกับลำตัวแยกเป็นสองก้อนชัดเจน (ของเดิมเป็นลูกกลมลูกเดียว
+ *  เลยไม่มีสัดส่วน) มีปากยื่นสั้น ๆ พร้อมรูจมูก เขาโค้งมีสันขวาง ครีบหูแนบข้างแก้ม
+ *  ปีกค้างคาวแผ่นกว้างมีก้านนิ้วและขอบหยัก แขน-ขาสั้นป้อมมีเล็บครีม
+ *  หางอ้วนม้วนออกข้างจบด้วยปลายหัวใจ และพ่นไฟเป็นหัวใจดวงเล็กลอยขึ้นจากปาก */
 function Dragon() {
+  const headD =
+    "M 50 13.6 C 61.5 13.6 69.6 19.4 71 29.4 C 72.2 38.4 66.6 46.4 57.6 49.8 C 55 50.8 52.4 51.2 50 51.2 C 47.6 51.2 45 50.8 42.4 49.8 C 33.4 46.4 27.8 38.4 29 29.4 C 30.4 19.4 38.5 13.6 50 13.6 Z";
+  const bodyD =
+    "M 50 45 C 63 45 71.5 53 72.5 64.5 C 73.6 77 65.4 86.5 50 86.5 C 34.6 86.5 26.4 77 27.5 64.5 C 28.5 53 37 45 50 45 Z";
+  // ปีก: ขอบหน้า = กระดูกแขนพาดขึ้นไปหาข้อมือ แล้วขอบหลังหยักเว้าระหว่างปลายนิ้วสามนิ้ว
+  const wingR =
+    "M 61 50 C 69 39 78 29 86 25.5 C 89.5 24 93 26.5 95 32.5 C 89.5 36 87.5 41 90.5 46 C 84.5 47.5 80 48.5 76.5 54 C 71.5 53 66.5 54 62 57 Z";
+  const wingL =
+    "M 39 50 C 31 39 22 29 14 25.5 C 10.5 24 7 26.5 5 32.5 C 10.5 36 12.5 41 9.5 46 C 15.5 47.5 20 48.5 23.5 54 C 28.5 53 33.5 54 38 57 Z";
+  const claw = "#f4e6bd";
   return (
     <g>
       <defs>
-        <radialGradient id="ff-dragon-body" cx="0.36" cy="0.26" r="0.94">
-          <stop offset="0%" stopColor="#c2f7de" />
-          <stop offset="44%" stopColor="#84e2b8" />
-          <stop offset="100%" stopColor="#37a37e" />
+        <radialGradient id="ff-dragon-body" cx="0.36" cy="0.24" r="0.94">
+          <stop offset="0%" stopColor="#c6f8e0" />
+          <stop offset="48%" stopColor="#84e2b8" />
+          <stop offset="100%" stopColor="#3ea886" />
+        </radialGradient>
+        <radialGradient id="ff-dragon-head" cx="0.38" cy="0.26" r="0.92">
+          <stop offset="0%" stopColor="#d2fbe8" />
+          <stop offset="52%" stopColor="#8ee7c0" />
+          <stop offset="100%" stopColor="#46b08d" />
+        </radialGradient>
+        <radialGradient id="ff-dragon-snout" cx="0.5" cy="0.3" r="0.8">
+          <stop offset="0%" stopColor="#e7fdf2" />
+          <stop offset="100%" stopColor="#b5eed4" />
         </radialGradient>
         <linearGradient id="ff-dragon-belly" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#fdf7dc" />
-          <stop offset="100%" stopColor="#f0d99a" />
+          <stop offset="100%" stopColor="#eed695" />
         </linearGradient>
-        <linearGradient id="ff-dragon-wing" x1="0.1" y1="0" x2="0.9" y2="1">
-          <stop offset="0%" stopColor="#d6f7ff" />
-          <stop offset="52%" stopColor="#a3e4f2" />
-          <stop offset="100%" stopColor="#63bdd6" />
+        <linearGradient id="ff-dragon-wing" x1="0.1" y1="0" x2="0.85" y2="1">
+          <stop offset="0%" stopColor="#cdf3fa" />
+          <stop offset="48%" stopColor="#8bd8e6" />
+          <stop offset="100%" stopColor="#4ba9bd" />
         </linearGradient>
         <linearGradient id="ff-dragon-ear" x1="1" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#7fdcb0" />
+          <stop offset="0%" stopColor="#89e0b8" />
           <stop offset="100%" stopColor="#3f9f7d" />
         </linearGradient>
-        <linearGradient id="ff-dragon-horn" x1="0" y1="1" x2="0" y2="0">
-          <stop offset="0%" stopColor="#e0ac4d" />
-          <stop offset="55%" stopColor="#f7cd72" />
-          <stop offset="100%" stopColor="#fff2c4" />
+        <linearGradient id="ff-dragon-horn" x1="0" y1="1" x2="0.3" y2="0">
+          <stop offset="0%" stopColor="#dda23f" />
+          <stop offset="52%" stopColor="#f7cd72" />
+          <stop offset="100%" stopColor="#fff4cf" />
         </linearGradient>
-        <linearGradient id="ff-dragon-tail" x1="1" y1="0" x2="0" y2="1">
+        <linearGradient id="ff-dragon-tail" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor="#6fd2a6" />
           <stop offset="100%" stopColor="#3f9f7d" />
         </linearGradient>
+        <clipPath id="ff-dragon-bodyclip">
+          <path d={bodyD} />
+        </clipPath>
+        <clipPath id="ff-dragon-headclip">
+          <path d={headD} />
+        </clipPath>
       </defs>
 
       {/* เงาทอดพื้น — นอกกลุ่มที่ขยับ จะได้ไม่ลอยตามตัว */}
-      <ellipse cx={50} cy={87.5} rx={23} ry={3.6} fill="#2f7a5e" opacity={0.15} />
-      <ellipse cx={50} cy={87.2} rx={12} ry={2.1} fill="#245c47" opacity={0.15} />
+      <ellipse cx={50} cy={90} rx={26} ry={3.6} fill="#2f7a5e" opacity={0.15} />
+      <ellipse cx={50} cy={89.6} rx={13} ry={2} fill="#245c47" opacity={0.14} />
 
-      {/* ---- ปีก: โคนอยู่ที่ (38,40)/(62,40) ซึ่งจมอยู่ในลำตัว ---- */}
-      <g className="ff-flap" style={{ transformOrigin: "40px 40px", animationDuration: "2.1s" }}>
-        <path d="M 38 40 C 28 28 14 23 7 29 C 2 34 8 40 13 38.6 C 8.6 45 15 51.4 22 47 C 28 43.4 34 42.4 38 40 Z"
-          fill="url(#ff-dragon-wing)" />
-        <path d="M 36 41 C 27 34 18 30 10 29.5" stroke="#4c9fb8" strokeWidth={0.9} fill="none" opacity={0.45} />
-        <path d="M 35.5 43 C 27 41 19 42 13.4 45" stroke="#4c9fb8" strokeWidth={0.9} fill="none" opacity={0.4} />
+      {/* ---- ปีกค้างคาว: โคนจมอยู่ในไหล่ กระพือคนละจังหวะซ้าย-ขวา ---- */}
+      <g className="ff-flap" style={{ transformOrigin: "39px 52px", animationDuration: "2.2s" }}>
+        <path d={wingL} fill="url(#ff-dragon-wing)" />
+        <path
+          d="M 37.5 52.5 C 28 44 16 37 6.5 32.5 M 37 54 C 29 49 19 46.5 10.5 45.5 M 36.5 55.5 C 32 53.5 28 53 24.2 53.5"
+          stroke="#4c9fb8" strokeWidth={1.2} fill="none" opacity={0.5} strokeLinecap="round"
+        />
+        <path d={wingL} fill="none" stroke="#5cb3c6" strokeWidth={1} opacity={0.5} />
+        <path d="M 38 51 C 30 42 21 32 13.5 26.5" stroke="#4c9fb8" strokeWidth={2.2} fill="none" opacity={0.7} strokeLinecap="round" />
       </g>
-      <g className="ff-flap" style={{ transformOrigin: "60px 40px", animationDuration: "2.1s", animationDelay: "-0.4s" }}>
-        <path d="M 62 40 C 72 28 86 23 93 29 C 98 34 92 40 87 38.6 C 91.4 45 85 51.4 78 47 C 72 43.4 66 42.4 62 40 Z"
-          fill="url(#ff-dragon-wing)" />
-        <path d="M 64 41 C 73 34 82 30 90 29.5" stroke="#4c9fb8" strokeWidth={0.9} fill="none" opacity={0.45} />
-        <path d="M 64.5 43 C 73 41 81 42 86.6 45" stroke="#4c9fb8" strokeWidth={0.9} fill="none" opacity={0.4} />
-      </g>
-
-      {/* ---- หูครีบ: โคนจมในตัวเช่นกัน ---- */}
-      <path d="M 31 52 C 21 47.5 10 49.5 7.5 55 C 11.5 60.5 22 62 31 58.6 Z" fill="url(#ff-dragon-ear)" />
-      <path d="M 69 52 C 79 47.5 90 49.5 92.5 55 C 88.5 60.5 78 62 69 58.6 Z" fill="url(#ff-dragon-ear)" />
-      <path d="M 27 53.5 C 20 52 14 53 11 55.6" stroke="#2f8a68" strokeWidth={0.9} fill="none" opacity={0.5} />
-      <path d="M 73 53.5 C 80 52 86 53 89 55.6" stroke="#2f8a68" strokeWidth={0.9} fill="none" opacity={0.5} />
-
-      {/* ---- เขาทอง: โคนลากลงถึง y=42 ซึ่งอยู่ใต้เส้นรอบตัว ---- */}
-      <path d="M 38 42 C 36.2 32 36.8 22.6 40.6 17.4 C 44.2 23 44.6 33 44 42 Z" fill="url(#ff-dragon-horn)" />
-      <path d="M 62 42 C 63.8 32 63.2 22.6 59.4 17.4 C 55.8 23 55.4 33 56 42 Z" fill="url(#ff-dragon-horn)" />
-      <path d="M 39.4 34 C 39 28.4 39.6 23.6 41 20.4" stroke="#fff6da" strokeWidth={1.1} fill="none" opacity={0.75} />
-      <path d="M 60.6 34 C 61 28.4 60.4 23.6 59 20.4" stroke="#fff6da" strokeWidth={1.1} fill="none" opacity={0.75} />
-
-      {/* ---- หาง: แกว่งช้า ๆ โคนจมอยู่ในตัว ---- */}
-      <g className="ff-tail" style={{ transformOrigin: "34px 76px", animationDuration: "3s" }}>
-        <path d="M 36 76 C 24 83 13 79 8.5 70.5" stroke="url(#ff-dragon-tail)" strokeWidth={7.5} fill="none" strokeLinecap="round" />
-        <path d="M 34 75.4 C 24 80.6 15 77.6 11 71.4" stroke="#a5edcb" strokeWidth={2.4} fill="none" strokeLinecap="round" opacity={0.55} />
-        <path d="M 8.5 70.5 C 4.4 68.6 4 63.4 7.6 61.4 C 10 60 12.6 61 13.4 63.4 C 14.6 61 17.4 60.6 19.4 62.4 C 22.6 65.2 20.4 70.4 15.8 71.6 C 13.2 72.3 10.6 71.6 8.5 70.5 Z"
-          fill="#6fd2a6" />
+      <g className="ff-flap" style={{ transformOrigin: "61px 52px", animationDuration: "2.2s", animationDelay: "-0.4s" }}>
+        <path d={wingR} fill="url(#ff-dragon-wing)" />
+        <path
+          d="M 62.5 52.5 C 72 44 84 37 93.5 32.5 M 63 54 C 71 49 81 46.5 89.5 45.5 M 63.5 55.5 C 68 53.5 72 53 75.8 53.5"
+          stroke="#4c9fb8" strokeWidth={1.2} fill="none" opacity={0.5} strokeLinecap="round"
+        />
+        <path d={wingR} fill="none" stroke="#5cb3c6" strokeWidth={1} opacity={0.5} />
+        <path d="M 62 51 C 70 42 79 32 86.5 26.5" stroke="#4c9fb8" strokeWidth={2.2} fill="none" opacity={0.7} strokeLinecap="round" />
       </g>
 
-      {/* ---- ลำตัวกลมป้อม ---- */}
-      <ellipse cx={50} cy={58} rx={27} ry={26} fill="url(#ff-dragon-body)" />
-      {/* ขนปุยรอบขอบตัว */}
-      <path d="M 26.6 46.4 l -3.2 -2.6 M 24.2 63 l -3.8 -0.4 M 29 74.6 l -3 2.4 M 73.4 46.4 l 3.2 -2.6 M 75.8 63 l 3.8 -0.4 M 71 74.6 l 3 2.4"
-        stroke="#a8ecd0" strokeWidth={1.7} strokeLinecap="round" opacity={0.9} />
-      {/* แสงตกด้านบนซ้าย */}
-      <ellipse cx={39} cy={43} rx={11} ry={7.5} fill="#ffffff" opacity={0.22} transform="rotate(-24 39 43)" />
+      {/* ---- หาง: โคนซ่อนใต้สะโพก ม้วนออกขวาแล้วจบด้วยปลายหัวใจ แกว่งช้า ๆ ---- */}
+      <g className="ff-tail" style={{ transformOrigin: "64px 79px", animationDuration: "3.2s" }}>
+        <path d="M 64 79 C 74 82.5 82 80 86.5 73.5" stroke="url(#ff-dragon-tail)" strokeWidth={8} fill="none" strokeLinecap="round" />
+        <path d="M 66 77.6 C 74 80.4 80.4 78.4 84.4 73.4" stroke="#a5edcb" strokeWidth={2.2} fill="none" strokeLinecap="round" opacity={0.5} />
+        <path
+          d="M 87.6 73.2 C 91.2 71.4 91.6 67 88.6 65.2 C 86.6 64 84.4 64.9 83.7 66.9 C 83.1 64.9 80.8 64.5 79.1 66 C 76.4 68.4 78.2 72.8 82.1 73.9 C 84.3 74.5 85.8 74.1 87.6 73.2 Z"
+          fill="#6fd2a6"
+        />
+        <path d="M 84.4 67.6 C 83.4 68.6 83.2 70 83.8 71.2" stroke="#a5edcb" strokeWidth={1} fill="none" strokeLinecap="round" opacity={0.6} />
+      </g>
 
-      {/* ---- ท้องเป็นปล้อง ---- */}
-      <ellipse cx={50} cy={71} rx={14.5} ry={11} fill="url(#ff-dragon-belly)" />
-      <path d="M 37.5 67 Q 50 69.4 62.5 67 M 36.4 72 Q 50 74.6 63.6 72 M 39 77 Q 50 79 61 77"
-        stroke="#e0c583" strokeWidth={1.1} fill="none" opacity={0.72} strokeLinecap="round" />
+      {/* ---- ครีบหูข้างแก้ม กระดิกทีละข้าง ---- */}
+      <g className="ff-ear" style={{ transformOrigin: "31px 35px" }}>
+        <path d="M 31 32 C 27.6 30.6 24.6 31.4 23.4 34.2 C 25.4 37.2 28.4 38.6 31.4 38 Z" fill="url(#ff-dragon-ear)" />
+        <path d="M 29 33.2 C 27 33 25.6 33.4 24.8 34.4 M 29.2 35.8 C 27.4 35.8 26.2 36.2 25.4 36.8" stroke="#2f8a68" strokeWidth={0.8} fill="none" opacity={0.5} strokeLinecap="round" />
+      </g>
+      <g className="ff-ear" style={{ transformOrigin: "69px 35px", animationDelay: "0.5s" }}>
+        <path d="M 69 32 C 72.4 30.6 75.4 31.4 76.6 34.2 C 74.6 37.2 71.6 38.6 68.6 38 Z" fill="url(#ff-dragon-ear)" />
+        <path d="M 71 33.2 C 73 33 74.4 33.4 75.2 34.4 M 70.8 35.8 C 72.6 35.8 73.8 36.2 74.6 36.8" stroke="#2f8a68" strokeWidth={0.8} fill="none" opacity={0.5} strokeLinecap="round" />
+      </g>
+
+      {/* ---- เขาทองโค้ง โคนจมในหัว + หงอนเล็กกลางกระหม่อม ---- */}
+      <path d="M 44.6 16.2 C 40.8 11 36 7 30.6 4.6 C 31.4 10.6 33.4 15.8 36.6 20.4 C 39.6 21.4 42.6 19.6 44.6 16.2 Z" fill="url(#ff-dragon-horn)" />
+      <path d="M 55.4 16.2 C 59.2 11 64 7 69.4 4.6 C 68.6 10.6 66.6 15.8 63.4 20.4 C 60.4 21.4 57.4 19.6 55.4 16.2 Z" fill="url(#ff-dragon-horn)" />
+      <path d="M 41.4 16.4 C 38.6 12.8 35.4 9.6 32 7.4" stroke="#fff4cf" strokeWidth={1} fill="none" opacity={0.7} strokeLinecap="round" />
+      <path d="M 58.6 16.4 C 61.4 12.8 64.6 9.6 68 7.4" stroke="#fff4cf" strokeWidth={1} fill="none" opacity={0.7} strokeLinecap="round" />
+      <path d="M 37.4 18.6 C 39.2 18 41.2 17.2 43 16.4 M 34.8 14 C 36.2 13 37.6 12 39 11 M 32.8 9.6 C 33.8 8.8 34.8 8 35.8 7.2" stroke="#dda23f" strokeWidth={0.9} fill="none" opacity={0.55} strokeLinecap="round" />
+      <path d="M 62.6 18.6 C 60.8 18 58.8 17.2 57 16.4 M 65.2 14 C 63.8 13 62.4 12 61 11 M 67.2 9.6 C 66.2 8.8 65.2 8 64.2 7.2" stroke="#dda23f" strokeWidth={0.9} fill="none" opacity={0.55} strokeLinecap="round" />
+      <path d="M 45.6 14.6 C 46.6 11.6 48 9.6 49.2 8.6 C 49.6 10.6 49.8 12.6 49.8 14.2 Z M 50.2 14.2 C 50.4 11.8 51 9.6 51.8 8.2 C 53 9.8 54 12 54.6 14.6 Z" fill="#5cc79f" />
+
+      {/* ---- ลำตัวอ้วนกลม + ท้องเป็นปล้อง ---- */}
+      <path d={bodyD} fill="url(#ff-dragon-body)" />
+      <g clipPath="url(#ff-dragon-bodyclip)">
+        {/* แสงบนไหล่ซ้าย เงาโค้งขวาล่าง และเงาหัวทาบลงอก */}
+        <ellipse cx={38} cy={55} rx={13} ry={8} fill="#ffffff" opacity={0.25} transform="rotate(-20 38 55)" />
+        <ellipse cx={80} cy={82} rx={24} ry={20} fill="#2f7a5e" opacity={0.2} />
+        <ellipse cx={50} cy={50} rx={20} ry={6} fill="#2f7a5e" opacity={0.18} />
+      </g>
+      <ellipse cx={50} cy={70} rx={14} ry={12} fill="url(#ff-dragon-belly)" />
+      <path d="M 37 65.6 Q 50 68.4 63 65.6 M 36.2 70.6 Q 50 73.6 63.8 70.6 M 38.4 75.8 Q 50 78.4 61.6 75.8" stroke="#e0c583" strokeWidth={1.1} fill="none" opacity={0.7} strokeLinecap="round" />
+      <path d="M 28.6 57.6 l -3.2 -2 M 27 68 l -3.6 -0.6 M 30.4 78 l -2.8 2.2 M 71.4 57.6 l 3.2 -2 M 73 68 l 3.6 -0.6 M 69.6 78 l 2.8 2.2" stroke="#a8ecd0" strokeWidth={1.6} strokeLinecap="round" opacity={0.85} />
+
+      {/* ---- แขนสั้นป้อมมีเล็บ ขยับคนละจังหวะ ---- */}
+      <g className="ff-wiggle" style={{ transformOrigin: "33px 61px", animationDuration: "5.4s" }}>
+        <path d="M 32 60.5 C 26.5 61.5 22.5 65.5 22.8 69.8 C 23 73.2 26 75 29.4 73.8 C 32.4 72.8 34.4 69.8 34.8 66 Z" fill="url(#ff-dragon-body)" />
+        <path d="M 24.2 72.4 l -1.8 2.4 M 27.4 74.4 l -1 2.6 M 30.8 74 l 0.2 2.6" stroke={claw} strokeWidth={1.6} strokeLinecap="round" fill="none" />
+      </g>
+      <g className="ff-wiggle" style={{ transformOrigin: "67px 61px", animationDuration: "5.4s", animationDelay: "1.6s" }}>
+        <path d="M 68 60.5 C 73.5 61.5 77.5 65.5 77.2 69.8 C 77 73.2 74 75 70.6 73.8 C 67.6 72.8 65.6 69.8 65.2 66 Z" fill="url(#ff-dragon-body)" />
+        <path d="M 75.8 72.4 l 1.8 2.4 M 72.6 74.4 l 1 2.6 M 69.2 74 l -0.2 2.6" stroke={claw} strokeWidth={1.6} strokeLinecap="round" fill="none" />
+      </g>
+
+      {/* ---- เท้าสองข้าง ---- */}
+      <ellipse cx={40} cy={84.6} rx={8.4} ry={5.4} fill="url(#ff-dragon-body)" />
+      <ellipse cx={60} cy={84.6} rx={8.4} ry={5.4} fill="url(#ff-dragon-body)" />
+      <path d="M 34.4 86.4 l -1.4 2.4 M 39.6 88.2 l -0.2 2.4 M 45 86.4 l 1.4 2.4 M 54.4 86.4 l -1.4 2.4 M 59.6 88.2 l -0.2 2.4 M 65 86.4 l 1.4 2.4" stroke={claw} strokeWidth={1.7} strokeLinecap="round" fill="none" />
+
+      {/* ---- หัว ---- */}
+      <path d={headD} fill="url(#ff-dragon-head)" />
+      <g clipPath="url(#ff-dragon-headclip)">
+        <ellipse cx={39} cy={24} rx={12} ry={7} fill="#ffffff" opacity={0.28} transform="rotate(-20 39 24)" />
+        <ellipse cx={74} cy={44} rx={16} ry={14} fill="#2f7a5e" opacity={0.16} />
+      </g>
+
+      {/* ---- ปากยื่นสั้น รูจมูก ปากอ้ายิ้ม เขี้ยวเล็ก ลิ้น ---- */}
+      <ellipse cx={50} cy={41} rx={11} ry={7.4} fill="url(#ff-dragon-snout)" />
+      <path d="M 46.4 36.6 q -1.2 1 -0.2 2.2 M 53.6 36.6 q 1.2 1 0.2 2.2" stroke="#5aab8b" strokeWidth={1.4} fill="none" strokeLinecap="round" />
+      <path d="M 42.6 42.6 C 44.6 49.4 55.4 49.4 57.4 42.6 Z" fill="#c94a63" />
+      <path d="M 46.4 47 C 47.6 49.8 52.4 49.8 53.6 47 C 51.4 48.2 48.6 48.2 46.4 47 Z" fill="#f9a8d4" />
+      <path d="M 44.6 43 l 1.5 2.2 1.5 -2.2 Z M 52.4 43 l 1.5 2.2 1.5 -2.2 Z" fill="#ffffff" />
+      <path d="M 42.6 42.6 C 45.6 41.6 54.4 41.6 57.4 42.6" stroke="#3f9f7d" strokeWidth={1} fill="none" opacity={0.45} strokeLinecap="round" />
 
       {/* ---- หน้า ---- */}
-      <GEye cx={42} cy={44} r={5.2} />
-      <GEye cx={58} cy={44} r={5.2} delay={0.4} />
-      <Blush cx={32.5} cy={51} r={5} color="#ff8fb4" opacity={0.72} />
-      <Blush cx={67.5} cy={51} r={5} color="#ff8fb4" opacity={0.72} />
-      {/* ปากอ้ายิ้มกว้าง + ลิ้น + เขี้ยวเล็ก */}
-      <path d="M 41.6 53 Q 50 64.6 58.4 53 Z" fill="#d9536b" />
-      <path d="M 45.6 58.2 Q 50 63 54.4 58.2 Q 50 60 45.6 58.2 Z" fill="#f9a8d4" opacity={0.9} />
-      <path d="M 43.6 53.4 l 1.7 2.4 1.6 -2.4 Z" fill="#ffffff" />
-      <path d="M 53.1 53.4 l 1.6 2.4 1.7 -2.4 Z" fill="#ffffff" />
+      <GEye cx={41.5} cy={28.5} r={5.4} />
+      <GEye cx={58.5} cy={28.5} r={5.4} delay={0.4} />
+      <path d="M 36.6 21.6 C 38.6 20 41.4 19.8 43.6 21 M 63.4 21.6 C 61.4 20 58.6 19.8 56.4 21" stroke="#3f9f7d" strokeWidth={1.5} fill="none" strokeLinecap="round" opacity={0.7} />
+      <Blush cx={33.6} cy={36.4} r={4.6} color="#ff8fb4" opacity={0.6} />
+      <Blush cx={66.4} cy={36.4} r={4.6} color="#ff8fb4" opacity={0.6} />
 
-      {/* ---- พ่นไฟเป็นหัวใจ ลอยขึ้นข้างปากแล้วจางหาย ---- */}
+      {/* ---- พ่นไฟเป็นหัวใจ ลอยขึ้นจากมุมปากแล้วจางหาย ---- */}
       <g className="ff-drift" style={{ animationDuration: "3s" }}>
-        <path d="M 80 58 C 77 55 77.6 50.6 80.6 50.6 C 82 50.6 82.7 51.5 82.7 52.6 C 82.7 51.5 83.4 50.6 84.8 50.6 C 87.8 50.6 88.4 55 85.4 58 C 84 59.4 81.4 59.4 80 58 Z"
-          fill="#fb7185" />
+        <path d="M 62.5 40 C 60.6 38 61 35.2 63 35.2 C 63.9 35.2 64.4 35.8 64.4 36.5 C 64.4 35.8 64.9 35.2 65.8 35.2 C 67.8 35.2 68.2 38 66.3 40 C 65.3 40.9 63.5 40.9 62.5 40 Z" fill="#fb7185" />
       </g>
-      <g className="ff-drift" style={{ animationDuration: "3s", animationDelay: "-1.5s" }}>
-        <path d="M 87.4 48 C 85.4 46 85.8 43.2 87.8 43.2 C 88.7 43.2 89.2 43.8 89.2 44.5 C 89.2 43.8 89.7 43.2 90.6 43.2 C 92.6 43.2 93 46 91 48 C 90 48.9 88.4 48.9 87.4 48 Z"
-          fill="#fda4af" />
+      <g className="ff-drift" style={{ animationDuration: "3s", animationDelay: "-1s" }}>
+        <path d="M 70.5 31.5 C 68.9 29.9 69.2 27.6 70.8 27.6 C 71.5 27.6 71.9 28.1 71.9 28.7 C 71.9 28.1 72.3 27.6 73 27.6 C 74.6 27.6 74.9 29.9 73.3 31.5 C 72.5 32.2 71.3 32.2 70.5 31.5 Z" fill="#fda4af" />
       </g>
+      <g className="ff-drift" style={{ animationDuration: "3s", animationDelay: "-2s" }}>
+        <path d="M 77.6 24.4 C 76.4 23.2 76.6 21.5 77.8 21.5 C 78.3 21.5 78.6 21.9 78.6 22.3 C 78.6 21.9 78.9 21.5 79.4 21.5 C 80.6 21.5 80.8 23.2 79.6 24.4 C 79 25 78.2 25 77.6 24.4 Z" fill="#fecdd3" />
+      </g>
+
       <g className="ff-twinkle">
-        <path d="M 18 26 l 1.3 3 3 1.3 -3 1.3 -1.3 3 -1.3 -3 -3 -1.3 3 -1.3 Z" fill="#fde68a" />
+        <path d="M 16 20 l 1.3 3 3 1.3 -3 1.3 -1.3 3 -1.3 -3 -3 -1.3 3 -1.3 Z" fill="#fde68a" />
       </g>
       <g className="ff-twinkle" style={{ animationDelay: "-1s" }}>
-        <path d="M 86 72 l 1.1 2.6 2.6 1.1 -2.6 1.1 -1.1 2.6 -1.1 -2.6 -2.6 -1.1 2.6 -1.1 Z" fill="#a7f3d0" />
+        <path d="M 88 58 l 1.1 2.6 2.6 1.1 -2.6 1.1 -1.1 2.6 -1.1 -2.6 -2.6 -1.1 2.6 -1.1 Z" fill="#a7f3d0" />
+      </g>
+      <g className="ff-twinkle" style={{ animationDelay: "-1.8s" }}>
+        <path d="M 10 62 l 0.9 2.1 2.1 0.9 -2.1 0.9 -0.9 2.1 -0.9 -2.1 -2.1 -0.9 2.1 -0.9 Z" fill="#bae6fd" />
       </g>
     </g>
   );
 }
 
-/** 🦄 ยูนิคอร์นแห่งความฝัน — มีออร่าสีรุ้งรอบตัว */
+/** 🦄 ยูนิคอร์นแห่งความฝัน — โพนี่ขนมุกกึ่งเรียล: กะโหลกแก้มกว้างปากสั้น จมูกมีรูจมูกจริง
+ *  ตาม่วงขนตายาว หูในสีชมพู เขาเกลียวทองมีสันจับแสง แผงคอ-หางสายรุ้งพลิ้วเป็นช่อ
+ *  ขาสี่ข้างมีกีบสีมุก และออร่ารุ้งเรืองรอบตัว */
 function Unicorn() {
   return (
     <g>
       <defs>
-        <linearGradient id="ff-unicorn-body" x1="0" y1="0" x2="1" y2="1">
+        <radialGradient id="ff-uni-coat" cx="0.36" cy="0.26" r="0.95">
           <stop offset="0%" stopColor="#ffffff" />
-          <stop offset="100%" stopColor="#e4ebf4" />
+          <stop offset="55%" stopColor="#f7f4fd" />
+          <stop offset="100%" stopColor="#ddd7f1" />
+        </radialGradient>
+        <radialGradient id="ff-uni-head" cx="0.38" cy="0.28" r="0.92">
+          <stop offset="0%" stopColor="#ffffff" />
+          <stop offset="60%" stopColor="#f9f6fe" />
+          <stop offset="100%" stopColor="#e3ddf4" />
+        </radialGradient>
+        <linearGradient id="ff-uni-muzzle" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#fefaff" />
+          <stop offset="100%" stopColor="#f6dced" />
         </linearGradient>
-        <linearGradient id="ff-unicorn-horn" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#fcd34d" />
-          <stop offset="100%" stopColor="#f59e0b" />
+        <linearGradient id="ff-uni-horn" x1="0" y1="1" x2="0.35" y2="0">
+          <stop offset="0%" stopColor="#dd9c34" />
+          <stop offset="45%" stopColor="#fbcf6e" />
+          <stop offset="100%" stopColor="#fff7dc" />
         </linearGradient>
+        <linearGradient id="ff-uni-hoof" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#f4dbf4" />
+          <stop offset="100%" stopColor="#c4a0dd" />
+        </linearGradient>
+        <radialGradient id="ff-uni-iris" cx="0.38" cy="0.32" r="0.85">
+          <stop offset="0%" stopColor="#bcaaf4" />
+          <stop offset="48%" stopColor="#7a5cc6" />
+          <stop offset="100%" stopColor="#38246a" />
+        </radialGradient>
+        <radialGradient id="ff-uni-glow" cx="0.5" cy="0.5" r="0.5">
+          <stop offset="52%" stopColor="#ffffff" stopOpacity={0} />
+          <stop offset="100%" stopColor="#e9d5ff" stopOpacity={0.5} />
+        </radialGradient>
+        <clipPath id="ff-uni-bodyclip">
+          <ellipse cx={50} cy={69} rx={22.5} ry={15.5} />
+        </clipPath>
+        <clipPath id="ff-uni-headclip">
+          <path d="M 50 20.5 C 62 20.5 71.5 26.5 73.2 36.5 C 74.6 44.8 70.6 51.8 63.4 55.4 C 58.6 57.8 54.4 58.6 50 58.6 C 45.6 58.6 41.4 57.8 36.6 55.4 C 29.4 51.8 25.4 44.8 26.8 36.5 C 28.5 26.5 38 20.5 50 20.5 Z" />
+        </clipPath>
       </defs>
-      {/* ออร่าสีรุ้งเรืองรองรอบตัว */}
-      <g className="ff-shimmer" fill="none" strokeWidth={2.5} strokeLinecap="round" opacity={0.6}>
-        <path d="M 6 58 A 44 44 0 0 1 94 58" stroke="#fda4af" />
-        <path d="M 12 58 A 38 38 0 0 1 88 58" stroke="#fde68a" />
-        <path d="M 18 58 A 32 32 0 0 1 82 58" stroke="#a7f3d0" />
+
+      {/* ---- ออร่ารุ้ง: ฟุ้งนุ่มรอบตัว + เส้นรุ้งสามชั้น
+             (จบเส้นสูงกว่าโคนหาง ไม่งั้นออร่ากับหางจะต่อกันจนดูเป็นสายรุ้งเส้นเดียว) ---- */}
+      <ellipse cx={50} cy={50} rx={48} ry={48} fill="url(#ff-uni-glow)" />
+      <g className="ff-shimmer" fill="none" strokeWidth={2.2} strokeLinecap="round" opacity={0.45}>
+        <path d="M 8 54 A 42 42 0 0 1 92 54" stroke="#fda4af" />
+        <path d="M 14 54 A 36 36 0 0 1 86 54" stroke="#fde68a" />
+        <path d="M 20 54 A 30 30 0 0 1 80 54" stroke="#a7f3d0" />
       </g>
-      {/* ตัวโพนี่ขนนุ่มฟู */}
-      <g className="ff-bob" style={{ animationDuration: "3.2s" }}>
-        <g className="ff-wiggle" style={{ transformOrigin: "72px 66px", animationDuration: "3.2s", animationDelay: "0.5s" }}>
-          <path d="M 70 68 Q 80 71 79 82" stroke="#fda4af" strokeWidth={2.8} fill="none" strokeLinecap="round" />
-          <path d="M 70 69.5 Q 77 73 75.5 83" stroke="#fde68a" strokeWidth={2.8} fill="none" strokeLinecap="round" />
-          <path d="M 70 71 Q 74 75 72.5 83.5" stroke="#bae6fd" strokeWidth={2.8} fill="none" strokeLinecap="round" />
+
+      {/* เงานุ่มใต้ตัว — อยู่นอกกลุ่มที่ขยับ จะได้ไม่ลอยตาม */}
+      <ellipse cx={50} cy={91} rx={25} ry={3.4} fill="#7c6bb0" opacity={0.14} />
+
+      <g className="ff-bob" style={{ animationDuration: "3.4s" }}>
+        {/* ---- หางสายรุ้ง: โคนจมในสะโพก ปลายม้วนกลับเข้าหาตัว (ให้อ่านเป็น "หาง" ไม่ใช่เส้นออร่า) ---- */}
+        <g className="ff-wiggle" style={{ transformOrigin: "68px 62px", animationDuration: "3.6s", animationDelay: "0.4s" }}>
+          <path d="M 68 60 C 82 62 90.5 74 84.5 86 C 82.8 89.4 79.6 90.6 76.4 89.6" stroke="#fda4af" strokeWidth={5} fill="none" strokeLinecap="round" />
+          <path d="M 68 62.6 C 80.6 65 87.6 75.4 82.2 86.6 C 80.6 89.4 78 90.4 75.4 89.6" stroke="#fde68a" strokeWidth={4.6} fill="none" strokeLinecap="round" />
+          <path d="M 68 65.2 C 79 68 84.8 76.6 80 87 C 78.8 89.4 76.6 90.2 74.4 89.4" stroke="#a7f3d0" strokeWidth={4.2} fill="none" strokeLinecap="round" />
+          <path d="M 68 67.8 C 77.6 70.4 82.4 77.6 78 87.2 C 77 89.2 75.2 89.8 73.4 89.2" stroke="#bae6fd" strokeWidth={3.8} fill="none" strokeLinecap="round" />
+          <path d="M 68 70.4 C 76 73 80 78.8 76.4 87.4 C 75.6 89 74 89.6 72.6 89" stroke="#ddd6fe" strokeWidth={3.4} fill="none" strokeLinecap="round" />
+          <path d="M 71.6 62.6 C 82 66.6 88.4 76.4 83.4 85.4 M 72.2 67.2 C 79.6 70.6 83.6 77.6 80.4 85.4"
+            stroke="#ffffff" strokeWidth={1} fill="none" strokeLinecap="round" opacity={0.5} />
         </g>
-        <ellipse cx={50} cy={69} rx={23} ry={15} fill="url(#ff-unicorn-body)" stroke="#d6dfee" strokeWidth={1.2} />
-        <ellipse cx={38} cy={83} rx={6} ry={3.2} fill="url(#ff-unicorn-body)" stroke="#d6dfee" strokeWidth={1.2} />
-        <ellipse cx={62} cy={83} rx={6} ry={3.2} fill="url(#ff-unicorn-body)" stroke="#d6dfee" strokeWidth={1.2} />
-        {/* เขาเกลียวทองกับหูจิ๋ว */}
-        <path d="M 46.5 28 L 53.5 28 L 50.4 7.5 Z" fill="url(#ff-unicorn-horn)" />
-        <path d="M 47.6 22.5 L 53 20.8 M 48.5 17.5 L 52.4 16.2 M 49.4 12.5 L 51.7 11.6"
-          stroke="#d97706" strokeWidth={1} strokeLinecap="round" />
-        <path d="M 33.5 30 Q 32 20.5 38.5 22 Q 41.5 24.5 40 30.5 Z" fill="url(#ff-unicorn-body)" />
-        <path d="M 66.5 30 Q 68 20.5 61.5 22 Q 58.5 24.5 60 30.5 Z" fill="url(#ff-unicorn-body)" />
-        <ellipse cx={37} cy={25.5} rx={1.6} ry={3} fill="#fbcfe8" transform="rotate(14 37 25.5)" />
-        <ellipse cx={63} cy={25.5} rx={1.6} ry={3} fill="#fbcfe8" transform="rotate(-14 63 25.5)" />
-        <circle cx={50} cy={45} r={22} fill="url(#ff-unicorn-body)" stroke="#d6dfee" strokeWidth={1.2} />
-        {/* แผงคอสีรุ้งพลิ้วไหว */}
-        <g className="ff-wiggle" style={{ transformOrigin: "36px 26px", animationDuration: "3.8s" }}>
-          <ellipse cx={41} cy={27.5} rx={8} ry={4.8} fill="#fda4af" transform="rotate(-16 41 27.5)" />
-          <ellipse cx={33} cy={36} rx={6.5} ry={11} fill="#fda4af" transform="rotate(20 33 36)" />
-          <ellipse cx={30} cy={46} rx={6} ry={10.5} fill="#fde68a" transform="rotate(12 30 46)" />
-          <ellipse cx={28.5} cy={56} rx={5.5} ry={9.5} fill="#a7f3d0" transform="rotate(5 28.5 56)" />
-          <ellipse cx={28} cy={65} rx={5} ry={8.5} fill="#bae6fd" transform="rotate(-3 28 65)" />
-          <ellipse cx={29.5} cy={73} rx={4.5} ry={7.5} fill="#ddd6fe" transform="rotate(-10 29.5 73)" />
+
+        {/* ---- ขาหลัง (อยู่หลังลำตัว จึงหม่นกว่านิดหนึ่ง) ---- */}
+        <rect x={28.4} y={72} width={7.6} height={16} rx={3.8} fill="#e5dff3" />
+        <rect x={64} y={72} width={7.6} height={16} rx={3.8} fill="#e5dff3" />
+        <path d="M 28.2 83.6 h 8 v 3.6 q 0 2 -2 2 h -4 q -2 0 -2 -2 Z" fill="url(#ff-uni-hoof)" opacity={0.85} />
+        <path d="M 63.8 83.6 h 8 v 3.6 q 0 2 -2 2 h -4 q -2 0 -2 -2 Z" fill="url(#ff-uni-hoof)" opacity={0.85} />
+
+        {/* ---- ลำตัวกลมนุ่ม ---- */}
+        <ellipse cx={50} cy={69} rx={22.5} ry={15.5} fill="url(#ff-uni-coat)" />
+        <g clipPath="url(#ff-uni-bodyclip)">
+          {/* แสงบนไหล่ซ้าย + เงาโค้งขวาล่าง = ปริมาตรกลม */}
+          <ellipse cx={39} cy={60} rx={13} ry={7} fill="#ffffff" opacity={0.55} transform="rotate(-16 39 60)" />
+          <ellipse cx={79} cy={83} rx={24} ry={20} fill="#a89ccf" opacity={0.28} />
+          {/* เงาหัวทาบลงอก */}
+          <ellipse cx={50} cy={55} rx={19} ry={5} fill="#a89ccf" opacity={0.2} />
+          {/* แผงอกขนนุ่ม + เส้นขน */}
+          <ellipse cx={50} cy={72} rx={13.5} ry={10} fill="#fffdff" opacity={0.8} />
+          <path d="M 43.6 65 q 1.6 2 1 4.2 M 50 63.8 q 1.8 2 1.2 4.2 M 56.4 65 q 1.6 2 1 4.2"
+            stroke="#e7e0f5" strokeWidth={1.1} fill="none" strokeLinecap="round" />
+          <path d="M 31.6 62 Q 29 66 29.6 70.6 M 68.4 62 Q 71 66 70.4 70.6 M 70 74.4 Q 72 77.6 71.4 81"
+            stroke="#d9d1ee" strokeWidth={1.1} fill="none" strokeLinecap="round" opacity={0.75} />
         </g>
-        {/* หน้ายิ้มละมุน */}
-        <GEye cx={42} cy={47} r={5} delay={0} />
-        <GEye cx={58} cy={47} r={5} delay={0.15} />
-        <Smile cx={50} cy={58} w={7} />
-        <circle cx={46} cy={55} r={0.9} fill={FRIEND_INK} opacity={0.5} />
-        <circle cx={54} cy={55} r={0.9} fill={FRIEND_INK} opacity={0.5} />
-        <Blush cx={35} cy={55} />
-        <Blush cx={65} cy={55} />
+
+        {/* ---- ขาหน้า + กีบสีมุก ---- */}
+        <rect x={39.4} y={75} width={8.4} height={15} rx={4.2} fill="url(#ff-uni-coat)" />
+        <rect x={52.2} y={75} width={8.4} height={15} rx={4.2} fill="url(#ff-uni-coat)" />
+        <path d="M 39.1 85.2 h 9 v 3.4 q 0 2 -2.2 2 h -4.6 q -2.2 0 -2.2 -2 Z" fill="url(#ff-uni-hoof)" />
+        <path d="M 51.9 85.2 h 9 v 3.4 q 0 2 -2.2 2 h -4.6 q -2.2 0 -2.2 -2 Z" fill="url(#ff-uni-hoof)" />
+        <path d="M 41 80.6 q 2.6 1 5.2 0 M 53.8 80.6 q 2.6 1 5.2 0" stroke="#ded7f0" strokeWidth={1} fill="none" strokeLinecap="round" />
+        {/* ขนข้อเท้าปุย ๆ ปิดรอยต่อกีบ */}
+        <path d="M 39.2 84.6 q 2.2 1.6 4.4 0.6 q 2.4 1.4 4.4 -0.6 M 52 84.6 q 2.2 1.6 4.4 0.6 q 2.4 1.4 4.4 -0.6"
+          fill="none" stroke="#f3eefc" strokeWidth={2} strokeLinecap="round" />
+
+        {/* ---- แผงคอสายรุ้ง: ช่อผมหนาซ้อนกันเป็นชั้น โคนซ่อนใต้หัว ปลายทิ้งตัวพาดไหล่ถึงพื้น
+               (วาดเป็นเส้นหนาปลายมน จะได้ความหนาสม่ำเสมอเหมือนปอยผมจริง) ---- */}
+        <g className="ff-sway" fill="none" strokeLinecap="round" style={{ transformOrigin: "42px 24px", animationDuration: "5.4s" }}>
+          <path d="M 43 21 C 33 25 26.5 33 24 43" stroke="#fda4af" strokeWidth={9} />
+          <path d="M 41 23 C 30 29 23.5 40 22.5 53" stroke="#fde68a" strokeWidth={8.5} />
+          <path d="M 40 26 C 29 33 23 46 23 62" stroke="#a7f3d0" strokeWidth={8} />
+          <path d="M 39 30 C 28 38 24 52 25 72" stroke="#bae6fd" strokeWidth={7.5} />
+          <path d="M 38 34 C 29 43 26.5 58 28.5 81" stroke="#ddd6fe" strokeWidth={7} />
+          {/* เส้นไหลของเส้นผม — มัดช่อทั้งหมดให้เป็นแผงเดียวกัน */}
+          <path d="M 39.4 24.6 C 31 29.6 25.6 38 23.6 48 M 35.6 34 C 28.4 42 25.4 54 26.4 68 M 34 40 C 28.6 48.6 27 60 28.4 76"
+            stroke="#ffffff" strokeWidth={1.1} opacity={0.5} />
+        </g>
+
+        {/* ---- หัวโพนี่ ---- */}
+        <path
+          d="M 50 20.5 C 62 20.5 71.5 26.5 73.2 36.5 C 74.6 44.8 70.6 51.8 63.4 55.4 C 58.6 57.8 54.4 58.6 50 58.6 C 45.6 58.6 41.4 57.8 36.6 55.4 C 29.4 51.8 25.4 44.8 26.8 36.5 C 28.5 26.5 38 20.5 50 20.5 Z"
+          fill="url(#ff-uni-head)"
+        />
+        <g clipPath="url(#ff-uni-headclip)">
+          <ellipse cx={38} cy={30} rx={12} ry={6.5} fill="#ffffff" opacity={0.6} transform="rotate(-18 38 30)" />
+          <ellipse cx={76} cy={50} rx={16} ry={16} fill="#a89ccf" opacity={0.2} />
+        </g>
+
+        {/* ---- หู: กระดิกทีละข้าง ---- */}
+        <g className="ff-ear" style={{ transformOrigin: "36.4px 27.6px" }}>
+          <path d="M 33.6 27.6 C 30.6 20.4 31.8 13.4 36.4 12.2 C 40.4 15.4 42.6 21.4 41.8 28.4 Z" fill="url(#ff-uni-head)" />
+          <path d="M 35.4 25.8 C 33.8 20.8 34.6 16.6 37 15.4 C 39.4 17.8 40.6 21.6 40.2 26.4 Z" fill="#f7d3e6" />
+        </g>
+        <g className="ff-ear" style={{ transformOrigin: "63.6px 27.6px", animationDelay: "0.5s" }}>
+          <path d="M 66.4 27.6 C 69.4 20.4 68.2 13.4 63.6 12.2 C 59.6 15.4 57.4 21.4 58.2 28.4 Z" fill="url(#ff-uni-head)" />
+          <path d="M 64.6 25.8 C 66.2 20.8 65.4 16.6 63 15.4 C 60.6 17.8 59.4 21.6 59.8 26.4 Z" fill="#f7d3e6" />
+        </g>
+
+        {/* ---- ปาก-จมูก: เนินปากสั้นแบบโพนี่ รูจมูกโค้ง ปากยิ้มบาง ๆ ---- */}
+        <ellipse cx={50} cy={50} rx={11.4} ry={8.2} fill="url(#ff-uni-muzzle)" />
+        <ellipse cx={50} cy={53.4} rx={7.6} ry={4} fill="#f2d2e6" opacity={0.5} />
+        <path d="M 45.4 48.2 q -1.4 1.2 -0.2 2.6 M 54.6 48.2 q 1.4 1.2 0.2 2.6"
+          stroke="#cf90b4" strokeWidth={1.5} fill="none" strokeLinecap="round" />
+        <path d="M 46.6 54.4 Q 50 57 53.4 54.4" stroke={FRIEND_INK} strokeWidth={1.3} fill="none" strokeLinecap="round" opacity={0.75} />
+        <ellipse cx={45.6} cy={45.8} rx={4.4} ry={2.4} fill="#ffffff" opacity={0.5} transform="rotate(-12 45.6 45.8)" />
+
+        {/* ---- ปอยผมพาดขอบหัวด้านซ้าย — วาดทับหัวแล้ว แผงคอจึงดู "งอกจากหัว" ไม่ใช่แผ่นหลังหัว ---- */}
+        <g className="ff-sway" fill="none" strokeLinecap="round" style={{ transformOrigin: "44px 22px", animationDuration: "5.4s" }}>
+          <path d="M 45.4 20.6 C 36.4 23 30.4 29 28 37.4" stroke="#fda4af" strokeWidth={7} />
+          <path d="M 43.6 21.4 C 35 26 30.4 33 28.8 41.6" stroke="#fde68a" strokeWidth={5.6} />
+          <path d="M 43 23 C 35.6 27.6 31.6 34 30.4 41" stroke="#ffffff" strokeWidth={1.1} opacity={0.5} />
+        </g>
+
+        {/* ---- ผมหน้าม้าสายรุ้ง: แผ่เป็นพัดจากโคนเขาลงมาปรกหน้าผาก ---- */}
+        <g className="ff-sway" fill="none" strokeLinecap="round" style={{ transformOrigin: "50px 23px", animationDuration: "6s", animationDelay: "0.6s" }}>
+          <path d="M 48.6 23 C 44.6 26 41 30 38.8 34.6" stroke="#fbb6ce" strokeWidth={4.4} />
+          <path d="M 50 23 C 47.6 27 46.2 31 45.6 35.2" stroke="#fcd88a" strokeWidth={4.2} />
+          <path d="M 51.4 23 C 52 27 53 31 54.2 34.8" stroke="#a7f3d0" strokeWidth={4.2} />
+          <path d="M 52.6 23.2 C 55.2 26.8 58 30 61.4 32.6" stroke="#bae6fd" strokeWidth={4} />
+          <path d="M 48.4 25.4 C 45.4 28 43 31 41.4 34 M 52.4 25.4 C 54.6 28 57 30.2 59.6 32"
+            stroke="#ffffff" strokeWidth={0.9} opacity={0.55} />
+        </g>
+
+        {/* ---- ตาม่วงประกาย ขนตายาว ---- */}
+        <g className="ff-blink" style={{ transformOrigin: "39.8px 40.5px" }}>
+          <ellipse cx={39.8} cy={40.5} rx={4.8} ry={5.6} fill="#2e1b3a" />
+          <circle cx={39.8} cy={40.5} r={4.3} fill="url(#ff-uni-iris)" />
+          <circle cx={39.9} cy={40.9} r={2.1} fill="#1b0f26" />
+          <circle cx={38.3} cy={38.5} r={1.2} fill="#ffffff" />
+          <circle cx={41.5} cy={42.4} r={0.5} fill="#ffffff" opacity={0.75} />
+          <path d="M 34.8 37.6 Q 39.6 33.4 44.6 37.4" stroke="#2e1b3a" strokeWidth={1.5} fill="none" strokeLinecap="round" />
+          <path d="M 34.6 35.2 l -2.4 -1.8 M 37.2 33.4 l -1.4 -2.4" stroke="#2e1b3a" strokeWidth={1.1} strokeLinecap="round" />
+        </g>
+        <g className="ff-blink" style={{ transformOrigin: "60.2px 40.5px", animationDelay: "0.15s" }}>
+          <ellipse cx={60.2} cy={40.5} rx={4.8} ry={5.6} fill="#2e1b3a" />
+          <circle cx={60.2} cy={40.5} r={4.3} fill="url(#ff-uni-iris)" />
+          <circle cx={60.1} cy={40.9} r={2.1} fill="#1b0f26" />
+          <circle cx={58.6} cy={38.5} r={1.2} fill="#ffffff" />
+          <circle cx={61.8} cy={42.4} r={0.5} fill="#ffffff" opacity={0.75} />
+          <path d="M 55.4 37.4 Q 60.4 33.4 65.2 37.6" stroke="#2e1b3a" strokeWidth={1.5} fill="none" strokeLinecap="round" />
+          <path d="M 65.4 35.2 l 2.4 -1.8 M 62.8 33.4 l 1.4 -2.4" stroke="#2e1b3a" strokeWidth={1.1} strokeLinecap="round" />
+        </g>
+        <Blush cx={31.8} cy={47.4} r={4.2} color="#f9a8d4" opacity={0.45} />
+        <Blush cx={68.2} cy={47.4} r={4.2} color="#f9a8d4" opacity={0.45} />
+
+        {/* ---- เขาเกลียวทอง: วาดท้ายสุดให้ทับผมหน้าม้า ---- */}
+        <ellipse cx={50} cy={26.4} rx={5} ry={1.7} fill="#f0c469" opacity={0.45} />
+        <path d="M 45.4 27 C 46.4 21.4 47.8 13.4 50 4.4 C 52.2 13.4 53.6 21.4 54.6 27 Z" fill="url(#ff-uni-horn)" />
+        <g stroke="#d99a35" strokeWidth={1.1} fill="none" strokeLinecap="round" opacity={0.75}>
+          <path d="M 46.1 23 C 47.6 25 52 25.2 53.9 23" />
+          <path d="M 46.9 18.4 C 48.2 20.2 51.8 20.4 53.1 18.4" />
+          <path d="M 47.7 13.8 C 48.7 15.4 51.3 15.5 52.3 13.8" />
+          <path d="M 48.5 9.4 C 49.2 10.6 50.8 10.7 51.5 9.4" />
+        </g>
+        <path d="M 47.7 24.4 C 48.4 17.6 49 11 49.8 6" stroke="#fff7dc" strokeWidth={1.2} fill="none" strokeLinecap="round" opacity={0.7} />
+        <path className="ff-twinkle" style={{ transformOrigin: "50px 4px" }} fill="#fff7dc"
+          d="M 50 0.8 L 50.9 3.1 L 53.2 4 L 50.9 4.9 L 50 7.2 L 49.1 4.9 L 46.8 4 L 49.1 3.1 Z" />
       </g>
-      {/* ประกายดาวระยิบระยับ */}
+
+      {/* ประกายดาวระยิบระยับรอบตัว */}
       <path className="ff-twinkle" style={{ transformOrigin: "16px 34px" }} fill="#fcd34d"
         d="M 16 31.4 L 16.8 33.2 L 18.6 34 L 16.8 34.8 L 16 36.6 L 15.2 34.8 L 13.4 34 L 15.2 33.2 Z" />
       <path className="ff-twinkle" style={{ transformOrigin: "85px 26px", animationDelay: "0.6s" }} fill="#f9a8d4"
         d="M 85 23.8 L 85.7 25.3 L 87.2 26 L 85.7 26.7 L 85 28.2 L 84.3 26.7 L 82.8 26 L 84.3 25.3 Z" />
-      <path className="ff-twinkle" style={{ transformOrigin: "86px 64px", animationDelay: "1.2s" }} fill="#bae6fd"
-        d="M 86 62.1 L 86.6 63.4 L 87.9 64 L 86.6 64.6 L 86 65.9 L 85.4 64.6 L 84.1 64 L 85.4 63.4 Z" />
+      <path className="ff-twinkle" style={{ transformOrigin: "88px 64px", animationDelay: "1.2s" }} fill="#bae6fd"
+        d="M 88 62.1 L 88.6 63.4 L 89.9 64 L 88.6 64.6 L 88 65.9 L 87.4 64.6 L 86.1 64 L 87.4 63.4 Z" />
+      <path className="ff-twinkle" style={{ transformOrigin: "12px 70px", animationDelay: "1.8s" }} fill="#c4b5fd"
+        d="M 12 68.1 L 12.6 69.4 L 13.9 70 L 12.6 70.6 L 12 71.9 L 11.4 70.6 L 10.1 70 L 11.4 69.4 Z" />
+    </g>
+  );
+}
+
+/** ✨ น้องปุยร่างทองคำ — ร่างศักดิ์สิทธิ์ของน้องปุย และเป็นรางวัลใหญ่สุดของตู้กาชา
+ *  ของเดิมคือ <FluffyBuddy> ทาสีทองเฉย ๆ เลยไม่ต่างจากตัวต้นฉบับ ตัวนี้จึงวาดใหม่เป็นสไปรต์ของตัวเอง:
+ *  รัศมีแสงหมุนรอบตัว ออร่าทอง วงแหวนแสงลอยเหนือหัว มงกุฎประดับพลอยสามเม็ด ปีกนางฟ้าขนทอง
+ *  เหรียญตราห้อยริบบิ้น และตัวขนปุยทองคำที่ลอยขึ้น-ลงเบา ๆ เหนือแอ่งแสง */
+function GoldenFluffy() {
+  const INK = "#6b350a";
+
+  /** ขอบขนปุย — วงรีที่ขอบเป็นคลื่นเล็ก ๆ (สูตรเดียวกับน้องหมี) */
+  const fluffy = (cx: number, cy: number, rx: number, ry: number, bumps: number, amp: number): string => {
+    const step = (Math.PI * 2) / bumps;
+    let d = `M ${(cx + rx).toFixed(2)} ${cy.toFixed(2)}`;
+    for (let i = 0; i < bumps; i += 1) {
+      const mid = (i + 0.5) * step;
+      const end = (i + 1) * step;
+      d += ` Q ${(cx + Math.cos(mid) * (rx + amp)).toFixed(2)} ${(cy + Math.sin(mid) * (ry + amp)).toFixed(2)} ${(cx + Math.cos(end) * rx).toFixed(2)} ${(cy + Math.sin(end) * ry).toFixed(2)}`;
+    }
+    return `${d} Z`;
+  };
+
+  /** ลำแสงหนึ่งซี่ของรัศมี — ซี่คู่/ซี่คี่ยาวไม่เท่ากันจะได้ไม่ดูเป็นเฟือง */
+  const ray = (i: number, n: number): string => {
+    const a = (i * Math.PI * 2) / n;
+    const h = 0.055;
+    const inner = 15;
+    const outer = i % 2 ? 40 : 56;
+    const p = (r: number, ang: number) => `${(50 + Math.cos(ang) * r).toFixed(2)} ${(55 + Math.sin(ang) * r).toFixed(2)}`;
+    return `M ${p(inner, a - h)} L ${p(outer, a)} L ${p(inner, a + h)} Z`;
+  };
+
+  /** ประกายสี่แฉกทรงเพชร */
+  const star = (cx: number, cy: number, r: number): string =>
+    `M ${cx} ${cy - r} Q ${cx + r * 0.22} ${cy - r * 0.22} ${cx + r} ${cy} Q ${cx + r * 0.22} ${cy + r * 0.22} ${cx} ${cy + r} Q ${cx - r * 0.22} ${cy + r * 0.22} ${cx - r} ${cy} Q ${cx - r * 0.22} ${cy - r * 0.22} ${cx} ${cy - r} Z`;
+
+  /** ปีก: แผ่นเดียวกวาดขึ้น ขอบหลังโป่งเป็นปลายขนห้าแฉก (X = ตัวสะท้อนซ้าย-ขวา) */
+  const wingPath = (X: (n: number) => number): string =>
+    `M ${X(66)} 55 C ${X(71)} 42 ${X(79)} 30 ${X(89)} 22 C ${X(91.5)} 20.2 ${X(94)} 21.4 ${X(93.6)} 24.4 ` +
+    `C ${X(96.6)} 27 ${X(96.4)} 31.6 ${X(92.8)} 32.6 C ${X(95.2)} 35.6 ${X(94)} 40.4 ${X(90.4)} 41.2 ` +
+    `C ${X(92)} 44.6 ${X(89.6)} 48.8 ${X(86)} 48.8 C ${X(86.8)} 52.6 ${X(83.4)} 55.8 ${X(79.6)} 55 ` +
+    `C ${X(79.4)} 58.6 ${X(75.6)} 60.6 ${X(72)} 59 C ${X(69.6)} 58.4 ${X(67.4)} 57.4 ${X(66)} 55.8 Z`;
+  /** ขนชั้นในที่โคนปีก — ทำให้ปีกดูซ้อนสองชั้น ไม่แบน */
+  const covertPath = (X: (n: number) => number): string =>
+    `M ${X(66)} 55 C ${X(70)} 46 ${X(76)} 38 ${X(83)} 32 C ${X(85)} 34.6 ${X(84.4)} 38 ${X(81.6)} 41 ` +
+    `C ${X(83.4)} 43.2 ${X(81.6)} 46 ${X(78.4)} 46.8 C ${X(79.6)} 49.4 ${X(77)} 51.8 ${X(73.6)} 51.6 ` +
+    `C ${X(71.4)} 53.6 ${X(68.6)} 54.8 ${X(66)} 55.8 Z`;
+
+  const Wing = ({ dir }: { dir: 1 | -1 }) => {
+    const X = (x: number) => (dir > 0 ? x : 100 - x);
+    return (
+      <g
+        className="ff-wingbeat"
+        style={{ transformOrigin: `${X(66)}px 55px`, animationDuration: "3.8s", animationDelay: dir > 0 ? "-0.5s" : "0s" }}
+      >
+        <path d={wingPath(X)} fill="url(#ff-gold-wing)" />
+        <path d={wingPath(X)} fill="none" stroke="#d99f2e" strokeWidth={0.9} opacity={0.6} />
+        <path
+          d={
+            `M ${X(68)} 54 C ${X(74)} 42 ${X(82)} 31 ${X(90)} 24 M ${X(68.6)} 55.6 C ${X(75)} 47 ${X(83)} 39 ${X(91)} 33 ` +
+            `M ${X(69)} 57 C ${X(74)} 51 ${X(80)} 46 ${X(88.6)} 41.6 M ${X(69.6)} 58 C ${X(73.6)} 55 ${X(78)} 52 ${X(84.4)} 49.4`
+          }
+          stroke="#e6b556" strokeWidth={0.8} fill="none" opacity={0.5} strokeLinecap="round"
+        />
+        <path d={covertPath(X)} fill="#fff8e2" opacity={0.8} />
+        <path d={`M ${X(67)} 54.4 C ${X(72)} 45 ${X(78)} 38 ${X(83.4)} 33.2`} stroke="#fffdf2" strokeWidth={1.8} fill="none" opacity={0.75} strokeLinecap="round" />
+      </g>
+    );
+  };
+
+  /** ตาทองคำ — ลูกตาโตแวว ไฮไลต์ใหญ่-เล็ก และมีประกายดาวในดวงตา */
+  const eye = (cx: number, cy: number, delay: number) => (
+    <g key={cx} className="ff-blink" style={{ transformOrigin: `${cx}px ${cy}px`, animationDelay: `${delay}s` }}>
+      <ellipse cx={cx} cy={cy} rx={5.6} ry={6.8} fill={INK} />
+      <path d={`M ${cx - 5.6} ${cy} a 5.6 6.8 0 0 1 11.2 0 z`} fill="#ffffff" opacity={0.18} />
+      <circle cx={cx + 1.7} cy={cy - 2.2} r={2.3} fill="#fff" />
+      <circle cx={cx - 2} cy={cy + 2.4} r={1} fill="#fff" opacity={0.85} />
+      <path d={`M ${cx + 2.6} ${cy + 2.2} l 0.6 1.4 1.4 0.6 -1.4 0.6 -0.6 1.4 -0.6 -1.4 -1.4 -0.6 1.4 -0.6 Z`} fill="#fff" opacity={0.9} />
+    </g>
+  );
+
+  return (
+    <g>
+      <defs>
+        <radialGradient id="ff-gold-aura" cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0%" stopColor="#fff3c4" stopOpacity={0.95} />
+          <stop offset="55%" stopColor="#ffe08a" stopOpacity={0.45} />
+          <stop offset="100%" stopColor="#ffd166" stopOpacity={0} />
+        </radialGradient>
+        <radialGradient id="ff-gold-halo" cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0%" stopColor="#fff6cf" stopOpacity={0} />
+          <stop offset="78%" stopColor="#ffeaa0" stopOpacity={0.55} />
+          <stop offset="100%" stopColor="#ffd977" stopOpacity={0} />
+        </radialGradient>
+        <radialGradient id="ff-gold-fur" cx="0.34" cy="0.24" r="0.95">
+          <stop offset="0%" stopColor="#fffdf0" />
+          <stop offset="38%" stopColor="#ffe9a4" />
+          <stop offset="72%" stopColor="#f7c948" />
+          <stop offset="100%" stopColor="#d68f16" />
+        </radialGradient>
+        <linearGradient id="ff-gold-wing" x1="0.2" y1="0" x2="0.8" y2="1">
+          <stop offset="0%" stopColor="#fffdf4" />
+          <stop offset="52%" stopColor="#ffe9b4" />
+          <stop offset="100%" stopColor="#e6b950" />
+        </linearGradient>
+        <linearGradient id="ff-gold-crown" x1="0" y1="0" x2="0.3" y2="1">
+          <stop offset="0%" stopColor="#fff6d2" />
+          <stop offset="45%" stopColor="#fcd063" />
+          <stop offset="100%" stopColor="#d9971d" />
+        </linearGradient>
+        <linearGradient id="ff-gold-limb" x1="0" y1="0" x2="0.4" y2="1">
+          <stop offset="0%" stopColor="#ffeeb4" />
+          <stop offset="100%" stopColor="#e5a824" />
+        </linearGradient>
+        <filter id="ff-gold-soft" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur stdDeviation={2} />
+        </filter>
+      </defs>
+
+      {/* ---- ออร่า + รัศมีแสงที่หมุนช้า ๆ ---- */}
+      <circle className="ff-shimmer" cx={50} cy={55} r={48} fill="url(#ff-gold-aura)" style={{ animationDuration: "4.2s" }} />
+      <g className="ff-spin" style={{ transformOrigin: "50px 55px" }}>
+        {Array.from({ length: 14 }, (_, i) => (
+          <path key={i} d={ray(i, 14)} fill="#ffe9a8" opacity={i % 2 ? 0.45 : 0.62} />
+        ))}
+      </g>
+      <ellipse cx={50} cy={55} rx={44} ry={44} fill="url(#ff-gold-halo)" />
+
+      {/* แอ่งแสงที่พื้น — อยู่นิ่ง ตัวจึงดูลอยเหนือมันจริง ๆ */}
+      <ellipse cx={50} cy={89} rx={26} ry={4.4} fill="#f0b429" opacity={0.22} />
+      <ellipse cx={50} cy={88.8} rx={13} ry={2.4} fill="#fff0bd" opacity={0.6} />
+
+      {/* ---- ตัวละครทั้งตัวลอยขึ้น-ลงช้า ๆ ---- */}
+      <g className="ff-float" style={{ animationDuration: "4.4s" }}>
+        {/* ปีกนางฟ้า (เงาฟุ้งข้างหลังให้เรืองแสง) */}
+        <g filter="url(#ff-gold-soft)" opacity={0.55}>
+          <Wing dir={-1} />
+          <Wing dir={1} />
+        </g>
+        <Wing dir={-1} />
+        <Wing dir={1} />
+
+        {/* ---- อุ้งเท้าหน้าสองข้าง: โคนซ่อนหลังตัว ขยับคนละจังหวะ ---- */}
+        <g className="ff-wiggle" style={{ transformOrigin: "31px 55px", animationDuration: "5.6s" }}>
+          <path d="M 31 54 C 22.6 53.4 15.6 59.6 15.4 67 C 15.2 72.8 19.4 75.8 24.2 74 C 28.8 72.2 32.2 67 33 60.6 Z" fill="url(#ff-gold-limb)" />
+          <path d="M 31 54 C 22.6 53.4 15.6 59.6 15.4 67 C 15.2 72.8 19.4 75.8 24.2 74" fill="none" stroke="#c8860f" strokeWidth={0.9} opacity={0.45} strokeLinecap="round" />
+          <ellipse cx={19} cy={62.5} rx={4} ry={6} fill="#fff6d8" opacity={0.45} transform="rotate(-24 19 62.5)" />
+          <path d="M 16.6 70.4 q -1.4 1.6 -1.2 3.4 M 20.4 73.2 q -0.8 1.8 -0.2 3.4 M 24.4 73.6 q 0.2 1.8 1.2 3" stroke="#f7dc9a" strokeWidth={1} fill="none" strokeLinecap="round" opacity={0.85} />
+        </g>
+        <g className="ff-wiggle" style={{ transformOrigin: "69px 55px", animationDuration: "5.6s", animationDelay: "1.7s" }}>
+          <path d="M 69 54 C 77.4 53.4 84.4 59.6 84.6 67 C 84.8 72.8 80.6 75.8 75.8 74 C 71.2 72.2 67.8 67 67 60.6 Z" fill="url(#ff-gold-limb)" />
+          <path d="M 69 54 C 77.4 53.4 84.4 59.6 84.6 67 C 84.8 72.8 80.6 75.8 75.8 74" fill="none" stroke="#c8860f" strokeWidth={0.9} opacity={0.45} strokeLinecap="round" />
+          <ellipse cx={81} cy={62.5} rx={4} ry={6} fill="#fff6d8" opacity={0.45} transform="rotate(24 81 62.5)" />
+          <path d="M 83.4 70.4 q 1.4 1.6 1.2 3.4 M 79.6 73.2 q 0.8 1.8 0.2 3.4 M 75.6 73.6 q -0.2 1.8 -1.2 3" stroke="#f7dc9a" strokeWidth={1} fill="none" strokeLinecap="round" opacity={0.85} />
+        </g>
+
+        {/* ---- ตัวขนปุยทองคำ ---- */}
+        <path d={fluffy(50, 57, 29, 27, 24, 2.6)} fill="#fff2c9" opacity={0.75} />
+        <path d={fluffy(50, 57, 27, 25.2, 22, 2.2)} fill="url(#ff-gold-fur)" />
+        <ellipse cx={38} cy={42} rx={11} ry={7.4} fill="#fffdf0" opacity={0.6} transform="rotate(-22 38 42)" />
+        <ellipse cx={72} cy={76} rx={16} ry={12} fill="#c8860f" opacity={0.18} />
+        {/* ร่องเงาที่แขนซุกเข้าลำตัว */}
+        <path d="M 30 55 C 27 60 26.4 66 28 71.4 M 70 55 C 73 60 73.6 66 72 71.4" stroke="#c8860f" strokeWidth={1.6} fill="none" opacity={0.22} strokeLinecap="round" />
+
+        {/* ---- เท้าจิ๋วสองข้าง ---- */}
+        <ellipse cx={39} cy={83.5} rx={8.6} ry={5} fill="url(#ff-gold-limb)" />
+        <ellipse cx={61} cy={83.5} rx={8.6} ry={5} fill="url(#ff-gold-limb)" />
+        <path d="M 35.6 82 q 1 2 0.2 3.6 M 39.4 82.4 q 0.4 2.2 -0.6 3.6 M 60.6 82.4 q -0.4 2.2 0.6 3.6 M 64.4 82 q -1 2 -0.2 3.6" stroke="#f7dc9a" strokeWidth={1} fill="none" strokeLinecap="round" opacity={0.8} />
+
+        {/* ---- หน้ายิ้มกว้าง ---- */}
+        {eye(40, 53, 0)}
+        {eye(60, 53, 0.2)}
+        <ellipse cx={30.5} cy={63} rx={5} ry={3.1} fill="#f8859f" opacity={0.5} />
+        <ellipse cx={69.5} cy={63} rx={5} ry={3.1} fill="#f8859f" opacity={0.5} />
+        <path d="M 42.4 63.4 C 43.6 71.6 56.4 71.6 57.6 63.4 Z" fill={INK} />
+        <path d="M 46.6 68.6 C 47.8 71.4 52.2 71.4 53.4 68.6 C 51.2 69.6 48.8 69.6 46.6 68.6 Z" fill="#ff9db4" />
+
+        {/* ---- เหรียญตราห้อยริบบิ้น ---- */}
+        <path d="M 46.6 70.4 L 50 75.4 L 53.4 70.4 L 51.4 70 L 50 72.4 L 48.6 70 Z" fill="#e8607f" />
+        <circle cx={50} cy={78.4} r={4.6} fill="url(#ff-gold-crown)" />
+        <circle cx={50} cy={78.4} r={2.6} fill="#ff7b9c" />
+        <circle cx={49.1} cy={77.5} r={0.9} fill="#fff" opacity={0.85} />
+        <circle cx={50} cy={78.4} r={4.6} fill="none" stroke="#c8860f" strokeWidth={0.7} opacity={0.5} />
+
+        {/* ---- วงแหวนแสงลอยเหนือมงกุฎ ---- */}
+        <g className="ff-shimmer" style={{ animationDuration: "3.4s" }}>
+          <ellipse cx={50} cy={8.4} rx={10.5} ry={2.9} fill="none" stroke="#ffe9a0" strokeWidth={2.2} opacity={0.9} />
+          <ellipse cx={50} cy={8.4} rx={10.5} ry={2.9} fill="none" stroke="#fffdf0" strokeWidth={0.9} opacity={0.8} />
+        </g>
+
+        {/* ---- มงกุฎประดับพลอย ---- */}
+        <path d="M 33.6 32.4 L 36.4 19.6 L 43.2 27 L 50 14.4 L 56.8 27 L 63.6 19.6 L 66.4 32.4 Z" fill="url(#ff-gold-crown)" />
+        <path d="M 33.4 31.6 Q 50 36.4 66.6 31.6 L 66.6 36.6 Q 50 41.4 33.4 36.6 Z" fill="url(#ff-gold-crown)" />
+        <path d="M 35.4 32.8 Q 50 37 64.6 32.8" stroke="#fff8dd" strokeWidth={0.9} fill="none" opacity={0.8} />
+        <g className="ff-twinkle" style={{ transformOrigin: "50px 13px", animationDuration: "2.4s" }}>
+          <circle cx={50} cy={13} r={3.2} fill="#ff7b9c" />
+          <circle cx={49} cy={11.9} r={1.1} fill="#fff" opacity={0.85} />
+        </g>
+        <g className="ff-twinkle" style={{ transformOrigin: "36.4px 18.4px", animationDuration: "2.4s", animationDelay: "-0.8s" }}>
+          <circle cx={36.4} cy={18.4} r={2.6} fill="#7fd7f0" />
+          <circle cx={35.6} cy={17.6} r={0.9} fill="#fff" opacity={0.85} />
+        </g>
+        <g className="ff-twinkle" style={{ transformOrigin: "63.6px 18.4px", animationDuration: "2.4s", animationDelay: "-1.6s" }}>
+          <circle cx={63.6} cy={18.4} r={2.6} fill="#a3f0c8" />
+          <circle cx={62.8} cy={17.6} r={0.9} fill="#fff" opacity={0.85} />
+        </g>
+        <circle cx={50} cy={35.4} r={2.7} fill="#ff7b9c" />
+        <circle cx={49.1} cy={34.5} r={0.9} fill="#fff" opacity={0.8} />
+        <circle cx={41.5} cy={34.6} r={1.5} fill="#7fd7f0" />
+        <circle cx={58.5} cy={34.6} r={1.5} fill="#a3f0c8" />
+      </g>
+
+      {/* ---- ประกายรอบตัว ---- */}
+      <path className="ff-twinkle" style={{ transformOrigin: "16px 30px" }} d={star(16, 30, 4.6)} fill="#fff0b0" />
+      <path className="ff-twinkle" style={{ transformOrigin: "84px 34px", animationDelay: "-0.6s" }} d={star(84, 34, 3.8)} fill="#fff0b0" />
+      <path className="ff-twinkle" style={{ transformOrigin: "22px 72px", animationDelay: "-1.2s" }} d={star(22, 72, 3.2)} fill="#ffe6f0" />
+      <path className="ff-twinkle" style={{ transformOrigin: "80px 66px", animationDelay: "-1.8s" }} d={star(80, 66, 2.6)} fill="#e0f7ff" />
+      <path className="ff-twinkle" style={{ transformOrigin: "50px 4.6px", animationDelay: "-0.9s" }} d={star(50, 4.6, 2.6)} fill="#fffbe6" />
+      <path className="ff-twinkle" style={{ transformOrigin: "12px 52px", animationDelay: "-1.5s" }} d={star(12, 52, 2.2)} fill="#fff0b0" opacity={0.8} />
+      <path className="ff-twinkle" style={{ transformOrigin: "90px 52px", animationDelay: "-0.3s" }} d={star(90, 52, 2.2)} fill="#fff0b0" opacity={0.8} />
     </g>
   );
 }
@@ -1944,6 +2460,7 @@ const SPRITES: Record<string, () => ReactNode> = {
   whale: Whale,
   dragon: Dragon,
   unicorn: Unicorn,
+  "golden-fluffy": GoldenFluffy,
 };
 
 /* ---------- exported renderer ---------- */
