@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 import { fetchAudit, insertAudit } from "@/lib/data/auditRepo";
+import { hasSession } from "@/lib/data/casesRepo";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
 
 /**
@@ -71,8 +72,15 @@ export const useAuditStore = create<AuditState>()(
           set({ source: "local" });
           return;
         }
+        // ไม่มี session (เช่น ล็อกอินแบบรหัสผ่านสาธิต) — RLS จะคืน "0 แถว"
+        // โดยไม่มี error ถ้าเอาค่าว่างนั้นไปแทนที่ จอจะว่างพร้อมป้ายเขียวว่า
+        // "กำลังดูของจริง" ซึ่งหลอกผู้อ่านในจังหวะที่เลวร้ายที่สุด
+        if (!(await hasSession())) {
+          set({ source: "local" });
+          return;
+        }
         const remote = await fetchAudit();
-        // null = ดึงไม่สำเร็จ (ไม่ได้ล็อกอิน/ไม่มีสิทธิ์) — คงสำเนาในเครื่องไว้
+        // null = ดึงไม่สำเร็จ — คงสำเนาในเครื่องไว้
         if (remote === null) {
           set({ source: "local" });
           return;
