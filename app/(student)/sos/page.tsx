@@ -205,6 +205,11 @@ export default function SosPage() {
   const myActive = mounted
     ? (alerts.find((a) => a.id === lastRaisedId && a.status === "active") ?? null)
     : null;
+  // เหตุเดียวกันแต่ไม่กรองสถานะ — ใช้ตอบคำถามที่คนกดปุ่มอยากรู้ที่สุดว่า
+  // "มีคนเห็นหรือยัง" SosSync ดึงของจริงมาเป็นระยะ พอครูกดรับเรื่องหน้านี้จึงเปลี่ยนเอง
+  const myAlert = mounted
+    ? (alerts.find((a) => a.id === lastRaisedId) ?? null)
+    : null;
   useEffect(() => {
     if (myActive && phase === "form") setPhase("sent");
   }, [myActive, phase]);
@@ -316,17 +321,57 @@ export default function SosPage() {
   // -- Sent: teacher paged; the student can still withdraw a mistaken press --
   if (mode === "school" && phase === "sent") {
     const sentPlace = myActive?.place.th ?? place?.th;
+    const ackAt = myAlert?.acknowledgedAt;
+    const closed = myAlert?.status === "resolved";
+    const ackTime = ackAt
+      ? new Date(ackAt).toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" })
+      : null;
     return (
       <div className="space-y-5">
         <ScreenHeader title="ส่งแล้ว" />
-        <Card className="border-l-4 border-l-risk-high p-5">
-          <p className="text-[0.95rem] font-medium text-ink">
-            ครูเวรได้รับแจ้งแล้ว
-          </p>
-          <p className="mt-2 text-[0.86rem] leading-relaxed text-ink-soft">
-            อยู่ตรงนั้นก่อนถ้าปลอดภัย มีคนกำลังไปหาคุณที่
-            <span className="font-medium text-ink"> {sentPlace}</span>
-          </p>
+        {/* สถานะจริงจากฝั่งครู ไม่ใช่ข้อความให้กำลังใจลอย ๆ — ตราบใดที่ยังไม่มีใคร
+            กดรับเรื่อง หน้านี้ต้องไม่บอกว่า "มีคนกำลังไป" เพราะยังไม่จริง */}
+        <Card
+          className={cn(
+            "border-l-4 p-5",
+            closed ? "border-l-mint-500" : ackAt ? "border-l-mint-600" : "border-l-risk-high",
+          )}
+        >
+          {closed ? (
+            <>
+              <p className="text-[0.95rem] font-medium text-ink">
+                เจ้าหน้าที่ปิดเหตุนี้แล้ว
+              </p>
+              <p className="mt-2 text-[0.86rem] leading-relaxed text-ink-soft">
+                ถ้ายังไม่ปลอดภัย กดแจ้งใหม่ได้ทันที หรือโทร 1323 ได้ตลอดเวลา
+              </p>
+            </>
+          ) : ackAt ? (
+            <>
+              <p className="flex items-center gap-2 text-[0.95rem] font-medium text-ink">
+                <span className="size-2 animate-pulse rounded-full bg-mint-500" />
+                {myAlert?.acknowledgedBy ?? "ครูเวร"} รับเรื่องแล้ว กำลังไปหาคุณ
+              </p>
+              <p className="mt-2 text-[0.86rem] leading-relaxed text-ink-soft">
+                อยู่ตรงนั้นก่อนถ้าปลอดภัย ที่
+                <span className="font-medium text-ink"> {sentPlace}</span>
+                {ackTime ? <span className="text-ink-mute"> · รับเรื่อง {ackTime} น.</span> : null}
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-[0.95rem] font-medium text-ink">
+                ส่งถึงครูเวรแล้ว — กำลังรอครูกดรับเรื่อง
+              </p>
+              <p className="mt-2 text-[0.86rem] leading-relaxed text-ink-soft">
+                อยู่ตรงนั้นก่อนถ้าปลอดภัย ที่
+                <span className="font-medium text-ink"> {sentPlace}</span>
+                <span className="block text-ink-mute">
+                  พอมีครูรับเรื่อง หน้านี้จะขึ้นชื่อครูที่กำลังไปหาคุณ
+                </span>
+              </p>
+            </>
+          )}
         </Card>
 
         <a

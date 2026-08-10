@@ -15,6 +15,10 @@ type SosRow = {
   status: SosStatus;
   name: string;
   outcome: SosOutcome | null;
+  // คอลัมน์ "รับเรื่องแล้ว" เพิ่มทีหลัง — ฐานข้อมูลที่ยังไม่ได้อัปเกรดจะไม่มีคีย์นี้
+  // จึงต้องอ่านแบบ optional ไม่ใช่บังคับ ไม่งั้นหน้าจอ SOS พังทั้งจอเพราะคอลัมน์เดียว
+  acknowledged_at?: string | null;
+  acknowledged_by?: string | null;
 };
 
 function rowToAlert(r: SosRow): SosAlert {
@@ -25,6 +29,8 @@ function rowToAlert(r: SosRow): SosAlert {
     status: r.status,
     name: r.name || undefined,
     outcome: r.outcome ?? undefined,
+    acknowledgedAt: r.acknowledged_at ?? undefined,
+    acknowledgedBy: r.acknowledged_by ?? undefined,
   };
 }
 
@@ -70,6 +76,8 @@ export async function patchSos(
     outcome: SosOutcome | null;
     place_th: string;
     place_en: string;
+    acknowledged_at: string;
+    acknowledged_by: string;
   }>,
 ): Promise<boolean> {
   const db = getClient();

@@ -215,15 +215,22 @@ do $$ begin
 exception when duplicate_object then null; end $$;
 
 create table if not exists public.sos_alerts (
-  id          text primary key,
-  reporter    uuid references auth.users(id) on delete set null,
-  created_at  timestamptz not null default now(),
-  place_th    text not null,
-  place_en    text not null default '',
-  status      sos_status not null default 'active',
-  name        text not null default '',
-  outcome     sos_outcome
+  id              text primary key,
+  reporter        uuid references auth.users(id) on delete set null,
+  created_at      timestamptz not null default now(),
+  place_th        text not null,
+  place_en        text not null default '',
+  status          sos_status not null default 'active',
+  name            text not null default '',
+  outcome         sos_outcome,
+  -- ครูกด "รับเรื่อง" — เหตุยังเปิดอยู่ แต่คนกดได้รู้ว่ามีคนเห็นแล้วและกำลังไป
+  acknowledged_at timestamptz,
+  acknowledged_by text
 );
+-- ฐานข้อมูลที่สร้างไว้ก่อนมีสองคอลัมน์นี้ (create table if not exists จะข้ามไปเฉย ๆ)
+alter table public.sos_alerts add column if not exists acknowledged_at timestamptz;
+alter table public.sos_alerts add column if not exists acknowledged_by text;
+
 create index if not exists sos_alerts_created_at_idx on public.sos_alerts (created_at desc);
 create index if not exists sos_alerts_status_idx on public.sos_alerts (status);
 
