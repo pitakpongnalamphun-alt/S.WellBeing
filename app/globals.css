@@ -1,0 +1,198 @@
+@import "tailwindcss";
+
+/**
+ * `th:` variant — Thai stacks vowel and tone marks above and below the
+ * baseline, so any line-height tuned for Latin crowds it. Use `th:leading-*`
+ * next to the Latin value rather than loosening both scripts.
+ */
+@custom-variant th (&:where(:lang(th), :lang(th) *));
+
+/* ============================================================================
+   S.WELL-BEING — design tokens
+   Every colour in the product derives from this block. Nothing is hard-coded
+   downstream, so a re-skin means editing this file and nothing else.
+   ========================================================================== */
+
+@theme {
+  /* -- Type ---------------------------------------------------------------
+     Fraunces is a soft serif with an optical-size axis: it stays warm at
+     display sizes instead of turning brittle the way high-contrast didone
+     faces do. DM Sans carries the interface; Noto Sans Thai carries Thai. */
+  --font-display: var(--font-fraunces), var(--font-noto-serif-thai),
+    "Iowan Old Style", Georgia, serif;
+  --font-sans: var(--font-dm-sans), var(--font-noto-thai), ui-sans-serif,
+    system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  /* -- Surfaces ----------------------------------------------------------- */
+  --color-canvas: #efebe3; /* page behind the card — warm paper */
+  --color-surface: #fbf9f5; /* form side */
+  --color-panel: #f1ece3; /* brand side, top of gradient */
+  --color-panel-deep: #e4ded2; /* brand side, bottom of gradient */
+
+  /* -- Ink ---------------------------------------------------------------- */
+  --color-ink: #17241e; /* headlines — deep forest, never pure black */
+  --color-ink-soft: #4e574f; /* body copy */
+  --color-ink-mute: #6e756d; /* placeholders, captions — 4.5:1 on surface */
+  --color-line: #e2dbd0; /* hairlines, field borders */
+  --color-accent: #2f6b4e; /* links, focus rings */
+  --color-action: #15201b; /* primary button */
+  --color-danger: #b4442f; /* validation errors */
+
+  /* -- Emotions -----------------------------------------------------------
+     The five states the product tracks. These are product data, not
+     decoration — the illustration reads them straight from here. */
+  --color-joy: #fdc500;
+  --color-spark: #4ea83c;
+  --color-calm: #c983f0;
+  --color-ache: #f76fb0;
+  --color-storm: #f94b40;
+
+  /* -- Role selection -----------------------------------------------------
+     This screen sits on white, per spec, rather than the warm canvas the rest
+     of the product uses — it is a doorway, not a room. */
+  --color-role-page: #ffffff;
+  --color-role-heading: #14532d; /* dark green wordmark */
+  --color-role-sub: #3f4a44; /* subtitle grey */
+  --color-role-hint: #98a29b; /* "choose your role" divider */
+
+  /* Core values. Each pairs an icon colour with its pastel chip. */
+  --color-value-safe: #17803d;
+  --color-value-safe-bg: #e7f6ec;
+  --color-value-care: #d63d4a;
+  --color-value-care-bg: #fdeaec;
+  --color-value-connect: #2563c9;
+  --color-value-connect-bg: #e6eefc;
+
+  /* Card overlays. Two stops each, laid diagonally over the backdrop so the
+     texture stays legible through the lighter corner. */
+  /* The lightest green that still clears 4.5:1 for the faintest text on the
+     card (the white/75 sub-label), measured against the composited pixel —
+     lighten this and the card fails AA. */
+  --color-card-student-from: #15603e;
+  --color-card-student-to: #0a3d27;
+  --color-card-admin-from: #1e3a6a;
+  --color-card-admin-to: #0f1f3d;
+
+  /* -- Product palette: mint & lavender ------------------------------------
+     The in-app palette, distinct from the warm paper of the marketing/login
+     surface. Mint carries progress and calm; lavender carries reflection.
+     Every -600 tone clears 4.5:1 on its own -50 tint, so text on a tinted
+     card is safe by construction. */
+  --color-mint-50: #eefaf4;
+  --color-mint-100: #d6f2e5;
+  --color-mint-200: #aee5cd;
+  --color-mint-400: #4fc08d;
+  --color-mint-600: #107751;
+  --color-mint-700: #0c5c3f;
+
+  --color-lavender-50: #f3f1fd;
+  --color-lavender-100: #e7e2fb;
+  --color-lavender-200: #cfc6f6;
+  --color-lavender-400: #9b86e8;
+  --color-lavender-600: #5b46b8;
+  --color-lavender-700: #46368f;
+
+  /* Risk tiers, used by the mood tracker and the admin case list. One scale,
+     so "high" means the same colour everywhere it appears. */
+  --color-risk-low: #10774f;
+  --color-risk-low-bg: #eefaf4;
+  --color-risk-medium: #a1600b;
+  --color-risk-medium-bg: #fdf3e2;
+  --color-risk-high: #b4321f;
+  --color-risk-high-bg: #fdecea;
+
+  /* -- Landscape ---------------------------------------------------------- */
+  --color-sky: #f7f1e6;
+  --color-sky-glow: #fbdfbc;
+  --color-sun: #fce9cb;
+  --color-ridge-far: #c3cec4;
+  --color-ridge-mid: #9bb0a2;
+  --color-ridge-near: #75907f;
+  --color-water: #90a99d;
+  --color-water-deep: #7b9689;
+  --color-shore: #e9e2d6;
+
+  /* -- Motion -------------------------------------------------------------
+     One idle animation, applied to the five characters on a stagger. The
+     product is about noticing feelings move; the art should breathe. */
+  --animate-breathe: breathe 6s ease-in-out infinite;
+  --animate-rise: rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes breathe {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-6px) scale(1.015);
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============================================================================
+   Base
+   ========================================================================== */
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-ink-soft);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Fraunces ships wonky by default. Dial WONK off and SOFT up so the
+     display face reads calm — this is a mental-health product, not a
+     magazine cover. */
+  .font-display {
+    font-variation-settings: "SOFT" 40, "WONK" 0, "opsz" 48;
+    letter-spacing: -0.018em;
+  }
+
+  /* Thai is never tracked tight — negative letter-spacing detaches its marks. */
+  :lang(th) .font-display {
+    letter-spacing: 0;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* Kill the browser's autofill wash — it fights the warm palette. */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--color-ink);
+    -webkit-box-shadow: 0 0 0 40px var(--color-surface) inset;
+    caret-color: var(--color-ink);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
