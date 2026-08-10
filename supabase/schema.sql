@@ -257,6 +257,106 @@ create policy sos_update on public.sos_alerts
 -- ไม่มี policy สำหรับ delete ⇒ ลบเหตุไม่ได้จากฝั่งแอป
 
 -- ============================================================================
+--  นัดพูดคุย (เฟส 3): นักเรียนจอง → ครูยืนยัน/เลื่อน/ปิด แล้วผลกลับไปถึงนักเรียน
+-- ============================================================================
+do $$ begin
+  create type appointment_format as enum ('onsite', 'video', 'phone');
+exception when duplicate_object then null; end $$;
+
+do $$ begin
+  create type appointment_status as enum ('pending', 'confirmed', 'done', 'cancelled');
+exception when duplicate_object then null; end $$;
+
+create table if not exists public.appointments (
+  id           text primary key,
+  reporter     uuid references auth.users(id) on delete set null,
+  code         text not null,                       -- รหัสอ้างอิงที่คนอ่านได้ APT-XXXX
+  -- ไม่ผูก foreign key กับ staff โดยตั้งใจ: รายชื่อครูโหมดสาธิตยังมีเฉพาะในเครื่อง
+  -- ถ้าบังคับ FK การจองกับครูสาธิตจะถูกฐานข้อมูลปฏิเสธทั้งใบ
+  counselor_id text not null default '',
+  date         date not null,
+  "time"       text not null,
+  format       appointment_format not null,
+  topic        text not null default '',
+  name         text not null default '',
+  room         text not null default '',
+  status       appointment_status not null default 'pending',
+  created_at   timestamptz not null default now()
+);
+create index if not exists appointments_date_idx on public.appointments (date desc);
+create index if not exists appointments_status_idx on public.appointments (status);
+
+alter table public.appointments enable row level security;
+
+drop policy if exists appointments_insert_own on public.appointments;
+create policy appointments_insert_own on public.appointments
+  for insert to authenticated
+  with check (reporter = auth.uid() or public.can_see_student_data());
+
+-- เจ้าของเห็นนัดของตัวเอง / ครูดูแลนักเรียนเห็นทุกนัด / ผู้ดูแลระบบไม่เห็น (PDPA)
+drop policy if exists appointments_select on public.appointments;
+create policy appointments_select on public.appointments
+  for select to authenticated
+  using (reporter = auth.uid() or public.can_see_student_data());
+
+-- นักเรียนยกเลิกของตัวเองได้ ครูยืนยัน/เลื่อน/ปิดได้
+drop policy if exists appointments_update on public.appointments;
+create policy appointments_update on public.appointments
+  for update to authenticated
+  using (reporter = auth.uid() or public.can_see_student_data())
+  with check (reporter = auth.uid() or public.can_see_student_data());
+-- ไม่มี policy สำหรับ delete ⇒ ลบนัดไม่ได้จากฝั่งแอป
+
+-- ============================================================================
+--  สถิตินิรนาม (เฟส 3): ผลประเมินใจ + อารมณ์ประจำวัน
+--
+--  ทั้งสองตาราง "ไม่มีคอลัมน์ผู้ส่ง" แบบเดียวกับ anon_reports — ผลตรวจสุขภาพจิต
+--  และอารมณ์รายวันเป็นข้อมูลอ่อนไหวที่สุดในแอป โรงเรียนต้องเห็นได้แค่ภาพรวม
+--  ส่วนประวัติรายคนอยู่ในเครื่องนักเรียนเท่านั้น (swb.myassess / สมุดสติกเกอร์)
+--  ความเป็นนิรนามจึงบังคับด้วยโครงสร้างตาราง ไม่ใช่ด้วยสัญญาว่าจะไม่ดู
+-- ============================================================================
+create table if not exists public.assessment_stats (
+  id             text primary key,
+  at             timestamptz not null default now(),
+  assessment_id  text not null,                      -- 2Q / 9Q / 8Q / ST-5 / GAD-7 / PHQ-A
+  score          integer not null,
+  action         text not null                       -- safe / monitor / warning / emergency
+);
+create index if not exists assessment_stats_at_idx on public.assessment_stats (at desc);
+
+create table if not exists public.mood_stats (
+  id         text primary key,
+  at         timestamptz not null default now(),
+  core       text not null,                          -- อารมณ์แกน 7 สี
+  tertiary   text not null                           -- ความรู้สึกย่อย
+);
+create index if not exists mood_stats_at_idx on public.mood_stats (at desc);
+
+alter table public.assessment_stats enable row level security;
+alter table public.mood_stats       enable row level security;
+
+-- เขียนเพิ่มได้ทุกคนที่ล็อกอิน (ไม่มีคอลัมน์ผู้ส่ง จึงไม่มีอะไรให้ตรวจ)
+drop policy if exists assessment_stats_insert on public.assessment_stats;
+create policy assessment_stats_insert on public.assessment_stats
+  for insert to authenticated with check (true);
+
+drop policy if exists mood_stats_insert on public.mood_stats;
+create policy mood_stats_insert on public.mood_stats
+  for insert to authenticated with check (true);
+
+-- อ่านได้เฉพาะเจ้าหน้าที่ (ทุกบทบาท — เป็นสถิติรวม ไม่ใช่ข้อมูลรายคน)
+drop policy if exists assessment_stats_select_staff on public.assessment_stats;
+create policy assessment_stats_select_staff on public.assessment_stats
+  for select to authenticated
+  using (public.current_staff_role() is not null);
+
+drop policy if exists mood_stats_select_staff on public.mood_stats;
+create policy mood_stats_select_staff on public.mood_stats
+  for select to authenticated
+  using (public.current_staff_role() is not null);
+-- ไม่มี policy สำหรับ update/delete ⇒ สถิติแก้ย้อนหลังไม่ได้
+
+-- ============================================================================
 --  ผู้ดูแลระบบเริ่มต้น (bootstrap)
 --  อีเมล Google ด้านล่างคือผู้ที่ล็อกอินเป็นผู้ดูแลระบบได้
 --  (แยกเป็นคนละคำสั่ง และใช้ on conflict do nothing แบบไม่ระบุคอลัมน์
@@ -280,6 +380,9 @@ select
 from pg_class c
 left join pg_policy p on p.polrelid = c.oid
 where c.relnamespace = 'public'::regnamespace
-  and c.relname in ('staff', 'profiles', 'cases', 'anon_reports', 'audit_log')
+  and c.relname in (
+    'staff', 'profiles', 'cases', 'anon_reports', 'audit_log',
+    'sos_alerts', 'appointments', 'assessment_stats', 'mood_stats'
+  )
 group by c.relname, c.relrowsecurity
 order by c.relname;

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { AppointmentsSync } from "@/components/data/AppointmentsSync";
 import { CasesSync } from "@/components/data/CasesSync";
 import { SosSync } from "@/components/data/SosSync";
 import { QuickExitButton } from "@/components/shared/QuickExitButton";
@@ -22,6 +23,7 @@ export default function StudentLayout({ children }: { children: ReactNode }) {
       <ConsentGuard role="student">
         <CasesSync />
         <SosSync />
+        <AppointmentsSync />
         <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col bg-white shadow-[0_0_60px_-30px_rgba(15,32,25,0.25)]">
           <div className="pointer-events-none sticky top-0 z-30 flex items-center justify-between p-3">
             <div className="pointer-events-auto">

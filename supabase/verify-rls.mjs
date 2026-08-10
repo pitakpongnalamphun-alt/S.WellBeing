@@ -28,7 +28,17 @@ const check = (label, ok, detail = "") => {
 console.log("\nตรวจ RLS ในสถานะ 'ยังไม่ล็อกอิน' (ทุกข้อต้องถูกปฏิเสธ)\n");
 
 // ---- อ่านไม่ได้ ----
-for (const table of ["cases", "profiles", "anon_reports", "audit_log", "staff", "sos_alerts"]) {
+for (const table of [
+  "cases",
+  "profiles",
+  "anon_reports",
+  "audit_log",
+  "staff",
+  "sos_alerts",
+  "appointments",
+  "assessment_stats",
+  "mood_stats",
+]) {
   const { data, error } = await db.from(table).select("*").limit(1);
   const blocked = error !== null || (Array.isArray(data) && data.length === 0);
   check(`อ่าน ${table} ไม่ได้`, blocked, error ? error.code : `คืน ${data?.length ?? 0} แถว`);
@@ -88,6 +98,51 @@ for (const table of ["cases", "profiles", "anon_reports", "audit_log", "staff", 
     .select();
   const n = data?.length ?? 0;
   check("ปิดเหตุ SOS ของคนอื่นไม่ได้", error !== null || n === 0, error?.code ?? `แก้ไปจริง ${n} แถว`);
+}
+
+{
+  const { error } = await db.from("appointments").insert({
+    id: "apt-rls-attack",
+    code: "APT-XXXX",
+    date: "2026-01-01",
+    time: "12:15",
+    format: "onsite",
+  });
+  check("จองนัดปลอมไม่ได้", error !== null, error?.code ?? "เขียนสำเร็จ (อันตราย!)");
+}
+{
+  const { data, error } = await db
+    .from("appointments")
+    .update({ status: "cancelled" })
+    .neq("id", "")
+    .select();
+  const n = data?.length ?? 0;
+  check("ยกเลิกนัดของคนอื่นไม่ได้", error !== null || n === 0, error?.code ?? `แก้ไปจริง ${n} แถว`);
+}
+{
+  const { error } = await db.from("profiles").insert({
+    user_id: "00000000-0000-0000-0000-000000000001",
+    username: "attacker",
+    student_id: "99999",
+  });
+  check("สร้างโปรไฟล์ให้คนอื่นไม่ได้", error !== null, error?.code ?? "เขียนสำเร็จ (อันตราย!)");
+}
+{
+  const { error } = await db.from("assessment_stats").insert({
+    id: "as-rls-attack",
+    assessment_id: "9Q",
+    score: 99,
+    action: "emergency",
+  });
+  check("ยัดสถิติประเมินใจไม่ได้", error !== null, error?.code ?? "เขียนสำเร็จ (อันตราย!)");
+}
+{
+  const { error } = await db.from("mood_stats").insert({
+    id: "md-rls-attack",
+    core: "red",
+    tertiary: "โกรธ",
+  });
+  check("ยัดสถิติอารมณ์ไม่ได้", error !== null, error?.code ?? "เขียนสำเร็จ (อันตราย!)");
 }
 
 console.log(
