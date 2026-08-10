@@ -84,9 +84,16 @@ const accountToCounselor = (a: {
 /**
  * The picker reads the LIVE staff-accounts store, so a teacher added on the
  * admin side is bookable immediately and a deactivated one stops appearing.
+ *
+ * ดึงทะเบียนกลางจากเซิร์ฟเวอร์ด้วย — ครูที่ผู้ดูแลระบบเพิ่มจากเครื่องอื่นต้องโผล่ใน
+ * รายชื่อบนมือถือนักเรียน ไม่ใช่เห็นแต่รายชื่อเริ่มต้นที่ติดมากับแอป
  */
 function usePickableCounselors(): Counselor[] {
   const accounts = useStaffAccountsStore((s) => s.accounts);
+  const syncFromServer = useStaffAccountsStore((s) => s.syncFromServer);
+  useEffect(() => {
+    void syncFromServer();
+  }, [syncFromServer]);
   return useMemo(
     () => accounts.filter((a) => a.active).map(accountToCounselor),
     [accounts],

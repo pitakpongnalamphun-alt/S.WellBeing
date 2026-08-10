@@ -29,6 +29,46 @@ export async function fetchStaffRoster(): Promise<ServerStaff[] | null> {
 }
 
 /**
+ * เพิ่ม/แก้ทะเบียนครูบนเซิร์ฟเวอร์ (RLS: เฉพาะผู้ดูแลระบบเท่านั้นที่ผ่าน)
+ *
+ * ต้องมีอีเมลเสมอ เพราะอีเมลคือกุญแจที่ RLS ใช้ตัดสินสิทธิ์ — บัญชีไม่มีอีเมล
+ * เป็นบัญชีสาธิตในเครื่องล้วน ๆ ไม่มีอะไรให้ผูกกับเซิร์ฟเวอร์
+ */
+export async function upsertStaff(s: ServerStaff): Promise<boolean> {
+  const db = getClient();
+  if (!db || !s.email) return false;
+  const { error } = await db.from("staff").upsert(
+    {
+      id: s.id,
+      email: s.email.trim().toLowerCase(),
+      name: s.name,
+      role: s.role,
+      title: s.title,
+      emoji: s.emoji,
+      active: s.active,
+    },
+    { onConflict: "id" },
+  );
+  if (error) {
+    console.warn("[staff] upsert failed:", error.message);
+    return false;
+  }
+  return true;
+}
+
+/** ถอนสิทธิ์ออกจากทะเบียนกลาง — เคสที่มอบหมายไว้จะกลายเป็น "ยังไม่มีผู้รับผิดชอบ" (on delete set null) */
+export async function deleteStaff(id: string): Promise<boolean> {
+  const db = getClient();
+  if (!db) return false;
+  const { error } = await db.from("staff").delete().eq("id", id);
+  if (error) {
+    console.warn("[staff] delete failed:", error.message);
+    return false;
+  }
+  return true;
+}
+
+/**
  * หาว่าอีเมลที่เพิ่งล็อกอินเป็นเจ้าหน้าที่คนไหน
  * คืน null = ล็อกอิน Google สำเร็จ แต่ยังไม่ได้รับสิทธิ์เจ้าหน้าที่
  */

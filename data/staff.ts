@@ -26,6 +26,12 @@ export type StaffIdentity = {
 
 /** The full stored account, secret included. Lives in the accounts store. */
 export type StaffAccount = StaffIdentity & {
+  /**
+   * อีเมล Google ของครูคนนี้ — ตัวตนจริงฝั่งเซิร์ฟเวอร์ กฎ RLS ทุกข้อตัดสินจาก
+   * อีเมลนี้ (ดู current_staff_role() ใน supabase/schema.sql) บัญชีที่ยังไม่ใส่
+   * อีเมลจะเข้าได้เฉพาะโหมดสาธิตด้วยรหัสผ่านในเครื่อง และมองไม่เห็นข้อมูลบนเซิร์ฟเวอร์
+   */
+  email?: string;
   passcode: string;
   /** A deactivated account keeps its history but can no longer sign in. */
   active: boolean;
