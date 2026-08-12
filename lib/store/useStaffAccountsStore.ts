@@ -6,6 +6,7 @@ import {
   type StaffAccount,
 } from "@/data/staff";
 import { deleteStaff, fetchStaffRoster, upsertStaff } from "@/lib/data/staffRepo";
+import { isSupabaseConfigured } from "@/lib/supabase/client";
 
 /**
  * The mutable list of staff accounts. Seeded from DEFAULT_STAFF_ACCOUNTS and
@@ -62,7 +63,10 @@ function makeId(): string {
 export const useStaffAccountsStore = create<StaffAccountsState>()(
   persist(
     (set, get) => ({
-      accounts: DEFAULT_STAFF_ACCOUNTS,
+      // เชื่อมฐานข้อมูลแล้ว = ไม่มีบัญชีตั้งต้นเลย ทะเบียนจริงมาจาก syncFromServer
+      // อย่างเดียว มิฉะนั้นเบราว์เซอร์ที่ยังไม่ซิงก์จะโชว์ชื่อที่ผู้ดูแลระบบเปลี่ยนไปแล้ว
+      // (คุณหมอพิม/ครูอ้อย/ครูเจน) — ซึ่งไปโผล่ในรายการให้นักเรียนเลือกจองนัดด้วย
+      accounts: isSupabaseConfigured() ? [] : DEFAULT_STAFF_ACCOUNTS,
       ready: false,
       setReady: () => set({ ready: true }),
 
@@ -131,7 +135,16 @@ export const useStaffAccountsStore = create<StaffAccountsState>()(
     {
       name: "swb.staffaccounts",
       partialize: (s) => ({ accounts: s.accounts }),
-      onRehydrateStorage: () => (state) => state?.setReady(),
+      onRehydrateStorage: () => (state) => {
+        if (!state) return;
+        // เครื่องที่เคยเก็บบัญชีตั้งต้นไว้ตั้งแต่ก่อนเชื่อมฐานข้อมูล ต้องทิ้งของเก่าด้วย
+        // ไม่งั้นชื่อเดิมจะค้างอยู่จนกว่า syncFromServer จะทับให้ — และถ้าซิงก์ไม่ผ่าน
+        // (ยังไม่ล็อกอิน/เน็ตหลุด) ก็ค้างต่อไปเรื่อย ๆ บัญชีที่ไม่มีอีเมลคือของสาธิตล้วน
+        if (isSupabaseConfigured()) {
+          state.accounts = state.accounts.filter((a) => a.email);
+        }
+        state.setReady();
+      },
     },
   ),
 );
@@ -141,6 +154,15 @@ export const useStaffAccountsStore = create<StaffAccountsState>()(
  * deactivated account never passes, even with the right code.
  */
 export function verifyStaff(id: string, passcode: string): boolean {
+  // เชื่อมฐานข้อมูลแล้ว = ปิดประตูรหัสผ่านทิ้งทั้งบาน ไม่ใช่แค่ซ่อนปุ่ม
+  //
+  // รหัสเริ่มต้น (1234/2345/3456/0000) ถูกคอมไพล์ไปกับบันเดิลที่ทุกคนโหลดได้ ใครกด
+  // View Source ก็อ่านเจอ และเครื่องคอมโรงเรียนใช้ร่วมกัน — ครูที่ปิดแท็บโดยไม่กด
+  // ออกจากระบบจะทิ้งเคสของนักเรียนไว้ใน localStorage ให้คนถัดไปที่สวมชื่อครูเข้ามาดู
+  // (ถึงจะไม่มี session แล้วอ่านของบนเซิร์ฟเวอร์ไม่ได้ แต่ของที่ค้างในเครื่องอ่านได้หมด)
+  //
+  // การซ่อนแค่ UI คือความปลอดภัยจอมปลอม เพราะประกอบฟอร์มยิงเองก็ยังผ่าน
+  if (isSupabaseConfigured()) return false;
   const code = passcode.trim();
   // รหัสว่างไม่ผ่านเสมอ ต่อให้บัญชีนั้นมีรหัสว่างด้วยความผิดพลาด — ไม่งั้นแค่กด
   // "เข้าสู่ระบบ" โดยไม่พิมพ์อะไรเลยก็สวมเป็นครูคนนั้นได้
