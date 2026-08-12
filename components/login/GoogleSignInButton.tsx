@@ -82,6 +82,37 @@ export function GoogleSignInButton({
   useEffect(() => {
     if (!CLIENT_ID) return;
     let cancelled = false;
+    let ro: ResizeObserver | undefined;
+    let lastWidth = 0;
+
+    /**
+     * วาดปุ่มตามความกว้าง "จริง" ของกล่องที่มันอยู่
+     *
+     * GIS รับ width เป็นพิกเซลเท่านั้น (ใส่ % ไม่ได้) ของเดิมฮาร์ดโค้ด 368px ไว้ ซึ่ง
+     * กว้างกว่าพื้นที่บนมือถือ (จอ 390px เหลือให้เนื้อหาราว 310px) ปุ่มจึงดันคอลัมน์
+     * ทั้งคอลัมน์ให้กว้างเกินการ์ด แล้วโดน overflow-hidden ของการ์ดตัดทิ้ง — ทุกอย่าง
+     * ในฟอร์มเลยขาดหายไปทางขวาและเลื่อนตามแนวนอนไม่ได้ (แนวนอนไม่เป็นเพราะจอกว้างพอ)
+     *
+     * 400 คือเพดานที่ GIS รองรับ ส่วน 200 คือพื้นล่างกันปุ่มแคบจนอ่านไม่ออก
+     */
+    const renderGoogleButton = () => {
+      const host = hostRef.current;
+      if (!host || !window.google) return;
+      const available = host.parentElement?.clientWidth ?? host.clientWidth;
+      const width = Math.max(200, Math.min(400, Math.floor(available)));
+      if (width === lastWidth) return;
+      lastWidth = width;
+      host.replaceChildren(); // วาดซ้ำต้องล้างปุ่มเดิมก่อน ไม่งั้นซ้อนกันสองปุ่ม
+      window.google.accounts.id.renderButton(host, {
+        theme: "outline",
+        size: "large",
+        shape: "pill",
+        text: "signin_with",
+        locale: "th",
+        width,
+      });
+    };
+
     loadGis()
       .then(() => {
         if (cancelled || !hostRef.current || !window.google) return;
@@ -126,21 +157,21 @@ export function GoogleSignInButton({
             }
           },
         });
-        window.google.accounts.id.renderButton(hostRef.current, {
-          theme: "outline",
-          size: "large",
-          shape: "pill",
-          text: "signin_with",
-          locale: "th",
-          width: 368,
-        });
+        renderGoogleButton();
         setStatus("ready");
+        // หมุนจอ / เปลี่ยนขนาดหน้าต่าง แล้ววาดปุ่มใหม่ให้พอดีกล่องเสมอ
+        const parent = hostRef.current.parentElement;
+        if (parent && typeof ResizeObserver !== "undefined") {
+          ro = new ResizeObserver(() => renderGoogleButton());
+          ro.observe(parent);
+        }
       })
       .catch(() => {
         if (!cancelled) setStatus("error");
       });
     return () => {
       cancelled = true;
+      ro?.disconnect();
     };
     // onVerified เปลี่ยนอ้างอิงได้ทุก render — ยึดตัวล่าสุดผ่าน closure ตอน callback ยิงจริงพอ
     // (initialize ครั้งเดียวพอ ไม่ต้อง re-init)
