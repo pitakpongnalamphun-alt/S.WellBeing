@@ -20,11 +20,22 @@ import { localDay } from "@/lib/date";
 
 const HUG_REWARD = 5;
 
-/** Stable scatter derived from the cloud id only, so adding a cloud never shuffles the rest. */
+/**
+ * Stable scatter derived from the cloud id only, so adding a cloud never shuffles the rest.
+ *
+ * ค่าที่ได้เป็น % ของ "สนามวางเมฆ" ซึ่งถูกเว้นขอบไว้แล้วในเลย์เอาต์ (ดู cloud-field
+ * ด้านล่าง) ไม่ใช่ % ของทั้งจอ — เมฆถูกจัดกึ่งกลางที่จุดนี้ด้วย -translate-1/2 ป้าย
+ * ชื่ออารมณ์จึงกินพื้นที่ออกไปข้างละครึ่งความกว้าง ถ้าคิด % จากทั้งจอ เมฆที่สุ่มไป
+ * ริมสุดจะโดนขอบจอตัดจนอ่านไม่ออก (บั๊กที่เจอ: ปล่อยเมฆแล้วเมฆไปเกาะขอบ)
+ */
 function seededPos(id: string) {
   let h = 0;
   for (let k = 0; k < id.length; k += 1) h = (h * 31 + id.charCodeAt(k)) >>> 0;
-  return { left: 9 + (h % 80), top: 15 + ((h >> 4) % 60) };
+  // >>> ไม่ใช่ >> : h เป็นเลข 32 บิตแบบไม่มีเครื่องหมาย แต่ >> จะตีความบิตบนสุดเป็นลบ
+  // ค่า h ที่เกิน 2^31 (ราวครึ่งหนึ่งของ id ทั้งหมด) จึงได้ top ติดลบ แล้วเมฆก้อนนั้น
+  // ไปเกาะขอบบนจนมองไม่เห็น — id ของเมฆที่เพิ่งปล่อยขึ้นต้นด้วย "me-" + เวลาปัจจุบัน
+  // ซึ่งยาวพอจะแฮชทะลุ 2^31 เกือบทุกครั้ง อาการเลยออกกับเมฆของตัวเองเป็นหลัก
+  return { left: 4 + (h % 92), top: 8 + ((h >>> 4) % 84) };
 }
 
 const floatVariants: Variants = {
@@ -212,12 +223,16 @@ export function CloudHugsGalaxy() {
         </header>
 
         <div className="relative flex-1">
-          {clouds.map((cloud, i) => {
+          {/* สนามวางเมฆ — เว้นขอบซ้าย-ขวาไว้ราวครึ่งหนึ่งของความกว้างป้ายชื่อ (ป้ายกว้างสุด
+              7.5rem จึงยื่นออกข้างละ ~3.75rem) เมฆที่สุ่มไปริมสุดจึงยังอยู่ในจอเสมอ
+              ไม่ว่าหน้าจอจะกว้างเท่าไหร่ — คิดเป็น px คงที่ ไม่ใช่ % ที่หดตามจอ */}
+          <div className="pointer-events-none absolute inset-x-16 inset-y-10">
+            {clouds.map((cloud, i) => {
             const pos = seededPos(cloud.id);
             const color = CLOUD_COLORS[cloud.coreColor];
             const hugged = huggedIds.has(cloud.id);
             return (
-              <div key={cloud.id} className="absolute -translate-x-1/2 -translate-y-1/2" style={{ left: `${pos.left}%`, top: `${pos.top}%` }}>
+              <div key={cloud.id} className="pointer-events-auto absolute -translate-x-1/2 -translate-y-1/2" style={{ left: `${pos.left}%`, top: `${pos.top}%` }}>
                 <motion.div
                   initial={{ opacity: 0, scale: 0.3 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -242,7 +257,7 @@ export function CloudHugsGalaxy() {
                       {cloud.mine && <span className="absolute -left-1 -top-1 text-xs">🫧</span>}
                       {hugged && <span className="absolute -right-1 -top-1 text-sm">💖</span>}
                     </span>
-                    <span className="max-w-[8.5rem] rounded-full bg-white/10 px-2.5 py-1 text-center text-[0.68rem] font-medium backdrop-blur" style={{ color: color.text }}>
+                    <span className="max-w-[7.5rem] rounded-full bg-white/10 px-2.5 py-1 text-center text-[0.68rem] font-medium backdrop-blur" style={{ color: color.text }}>
                       {cloud.tertiaryEmotion}
                     </span>
                     <span className="text-[0.6rem] text-white/45">🫂 {cloud.hugsReceived}{cloud.mine ? " · ของฉัน" : ""}</span>
@@ -250,7 +265,8 @@ export function CloudHugsGalaxy() {
                 </motion.div>
               </div>
             );
-          })}
+            })}
+          </div>
         </div>
 
         <p className="relative z-20 pb-4 text-center text-[0.68rem] text-white/40">ทุกก้อนเมฆไม่ระบุตัวตน · ส่งได้แค่ความอบอุ่น 🔒</p>
