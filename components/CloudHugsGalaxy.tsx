@@ -37,6 +37,8 @@ function seededJitter(id: string) {
 }
 
 const floatVariants: Variants = {
+  /** ก้อนที่อยู่นอกจอ — หยุดนิ่งตรงจุดตั้งต้น ไม่กิน GPU */
+  rest: { x: 0, y: 0 },
   float: (i: number) => ({
     // แอมพลิจูดต้องเล็กกว่าครึ่งของช่องไฟระหว่างแถว (gap-y-10 = 40px) เผื่อสองแถว
     // ลอยเข้าหากันพร้อมกัน ไม่งั้นป้ายชื่อจะเหลื่อมกันจนบังปุ่มของอีกก้อน
@@ -108,6 +110,80 @@ function CloudFace({ color, size = 46 }: { color: { glow: string; text: string }
       {/* tiny soft smile */}
       <path d="M45,57 Q50,61 55,57" stroke="#41415f" strokeWidth="2.2" fill="none" strokeLinecap="round" />
     </svg>
+  );
+}
+
+/**
+ * เมฆหนึ่งก้อนพร้อมแอนิเมชันลอย
+ *
+ * แยกออกมาเป็นคอมโพเนนต์ของตัวเองเพราะแต่ละก้อนต้องมี IntersectionObserver ของ
+ * ตัวเอง: ก้อนที่เลื่อนพ้นจอจะหยุดลอย เหลือแต่ก้อนที่มองเห็นจริงที่ยังขยับ
+ * ทุกก้อนมี drop-shadow กับ backdrop-blur ซึ่งกิน GPU มาก ถ้าปล่อยให้หลายร้อยก้อน
+ * แอนิเมชันพร้อมกันทั้งที่เห็นแค่ 6 ก้อน มือถือจะกระตุกทันทีที่กาแล็กซีเริ่มแน่น
+ */
+function CloudItem({
+  cloud,
+  index,
+  hugged,
+  onOpen,
+}: {
+  cloud: MoodCloud;
+  index: number;
+  hugged: boolean;
+  onOpen: () => void;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  // เริ่มที่ "เห็น" ไว้ก่อน เผื่อเบราว์เซอร์ไม่รองรับ observer — เมฆจะได้ไม่แข็งทื่อ
+  const [inView, setInView] = useState(true);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(
+      ([entry]) => setInView(entry.isIntersecting),
+      // เผื่อขอบไว้หน่อย ก้อนที่กำลังจะเลื่อนเข้ามาจะได้ลอยอยู่ก่อนแล้ว ไม่ใช่กระตุกเริ่ม
+      { rootMargin: "120px 0px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  const jitter = seededJitter(cloud.id);
+  const color = CLOUD_COLORS[cloud.coreColor];
+
+  return (
+    <div ref={ref} style={{ transform: `translate(${jitter.x}px, ${jitter.y}px)` }}>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.3 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.25 + Math.min(index, 12) * 0.07, duration: 0.55, ease: [0.34, 1.3, 0.68, 1] }}
+      >
+        <motion.button
+          type="button"
+          onClick={onOpen}
+          aria-label={`ก้อนเมฆความรู้สึก ${cloud.tertiaryEmotion}${cloud.mine ? " (ของฉัน)" : ""} ได้รับกอดแล้ว ${cloud.hugsReceived} ครั้ง`}
+          className="flex flex-col items-center gap-1.5 rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+          variants={floatVariants}
+          custom={index}
+          animate={inView ? "float" : "rest"}
+          whileHover={{ scale: 1.09 }}
+          whileTap={{ scale: 0.94 }}
+        >
+          <span
+            className="relative grid size-16 place-items-center rounded-full"
+            style={{ background: `radial-gradient(circle at 50% 42%, ${color.glow}, transparent 72%)`, filter: `drop-shadow(0 0 14px ${color.glow})` }}
+          >
+            <CloudFace color={color} size={46} />
+            {cloud.mine && <span className="absolute -left-1 -top-1 text-xs">🫧</span>}
+            {hugged && <span className="absolute -right-1 -top-1 text-sm">💖</span>}
+          </span>
+          <span className="max-w-[7.5rem] rounded-full bg-white/10 px-2.5 py-1 text-center text-[0.68rem] font-medium backdrop-blur" style={{ color: color.text }}>
+            {cloud.tertiaryEmotion}
+          </span>
+          <span className="text-[0.6rem] text-white/45">🫂 {cloud.hugsReceived}{cloud.mine ? " · ของฉัน" : ""}</span>
+        </motion.button>
+      </motion.div>
+    </div>
   );
 }
 
@@ -235,45 +311,15 @@ export function CloudHugsGalaxy() {
             ช่องกว้างขั้นต่ำ 9rem กว้างกว่าป้ายชื่อ (7.5rem) พอที่จะไม่ชนกันแม้ขยับแล้ว */}
         <div className="relative z-10 flex-1 overflow-y-auto overscroll-contain px-3 pb-8">
           <div className="grid grid-cols-[repeat(auto-fill,minmax(9rem,1fr))] justify-items-center gap-x-2 gap-y-10 py-4">
-            {clouds.map((cloud, i) => {
-            const jitter = seededJitter(cloud.id);
-            const color = CLOUD_COLORS[cloud.coreColor];
-            const hugged = huggedIds.has(cloud.id);
-            return (
-              <div key={cloud.id} style={{ transform: `translate(${jitter.x}px, ${jitter.y}px)` }}>
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.3 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.25 + Math.min(i, 12) * 0.07, duration: 0.55, ease: [0.34, 1.3, 0.68, 1] }}
-                >
-                  <motion.button
-                    type="button"
-                    onClick={() => openCloud(cloud.id)}
-                    aria-label={`ก้อนเมฆความรู้สึก ${cloud.tertiaryEmotion}${cloud.mine ? " (ของฉัน)" : ""} ได้รับกอดแล้ว ${cloud.hugsReceived} ครั้ง`}
-                    className="flex flex-col items-center gap-1.5 rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
-                    variants={floatVariants}
-                    custom={i}
-                    animate="float"
-                    whileHover={{ scale: 1.09 }}
-                    whileTap={{ scale: 0.94 }}
-                  >
-                    <span
-                      className="relative grid size-16 place-items-center rounded-full"
-                      style={{ background: `radial-gradient(circle at 50% 42%, ${color.glow}, transparent 72%)`, filter: `drop-shadow(0 0 14px ${color.glow})` }}
-                    >
-                      <CloudFace color={color} size={46} />
-                      {cloud.mine && <span className="absolute -left-1 -top-1 text-xs">🫧</span>}
-                      {hugged && <span className="absolute -right-1 -top-1 text-sm">💖</span>}
-                    </span>
-                    <span className="max-w-[7.5rem] rounded-full bg-white/10 px-2.5 py-1 text-center text-[0.68rem] font-medium backdrop-blur" style={{ color: color.text }}>
-                      {cloud.tertiaryEmotion}
-                    </span>
-                    <span className="text-[0.6rem] text-white/45">🫂 {cloud.hugsReceived}{cloud.mine ? " · ของฉัน" : ""}</span>
-                  </motion.button>
-                </motion.div>
-              </div>
-            );
-            })}
+            {clouds.map((cloud, i) => (
+              <CloudItem
+                key={cloud.id}
+                cloud={cloud}
+                index={i}
+                hugged={huggedIds.has(cloud.id)}
+                onOpen={() => openCloud(cloud.id)}
+              />
+            ))}
           </div>
         </div>
 

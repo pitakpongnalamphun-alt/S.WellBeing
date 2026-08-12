@@ -8,6 +8,7 @@ import { FluffyBuddy } from "@/components/FluffyBuddy";
 import { EMOTION_WHEEL, type CoreEmotion, type SecondaryEmotion } from "@/data/emotionWheel";
 import { NEGATIVE_CORES } from "@/data/cloudHugs";
 import { useCloudHugsStore } from "@/lib/store/useCloudHugsStore";
+import { localDay } from "@/lib/date";
 
 /** A gentle crossfade + drift. Deliberately soft and non-bouncy. */
 const swap = {
@@ -37,6 +38,8 @@ export type DailyMoodPetProps = {
 
 export function DailyMoodPet({ onSave, onExit, onReleaseCloud, className }: DailyMoodPetProps) {
   const release = useCloudHugsStore((s) => s.release);
+  const lastReleasedDay = useCloudHugsStore((s) => s.lastReleasedDay);
+  const releasedToday = lastReleasedDay === localDay();
   const [step, setStep] = useState<Step>("core");
   const [core, setCore] = useState<CoreEmotion | null>(null);
   const [secondary, setSecondary] = useState<SecondaryEmotion | null>(null);
@@ -83,8 +86,8 @@ export function DailyMoodPet({ onSave, onExit, onReleaseCloud, className }: Dail
   function releaseMyCloud() {
     if (!core || !tertiary || released) return;
     // ไม่ต้องยัดชนิดข้อมูลแล้ว — CoreColor ครอบคลุมคีย์ของวงล้อครบทุกสี
-    release(tertiary, core.key);
-    setReleased(true);
+    // คืน null = วันนี้ปล่อยไปแล้ว (สโตร์เป็นคนตัดสิน ปุ่มจะได้ไม่หลอกว่ากดได้)
+    if (release(tertiary, core.key) !== null) setReleased(true);
   }
 
   return (
@@ -251,6 +254,25 @@ export function DailyMoodPet({ onSave, onExit, onReleaseCloud, className }: Dail
                         ไปดูกาแล็กซี
                       </button>
                     </div>
+                  ) : releasedToday ? (
+                    /* ปล่อยได้วันละก้อน — บอกให้รู้แทนที่จะโชว์ปุ่มที่กดแล้วไม่เกิดอะไร
+                       (จอนี้เข้าถึงได้หลัง mount เสมอ อ่านสโตร์ตรงนี้จึงไม่ชน hydration) */
+                    <div className="flex w-full flex-col items-center gap-2 rounded-2xl bg-slate-50 p-4 text-center ring-1 ring-slate-200">
+                      <p className="text-[0.82rem] font-medium text-slate-600">
+                        วันนี้ปล่อยเมฆไปแล้วหนึ่งก้อนนะ ☁️
+                      </p>
+                      <p className="text-[0.76rem] leading-relaxed text-slate-500">
+                        พรุ่งนี้ปล่อยได้ใหม่ — ระหว่างนี้แวะไปส่งกอดให้เพื่อนก็ได้นะ
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => onReleaseCloud?.()}
+                        className="mt-0.5 inline-flex items-center gap-1.5 rounded-full bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-300 active:scale-95"
+                      >
+                        <Cloud className="size-4" />
+                        ไปดูกาแล็กซี
+                      </button>
+                    </div>
                   ) : (
                     <div className="flex w-full flex-col items-center gap-2.5 rounded-2xl bg-indigo-50/70 p-4 text-center ring-1 ring-indigo-100">
                       <p className="text-[0.82rem] leading-relaxed text-slate-600">
@@ -264,6 +286,7 @@ export function DailyMoodPet({ onSave, onExit, onReleaseCloud, className }: Dail
                         <Send className="size-4" />
                         ปล่อยเมฆของฉัน ☁️
                       </button>
+                      <p className="text-[0.7rem] text-slate-400">ปล่อยได้วันละหนึ่งก้อน</p>
                     </div>
                   ))}
 

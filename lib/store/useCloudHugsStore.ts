@@ -26,10 +26,18 @@ type CloudHugsState = {
   /** เดือนของกาแล็กซีชุดที่ถืออยู่ "YYYY-MM" */
   month: string;
   clouds: MoodCloud[];
+  /**
+   * วันที่ปล่อยเมฆล่าสุด "YYYY-MM-DD" — ปล่อยได้วันละก้อน ให้ตรงกับที่บันทึกอารมณ์
+   * ได้วันละครั้งอยู่แล้ว และกันการกดย้อนกลับในหน้าเช็คอินเพื่อปล่อยรัว ๆ ซึ่งจะทำให้
+   * ท้องฟ้าของคนคนเดียวกลบเมฆของคนอื่นจนหาไม่เจอ
+   */
+  lastReleasedDay: string | null;
   /** ขึ้นเดือนใหม่แล้วล้างท้องฟ้าเริ่มใหม่ — เรียกตอนเปิดหน้าและก่อนปล่อยเมฆ */
   ensureMonth: () => void;
-  /** Send an anonymous cloud into the galaxy; returns its id. */
-  release: (tertiaryEmotion: string, coreColor: CoreColor) => string;
+  /** วันนี้ยังปล่อยเมฆได้อีกไหม */
+  canReleaseToday: () => boolean;
+  /** ปล่อยเมฆนิรนามเข้ากาแล็กซี — คืน id หรือ null ถ้าวันนี้ปล่อยไปแล้ว */
+  release: (tertiaryEmotion: string, coreColor: CoreColor) => string | null;
   hug: (id: string) => void;
 };
 
@@ -38,18 +46,25 @@ export const useCloudHugsStore = create<CloudHugsState>()(
     (set, get) => ({
       month: monthOf(),
       clouds: seedFor(monthOf()),
+      lastReleasedDay: null,
 
       ensureMonth: () => {
         const now = monthOf();
         if (get().month === now) return;
+        // ล้างเฉพาะท้องฟ้า — lastReleasedDay ไม่ต้องแตะ วันใหม่ก็ปล่อยได้เองอยู่แล้ว
         set({ month: now, clouds: seedFor(now) });
       },
 
+      canReleaseToday: () => get().lastReleasedDay !== localDay(),
+
       release: (tertiaryEmotion, coreColor) => {
         get().ensureMonth();
+        const today = localDay();
+        if (get().lastReleasedDay === today) return null;
         const id = `me-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
         set((s) => ({
           clouds: [{ id, tertiaryEmotion, coreColor, hugsReceived: 0, mine: true }, ...s.clouds],
+          lastReleasedDay: today,
         }));
         return id;
       },
@@ -61,7 +76,11 @@ export const useCloudHugsStore = create<CloudHugsState>()(
     }),
     {
       name: "swb.cloudhugs",
-      partialize: (s) => ({ clouds: s.clouds, month: s.month }),
+      partialize: (s) => ({
+        clouds: s.clouds,
+        month: s.month,
+        lastReleasedDay: s.lastReleasedDay,
+      }),
     },
   ),
 );
