@@ -113,13 +113,18 @@ export function ChatScreen() {
    * สีหน้าของปุยผูกกับ "สถานะที่รู้จริง" เท่านั้น ไม่ใช่การเดาอารมณ์ของนักเรียน —
    * ถ้าเดาผิด เด็กที่เพิ่งเล่าเรื่องหนักแล้วเจอปุยยิ้มแป้น จะรู้สึกแย่กว่าไม่มีหน้าเลย
    */
+  // ปากขยับได้เฉพาะตอนตัวอักษรไหลออกมาจริง ๆ ไม่ใช่ตลอดช่วงที่รอเซิร์ฟเวอร์ —
+  // ปากขยับทั้งที่ยังไม่มีอะไรมาคือการแสดงว่ากำลังพูดอยู่ทั้งที่ยังไม่ได้พูด
+  const talking = !!pending?.content;
   const expression: PuyExpression = emergency
     ? "worry" // คิ้วห่วง ไม่ยิ้ม และหยุดขยับทั้งตัว
-    : sending || input.trim()
-      ? "think" // มองลง — ตั้งใจฟังตอนนักเรียนพิมพ์ และตอนปุยกำลังเรียบเรียงคำตอบ
-      : started
-        ? "listen"
-        : "greet";
+    : talking
+      ? "listen" // เงยหน้าขึ้นตอนกำลังตอบ
+      : sending || input.trim()
+        ? "think" // มองลง — ตั้งใจฟังตอนนักเรียนพิมพ์ และตอนปุยกำลังเรียบเรียงคำตอบ
+        : started
+          ? "listen"
+          : "greet";
 
   async function send(raw: string) {
     const text = raw.trim();
@@ -231,7 +236,7 @@ export function ChatScreen() {
           )}
           aria-hidden="true"
         >
-          <Puy expression={expression} size={32} float={false} />
+          <Puy expression={expression} size={32} motion="still" talking={talking} />
         </span>
         <span className="min-w-0 flex-1">
           <span className="block text-[0.95rem] font-bold leading-tight text-ink">
@@ -318,7 +323,7 @@ export function ChatScreen() {
         {showNudge ? (
           <div className="mx-auto flex max-w-[92%] items-start gap-3 rounded-2xl bg-lavender-50 p-3.5 ring-1 ring-lavender-200">
             <span className="mt-0.5 shrink-0" aria-hidden="true">
-              <Puy expression="cheer" size={34} float={false} />
+              <Puy expression="cheer" size={34} motion="still" />
             </span>
             <div className="min-w-0 flex-1">
               <p className="text-[0.84rem] leading-relaxed text-ink">

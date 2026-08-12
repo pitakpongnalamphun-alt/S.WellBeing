@@ -23,7 +23,16 @@ export type PuyExpression =
   /** ด่านฉุกเฉินทำงาน — คิ้วห่วง ไม่ยิ้ม และไม่ขยับ */
   | "worry"
   /** ส่งกำลังใจ — กอดหัวใจ (ใช้ในการ์ดชวนไปคุยกับครู) */
-  | "cheer";
+  | "cheer"
+  /**
+   * ตื่นเต้น — มีประกายรอบตัว
+   *
+   * ห้องแชทไม่ใช้หน้านี้ เพราะจะรู้ว่านักเรียนดีใจได้ต้องเดาอารมณ์จากข้อความ ซึ่งตกลง
+   * กันไว้ว่าจะไม่ทำ — มีไว้ให้หน้าจอที่รู้แน่จริงเรียกใช้ เช่นตอนเล่นเกมชนะ
+   */
+  | "excited"
+  /** พักผ่อน — หลับในผ้าห่ม (เช่น หน้าจบการฝึกหายใจก่อนนอน) */
+  | "rest";
 
 const INK = "#4A2340";
 const LEAF = "#BEE99A";
@@ -46,21 +55,36 @@ const PUY_CSS = `
   0%, 92%, 100% { transform: scaleY(1); }
   95%           { transform: scaleY(0.08); }
 }
-.puy-float { animation: puy-float 4.2s ease-in-out infinite; }
+@keyframes puy-bounce {
+  0%, 60%, 100% { transform: translateY(0); }
+  15%           { transform: translateY(-9%); }
+  32%           { transform: translateY(0); }
+  42%           { transform: translateY(-4%); }
+}
+@keyframes puy-talk {
+  0%, 100% { transform: scaleY(1); }
+  50%      { transform: scaleY(0.55); }
+}
+.puy-float  { animation: puy-float 4.2s ease-in-out infinite; }
+.puy-bounce { animation: puy-bounce 2.4s ease-in-out infinite; }
+.puy-mouth  { transform-box: fill-box; transform-origin: center; }
+.puy-mouth.puy-talking { animation: puy-talk 0.42s ease-in-out infinite; }
 .puy-eyes  { transform-box: fill-box; transform-origin: center; }
 .puy-eyes.puy-blinking { animation: puy-blink 6.4s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) {
-  .puy-float, .puy-eyes.puy-blinking { animation: none; }
+  .puy-float, .puy-bounce, .puy-eyes.puy-blinking, .puy-mouth.puy-talking { animation: none; }
 }
 `;
 
 type FaceSpec = {
-  eye: "open" | "down" | "happy";
+  eye: "open" | "down" | "happy" | "sleepy";
   mouth: "open" | "smile" | "soft" | "flat";
-  arm: "side" | "hold";
+  arm: "side" | "hold" | "none";
   belly: boolean;
   brows?: boolean;
   heart?: boolean;
+  sparkle?: boolean;
+  blanket?: boolean;
 };
 
 const FACES: Record<PuyExpression, FaceSpec> = {
@@ -69,6 +93,8 @@ const FACES: Record<PuyExpression, FaceSpec> = {
   think: { eye: "down", mouth: "soft", arm: "side", belly: true },
   worry: { eye: "open", mouth: "flat", arm: "side", belly: true, brows: true },
   cheer: { eye: "happy", mouth: "open", arm: "hold", belly: false, heart: true },
+  excited: { eye: "open", mouth: "open", arm: "side", belly: true, sparkle: true },
+  rest: { eye: "sleepy", mouth: "soft", arm: "none", belly: false, blanket: true },
 };
 
 function Eyes({ kind, iris }: { kind: FaceSpec["eye"]; iris: string }) {
@@ -82,6 +108,23 @@ function Eyes({ kind, iris }: { kind: FaceSpec["eye"]; iris: string }) {
             fill="none"
             stroke={INK}
             strokeWidth={6}
+            strokeLinecap="round"
+          />
+        ))}
+      </>
+    );
+  }
+  if (kind === "sleepy") {
+    // โค้งคว่ำ = หลับ ต่างจาก happy ที่โค้งหงายขึ้นแปลว่ายิ้ม
+    return (
+      <>
+        {[EYE_L, EYE_R].map((cx) => (
+          <path
+            key={cx}
+            d={`M${cx - 15},${EYE_Y - 2} q15,16 30,0`}
+            fill="none"
+            stroke={INK}
+            strokeWidth={5.5}
             strokeLinecap="round"
           />
         ))}
@@ -142,7 +185,42 @@ function Mouth({ kind }: { kind: FaceSpec["mouth"] }) {
   );
 }
 
+/** ประกายรอบตัว — ใช้กับหน้า "ตื่นเต้น" */
+function Sparkles() {
+  const star = (cx: number, cy: number, r: number) => (
+    <path
+      key={`${cx}-${cy}`}
+      d={`M${cx},${cy - r} Q${cx + r * 0.22},${cy - r * 0.22} ${cx + r},${cy} Q${cx + r * 0.22},${cy + r * 0.22} ${cx},${cy + r} Q${cx - r * 0.22},${cy + r * 0.22} ${cx - r},${cy} Q${cx - r * 0.22},${cy - r * 0.22} ${cx},${cy - r} Z`}
+      fill="#FFD98A"
+    />
+  );
+  return (
+    <>
+      {star(38, 74, 11)}
+      {star(166, 88, 8)}
+      {star(150, 52, 6)}
+    </>
+  );
+}
+
+/** ผ้าห่มคลุมครึ่งล่าง — ขอบบนต้องอยู่ในเส้นรอบตัว ไม่งั้นกลายเป็นชามใส่ปุย */
+function Blanket() {
+  return (
+    <>
+      <path
+        d="M40,171 C60,163 140,163 160,171 C158,190 132,201 100,201 C68,201 42,190 40,171 Z"
+        fill="#FFF6FA"
+      />
+      <path
+        d="M40,171 C60,163 140,163 160,171 C140,179 60,179 40,171 Z"
+        fill="#FFDDEE"
+      />
+    </>
+  );
+}
+
 function Paws({ kind, limb }: { kind: FaceSpec["arm"]; limb: string }) {
+  if (kind === "none") return null;
   const spec: [number, number, number][] =
     kind === "hold"
       ? [
@@ -193,31 +271,45 @@ export type PuyProps = {
   expression?: PuyExpression;
   /** ความกว้างเป็น px (สูง = กว้าง × 1.07 ตามสัดส่วนตัว) */
   size?: number;
-  /** ลอยขึ้นลงเบา ๆ — ปิดได้สำหรับตัวเล็กบนแถบหัวที่ไม่ควรดึงสายตา */
-  float?: boolean;
+  /**
+   * การเคลื่อนไหวของทั้งตัว
+   *   float  — ลอยขึ้นลงเบา ๆ (ค่าตั้งต้น)
+   *   bounce — กระโดดนิด ๆ ตอนดีใจ
+   *   still  — หยุดนิ่ง สำหรับตัวเล็กบนแถบหัวที่ไม่ควรดึงสายตา
+   */
+  motion?: "float" | "bounce" | "still";
+  /** ปากขยับ — เปิดตอนข้อความกำลังไหลออกมาจริง ๆ เท่านั้น */
+  talking?: boolean;
   className?: string;
 };
 
 export function Puy({
   expression = "listen",
   size = 120,
-  float = true,
+  motion = "float",
+  talking = false,
   className,
 }: PuyProps) {
   const uid = useId().replace(/[^a-zA-Z0-9]/g, "");
   const id = (k: string) => `puy-${k}-${uid}`;
   const f = FACES[expression];
-  // ตอนเจอเรื่องฉุกเฉิน ทุกอย่างต้องนิ่ง — ไม่กระพริบ ไม่ลอย
-  const still = expression === "worry";
+  // ตอนเจอเรื่องฉุกเฉิน ทุกอย่างต้องนิ่ง — ไม่กระพริบ ไม่ลอย ไม่ขยับปาก
+  const still = expression === "worry" || motion === "still";
+  const moving =
+    expression === "worry"
+      ? null
+      : motion === "bounce"
+        ? "puy-bounce"
+        : motion === "float"
+          ? "puy-float"
+          : null;
 
   return (
     <svg
       viewBox="0 0 200 214"
       width={size}
       height={Math.round(size * 1.07)}
-      className={[float && !still ? "puy-float" : "", className]
-        .filter(Boolean)
-        .join(" ")}
+      className={[moving ?? "", className].filter(Boolean).join(" ")}
       role="presentation"
       aria-hidden="true"
     >
@@ -307,8 +399,12 @@ export function Puy({
         <Eyes kind={f.eye} iris={id("iris")} />
       </g>
 
-      <Mouth kind={f.mouth} />
+      <g className={`puy-mouth${talking && !still ? " puy-talking" : ""}`}>
+        <Mouth kind={f.mouth} />
+      </g>
 
+      {f.sparkle ? <Sparkles /> : null}
+      {f.blanket ? <Blanket /> : null}
       {f.belly ? <Heart cx={100} cy={177} s={3.4} fill="#fff" opacity={0.5} /> : null}
       {f.heart ? <Heart cx={100} cy={184} s={5} fill="#FF6E9A" /> : null}
     </svg>
