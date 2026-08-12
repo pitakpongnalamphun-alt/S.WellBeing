@@ -63,7 +63,10 @@ function makeId(): string {
 export const useStaffAccountsStore = create<StaffAccountsState>()(
   persist(
     (set, get) => ({
-      accounts: DEFAULT_STAFF_ACCOUNTS,
+      // เชื่อมฐานข้อมูลแล้ว = ไม่มีบัญชีตั้งต้นเลย ทะเบียนจริงมาจาก syncFromServer
+      // อย่างเดียว มิฉะนั้นเบราว์เซอร์ที่ยังไม่ซิงก์จะโชว์ชื่อที่ผู้ดูแลระบบเปลี่ยนไปแล้ว
+      // (คุณหมอพิม/ครูอ้อย/ครูเจน) — ซึ่งไปโผล่ในรายการให้นักเรียนเลือกจองนัดด้วย
+      accounts: isSupabaseConfigured() ? [] : DEFAULT_STAFF_ACCOUNTS,
       ready: false,
       setReady: () => set({ ready: true }),
 
@@ -132,7 +135,16 @@ export const useStaffAccountsStore = create<StaffAccountsState>()(
     {
       name: "swb.staffaccounts",
       partialize: (s) => ({ accounts: s.accounts }),
-      onRehydrateStorage: () => (state) => state?.setReady(),
+      onRehydrateStorage: () => (state) => {
+        if (!state) return;
+        // เครื่องที่เคยเก็บบัญชีตั้งต้นไว้ตั้งแต่ก่อนเชื่อมฐานข้อมูล ต้องทิ้งของเก่าด้วย
+        // ไม่งั้นชื่อเดิมจะค้างอยู่จนกว่า syncFromServer จะทับให้ — และถ้าซิงก์ไม่ผ่าน
+        // (ยังไม่ล็อกอิน/เน็ตหลุด) ก็ค้างต่อไปเรื่อย ๆ บัญชีที่ไม่มีอีเมลคือของสาธิตล้วน
+        if (isSupabaseConfigured()) {
+          state.accounts = state.accounts.filter((a) => a.email);
+        }
+        state.setReady();
+      },
     },
   ),
 );

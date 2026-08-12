@@ -67,9 +67,13 @@ function AddStaffForm({ onClose }: { onClose: () => void }) {
   const [role, setRole] = useState<StaffRole>("counselor");
   const [passcode, setPasscode] = useState("");
 
-  // ผูกอีเมลไว้ = ล็อกอินด้วย Google ได้ ไม่ต้องตั้งรหัสผ่านสาธิตก็ได้
+  // เชื่อมฐานข้อมูลแล้ว อีเมลคือ "บังคับ" เพราะเป็นกุญแจเดียวที่ใช้ล็อกอินได้จริง —
+  // บัญชีที่ไม่มีอีเมลจะขึ้นเซิร์ฟเวอร์ไม่ได้และล็อกอินไม่ได้ กลายเป็นครูผีที่โผล่ใน
+  // รายการให้นักเรียนจองนัดแต่ไม่มีตัวตน ส่วนโหมดสาธิตยังใช้รหัสผ่านเหมือนเดิม
+  const dbMode = isSupabaseConfigured();
   const canSave =
-    name.trim().length > 0 && (email.trim().length > 0 || passcode.trim().length > 0);
+    name.trim().length > 0 &&
+    (dbMode ? email.trim().length > 0 : passcode.trim().length > 0);
 
   function submit() {
     if (!canSave) return;
@@ -122,7 +126,7 @@ function AddStaffForm({ onClose }: { onClose: () => void }) {
 
         <div className="sm:col-span-2">
           <label htmlFor="as-email" className={FIELD_LABEL}>
-            อีเมล Google ของโรงเรียน
+            อีเมล Google ของโรงเรียน {dbMode && <span className="text-rose-500">*</span>}
           </label>
           <input
             id="as-email"
@@ -133,8 +137,9 @@ function AddStaffForm({ onClose }: { onClose: () => void }) {
             className={FIELD_INPUT}
           />
           <p className="mt-1 text-[0.72rem] leading-relaxed text-ink-mute">
-            อีเมลนี้คือสิ่งที่ระบบใช้ตัดสินสิทธิ์ตอนล็อกอิน — ไม่ใส่ก็ใช้ได้ แต่จะเข้าได้เฉพาะโหมดสาธิตด้วยรหัสผ่าน
-            และมองไม่เห็นข้อมูลบนเซิร์ฟเวอร์
+            {dbMode
+              ? "อีเมลนี้คือสิ่งที่ระบบใช้ตัดสินสิทธิ์ตอนล็อกอิน — ต้องเป็นอีเมล Google ที่ครูคนนั้นใช้จริง"
+              : "โหมดสาธิตยังไม่ต้องใส่ก็ได้ แต่ใส่ไว้จะพร้อมใช้ทันทีเมื่อเชื่อมฐานข้อมูล"}
           </p>
         </div>
 
@@ -158,7 +163,7 @@ function AddStaffForm({ onClose }: { onClose: () => void }) {
           />
         </div>
 
-        <div>
+        <div className={dbMode ? "hidden" : undefined}>
           <label htmlFor="as-pass" className={FIELD_LABEL}>
             รหัสผ่าน{" "}
             {email.trim() ? (
@@ -595,6 +600,14 @@ export function AdminStaffBoard() {
 
       {!mounted ? (
         <p className="py-12 text-center text-[0.88rem] text-ink-mute">กำลังโหลด…</p>
+      ) : sorted.length === 0 ? (
+        /* ไม่มีบัญชีตั้งต้นอีกแล้วเมื่อเชื่อมฐานข้อมูล — ว่างแปลว่าดึงทะเบียนยังไม่สำเร็จ
+           (ยังไม่ล็อกอินด้วย Google / เน็ตหลุด) ต้องบอกตรง ๆ ไม่ใช่ปล่อยจอโล่ง */
+        <p className="py-12 text-center text-[0.88rem] leading-relaxed text-ink-mute">
+          {linked
+            ? "ยังไม่มีบัญชีเจ้าหน้าที่ในทะเบียน — กด “เพิ่มเจ้าหน้าที่” เพื่อสร้างบัญชีแรก"
+            : "ยังดึงทะเบียนจากเซิร์ฟเวอร์ไม่ได้ — ล็อกอินด้วย Google แล้วเปิดหน้านี้อีกครั้ง"}
+        </p>
       ) : (
         <div className="space-y-3">
           {sorted.map((a) => (
