@@ -38,6 +38,7 @@ for (const table of [
   "appointments",
   "assessment_stats",
   "mood_stats",
+  "mood_clouds",
 ]) {
   const { data, error } = await db.from(table).select("*").limit(1);
   const blocked = error !== null || (Array.isArray(data) && data.length === 0);
@@ -135,6 +136,24 @@ for (const table of [
     action: "emergency",
   });
   check("ยัดสถิติประเมินใจไม่ได้", error !== null, error?.code ?? "เขียนสำเร็จ (อันตราย!)");
+}
+{
+  const { error } = await db.from("mood_clouds").insert({
+    id: "cloud-rls-attack",
+    month: "2026-08",
+    emotion: "โดดเดี่ยว",
+    core: "blue",
+  });
+  check("ปล่อยเมฆปลอมไม่ได้", error !== null, error?.code ?? "เขียนสำเร็จ (อันตราย!)");
+}
+{
+  const { error } = await db.rpc("hug_cloud", { cloud_id: "seed-1" });
+  check("เรียก hug_cloud() ไม่ได้", error !== null, error?.code ?? "เรียกสำเร็จ (อันตราย!)");
+}
+{
+  const { data, error } = await db.from("mood_clouds").update({ hugs: 9999 }).neq("id", "").select();
+  const n = data?.length ?? 0;
+  check("ตั้งจำนวนกอดเองไม่ได้", error !== null || n === 0, error?.code ?? `แก้ไปจริง ${n} แถว`);
 }
 {
   const { error } = await db.from("mood_stats").insert({

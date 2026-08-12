@@ -194,6 +194,7 @@ export function CloudHugsGalaxy() {
   const clouds = useCloudHugsStore((s) => s.clouds);
   const hug = useCloudHugsStore((s) => s.hug);
   const ensureMonth = useCloudHugsStore((s) => s.ensureMonth);
+  const syncFromServer = useCloudHugsStore((s) => s.syncFromServer);
 
   const monthLabel = useMemo(
     () => new Date().toLocaleDateString("th-TH", { month: "long" }),
@@ -211,6 +212,21 @@ export function CloudHugsGalaxy() {
     [],
   );
   const selected = clouds.find((c) => c.id === selectedId) ?? null;
+
+  // ดึงท้องฟ้าจากเซิร์ฟเวอร์ตอนเปิดหน้า ตอนกลับมาที่แท็บ และทุก 60 วิ — เมฆที่เพื่อน
+  // เพิ่งปล่อยจะได้โผล่มาเองโดยไม่ต้องรีเฟรช (ซิงก์เฉพาะหน้านี้ ไม่ต้องยิงทั้งแอป)
+  useEffect(() => {
+    void syncFromServer();
+    const onFocus = () => {
+      if (document.visibilityState === "visible") void syncFromServer();
+    };
+    document.addEventListener("visibilitychange", onFocus);
+    const t = window.setInterval(() => void syncFromServer(), 60_000);
+    return () => {
+      document.removeEventListener("visibilitychange", onFocus);
+      window.clearInterval(t);
+    };
+  }, [syncFromServer]);
 
   useEffect(() => {
     setMounted(true);
@@ -321,6 +337,21 @@ export function CloudHugsGalaxy() {
               />
             ))}
           </div>
+
+          {/* ท้องฟ้าว่างจริง ๆ ดีกว่าเติมเมฆปลอมให้ดูมีคน — และชวนให้เป็นคนแรกแทน */}
+          {mounted && clouds.length === 0 && (
+            <div className="flex flex-col items-center gap-2 px-6 py-16 text-center">
+              <span className="text-3xl" aria-hidden="true">☁️</span>
+              <p className="text-[0.9rem] font-medium text-white/80">
+                เดือนนี้ยังไม่มีใครปล่อยเมฆเลย
+              </p>
+              <p className="text-[0.78rem] leading-relaxed text-white/45">
+                ถ้าวันไหนรู้สึกหนัก ลองปล่อยเมฆก้อนแรกของเดือนดูไหม
+                <br />
+                แล้วเพื่อน ๆ จะแวะมาส่งกอดให้เอง
+              </p>
+            </div>
+          )}
         </div>
 
         <p className="relative z-20 pb-4 text-center text-[0.68rem] text-white/40">ทุกก้อนเมฆไม่ระบุตัวตน · ส่งได้แค่ความอบอุ่น 🔒</p>

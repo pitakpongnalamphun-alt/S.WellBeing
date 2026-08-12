@@ -357,6 +357,52 @@ create policy mood_stats_select_staff on public.mood_stats
 -- ไม่มี policy สำหรับ update/delete ⇒ สถิติแก้ย้อนหลังไม่ได้
 
 -- ============================================================================
+--  กาแล็กซีแห่งการโอบกอด (เฟส 3): เมฆนิรนามที่นักเรียนเห็นของกันและกัน
+--
+--  จุดเดียวในแอปที่นักเรียนเห็นข้อมูลของนักเรียนคนอื่นได้ จึงให้เห็นแค่สองอย่าง:
+--  คำความรู้สึกจากวงล้อ (ไม่ใช่ข้อความอิสระ จึงไม่มีทางมีชื่อคนหรือคำหยาบ)
+--  กับจำนวนกอด — และตารางไม่มีคอลัมน์ผู้ส่งเลย เหมือน anon_reports
+-- ============================================================================
+create table if not exists public.mood_clouds (
+  id          text primary key,
+  created_at  timestamptz not null default now(),
+  month       text not null,          -- 'YYYY-MM' — ท้องฟ้าเริ่มใหม่ทุกเดือน
+  emotion     text not null,          -- คำจากวงล้ออารมณ์
+  core        text not null,          -- สีแกน 7 สี
+  hugs        integer not null default 0
+);
+create index if not exists mood_clouds_month_idx on public.mood_clouds (month, created_at desc);
+
+alter table public.mood_clouds enable row level security;
+
+drop policy if exists mood_clouds_insert on public.mood_clouds;
+create policy mood_clouds_insert on public.mood_clouds
+  for insert to authenticated with check (true);
+
+drop policy if exists mood_clouds_select on public.mood_clouds;
+create policy mood_clouds_select on public.mood_clouds
+  for select to authenticated using (true);
+
+-- ไม่มี policy สำหรับ update/delete ⇒ แก้จำนวนกอดตรง ๆ ไม่ได้ ต้องผ่าน hug_cloud()
+-- เท่านั้น ไม่งั้นใครก็ยิงตั้งค่ากอดเป็นเลขอะไรก็ได้ หรือลบเมฆของคนอื่นทิ้ง
+create or replace function public.hug_cloud(cloud_id text)
+returns integer
+language sql
+security definer
+set search_path = public
+as $$
+  update public.mood_clouds
+     set hugs = hugs + 1
+   where id = cloud_id
+  returning hugs;
+$$;
+
+-- ฟังก์ชัน security definer ข้าม RLS ได้ จึงต้องปิดไม่ให้ผู้ที่ยังไม่ล็อกอินเรียก
+revoke execute on function public.hug_cloud(text) from public;
+revoke execute on function public.hug_cloud(text) from anon;
+grant execute on function public.hug_cloud(text) to authenticated;
+
+-- ============================================================================
 --  ผู้ดูแลระบบเริ่มต้น (bootstrap)
 --  อีเมล Google ด้านล่างคือผู้ที่ล็อกอินเป็นผู้ดูแลระบบได้
 --  (แยกเป็นคนละคำสั่ง และใช้ on conflict do nothing แบบไม่ระบุคอลัมน์
@@ -382,7 +428,7 @@ left join pg_policy p on p.polrelid = c.oid
 where c.relnamespace = 'public'::regnamespace
   and c.relname in (
     'staff', 'profiles', 'cases', 'anon_reports', 'audit_log',
-    'sos_alerts', 'appointments', 'assessment_stats', 'mood_stats'
+    'sos_alerts', 'appointments', 'assessment_stats', 'mood_stats', 'mood_clouds'
   )
 group by c.relname, c.relrowsecurity
 order by c.relname;
