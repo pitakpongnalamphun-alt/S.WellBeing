@@ -132,7 +132,7 @@ const en: Dictionary = {
     storm: "Overwhelmed",
   },
   roles: {
-    subtitle: "Student mental health support — Wat Bot School",
+    subtitle: "Student mental health support",
     values: {
       safe: "Safe",
       care: "Cared for",
@@ -216,7 +216,7 @@ const th: Dictionary = {
     storm: "ท่วมท้น",
   },
   roles: {
-    subtitle: "ระบบดูแลสุขภาพจิตนักเรียน โรงเรียนวัดบท",
+    subtitle: "ระบบดูแลสุขภาพจิตนักเรียน",
     values: {
       safe: "ปลอดภัย",
       care: "ใส่ใจ",
