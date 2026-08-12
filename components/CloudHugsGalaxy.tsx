@@ -21,27 +21,27 @@ import { localDay } from "@/lib/date";
 const HUG_REWARD = 5;
 
 /**
- * Stable scatter derived from the cloud id only, so adding a cloud never shuffles the rest.
+ * เมฆวางบน "ตาราง" ไม่ใช่สุ่มตำแหน่งอิสระ แล้วขยับออกจากจุดกึ่งกลางช่องเล็กน้อย
+ * ตามค่าแฮชของ id เพื่อไม่ให้ดูเป็นแถวทหาร
  *
- * ค่าที่ได้เป็น % ของ "สนามวางเมฆ" ซึ่งถูกเว้นขอบไว้แล้วในเลย์เอาต์ (ดู cloud-field
- * ด้านล่าง) ไม่ใช่ % ของทั้งจอ — เมฆถูกจัดกึ่งกลางที่จุดนี้ด้วย -translate-1/2 ป้าย
- * ชื่ออารมณ์จึงกินพื้นที่ออกไปข้างละครึ่งความกว้าง ถ้าคิด % จากทั้งจอ เมฆที่สุ่มไป
- * ริมสุดจะโดนขอบจอตัดจนอ่านไม่ออก (บั๊กที่เจอ: ปล่อยเมฆแล้วเมฆไปเกาะขอบ)
+ * ของเดิมสุ่มพิกัดจาก id ตรง ๆ ซึ่งไม่มีอะไรกันเมฆทับกันเลย พอเมฆเยอะขึ้นก็มีก้อนที่
+ * ถูกก้อนอื่นบังจนกดส่งกอดไม่ได้ — ตารางการันตีว่าทุกก้อนมีช่องของตัวเองที่กดโดนเสมอ
+ * ส่วนความรู้สึก "ลอยอยู่ในอวกาศ" มาจากการขยับเล็กน้อยนี้ + แอนิเมชันลอยของแต่ละก้อน
  */
-function seededPos(id: string) {
+function seededJitter(id: string) {
   let h = 0;
   for (let k = 0; k < id.length; k += 1) h = (h * 31 + id.charCodeAt(k)) >>> 0;
-  // >>> ไม่ใช่ >> : h เป็นเลข 32 บิตแบบไม่มีเครื่องหมาย แต่ >> จะตีความบิตบนสุดเป็นลบ
-  // ค่า h ที่เกิน 2^31 (ราวครึ่งหนึ่งของ id ทั้งหมด) จึงได้ top ติดลบ แล้วเมฆก้อนนั้น
-  // ไปเกาะขอบบนจนมองไม่เห็น — id ของเมฆที่เพิ่งปล่อยขึ้นต้นด้วย "me-" + เวลาปัจจุบัน
-  // ซึ่งยาวพอจะแฮชทะลุ 2^31 เกือบทุกครั้ง อาการเลยออกกับเมฆของตัวเองเป็นหลัก
-  return { left: 4 + (h % 92), top: 8 + ((h >>> 4) % 84) };
+  // >>> ไม่ใช่ >> : h เป็นเลข 32 บิตแบบไม่มีเครื่องหมาย ถ้าใช้ >> ค่าที่เกิน 2^31
+  // จะกลายเป็นลบ แล้วระยะขยับจะเบ้ไปทางเดียวทั้งหมด
+  return { x: (h % 13) - 6, y: ((h >>> 5) % 13) - 6 };
 }
 
 const floatVariants: Variants = {
   float: (i: number) => ({
-    y: [0, -16, 6, 0],
-    x: [0, 10, -8, 0],
+    // แอมพลิจูดต้องเล็กกว่าครึ่งของช่องไฟระหว่างแถว (gap-y-10 = 40px) เผื่อสองแถว
+    // ลอยเข้าหากันพร้อมกัน ไม่งั้นป้ายชื่อจะเหลื่อมกันจนบังปุ่มของอีกก้อน
+    y: [0, -10, 4, 0],
+    x: [0, 7, -6, 0],
     transition: { duration: 11 + (i % 5) * 1.2, repeat: Infinity, ease: "easeInOut", delay: (i % 6) * 0.5 },
   }),
 };
@@ -117,6 +117,12 @@ export function CloudHugsGalaxy() {
   const earn = useGachaStore((s) => s.earn);
   const clouds = useCloudHugsStore((s) => s.clouds);
   const hug = useCloudHugsStore((s) => s.hug);
+  const ensureMonth = useCloudHugsStore((s) => s.ensureMonth);
+
+  const monthLabel = useMemo(
+    () => new Date().toLocaleDateString("th-TH", { month: "long" }),
+    [],
+  );
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [huggedIds, setHuggedIds] = useState<Set<string>>(() => new Set());
@@ -132,6 +138,8 @@ export function CloudHugsGalaxy() {
 
   useEffect(() => {
     setMounted(true);
+    // ขึ้นเดือนใหม่แล้วล้างท้องฟ้า — ทำหลัง mount เท่านั้น สโตร์ persist ยังไม่พร้อมก่อนหน้านี้
+    ensureMonth();
     const day = localDay();
     const already = useGachaStore
       .getState()
@@ -179,7 +187,7 @@ export function CloudHugsGalaxy() {
 
   return (
     <motion.div
-      className="relative flex min-h-[calc(100dvh-5rem)] w-full flex-col overflow-hidden rounded-[1.75rem] bg-gradient-to-b from-indigo-950 via-slate-900 to-purple-950"
+      className="relative flex h-[calc(100dvh-5rem)] w-full flex-col overflow-hidden rounded-[1.75rem] bg-gradient-to-b from-indigo-950 via-slate-900 to-purple-950"
       initial={{ opacity: 0, scale: 1.05 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.65, ease: [0.4, 0, 0.2, 1] }}
@@ -206,14 +214,15 @@ export function CloudHugsGalaxy() {
         </div>
 
         <header className="relative z-20 flex items-center justify-between px-5 py-4">
-          <motion.h1
-            className="text-[1.05rem] font-bold text-white/95"
+          <motion.div
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1, duration: 0.5 }}
           >
-            กาแล็กซีแห่งการโอบกอด
-          </motion.h1>
+            <h1 className="text-[1.05rem] font-bold text-white/95">กาแล็กซีแห่งการโอบกอด</h1>
+            {/* บอกให้รู้ว่าท้องฟ้าเริ่มใหม่ทุกเดือน ไม่งั้นวันที่ 1 เมฆหายหมดจะงงว่าพัง */}
+            <p className="text-[0.7rem] text-white/45">ท้องฟ้าเดือน{monthLabel} · เริ่มใหม่ทุกเดือน</p>
+          </motion.div>
           <span
             className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-sm font-semibold text-amber-200 ring-1 ring-white/15 backdrop-blur"
             aria-label={`เหรียญดาวของคุณ ${mounted ? coins : 0} เหรียญ`}
@@ -222,17 +231,16 @@ export function CloudHugsGalaxy() {
           </span>
         </header>
 
-        <div className="relative flex-1">
-          {/* สนามวางเมฆ — เว้นขอบซ้าย-ขวาไว้ราวครึ่งหนึ่งของความกว้างป้ายชื่อ (ป้ายกว้างสุด
-              7.5rem จึงยื่นออกข้างละ ~3.75rem) เมฆที่สุ่มไปริมสุดจึงยังอยู่ในจอเสมอ
-              ไม่ว่าหน้าจอจะกว้างเท่าไหร่ — คิดเป็น px คงที่ ไม่ใช่ % ที่หดตามจอ */}
-          <div className="pointer-events-none absolute inset-x-16 inset-y-10">
+        {/* ท้องฟ้าเลื่อนได้ — เมฆเยอะกว่าหนึ่งหน้าจอก็ยังเข้าถึงได้ครบ ไม่ถูกตัดหาย
+            ช่องกว้างขั้นต่ำ 9rem กว้างกว่าป้ายชื่อ (7.5rem) พอที่จะไม่ชนกันแม้ขยับแล้ว */}
+        <div className="relative z-10 flex-1 overflow-y-auto overscroll-contain px-3 pb-8">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(9rem,1fr))] justify-items-center gap-x-2 gap-y-10 py-4">
             {clouds.map((cloud, i) => {
-            const pos = seededPos(cloud.id);
+            const jitter = seededJitter(cloud.id);
             const color = CLOUD_COLORS[cloud.coreColor];
             const hugged = huggedIds.has(cloud.id);
             return (
-              <div key={cloud.id} className="pointer-events-auto absolute -translate-x-1/2 -translate-y-1/2" style={{ left: `${pos.left}%`, top: `${pos.top}%` }}>
+              <div key={cloud.id} style={{ transform: `translate(${jitter.x}px, ${jitter.y}px)` }}>
                 <motion.div
                   initial={{ opacity: 0, scale: 0.3 }}
                   animate={{ opacity: 1, scale: 1 }}
