@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-import { FluffyBuddy, type FluffyExpression } from "@/components/FluffyBuddy";
+import { Puy, type PuyExpression } from "@/components/Puy";
 import { CRISIS_MESSAGE, detectCrisis } from "@/lib/wellai/crisis";
 import { useChatStore } from "@/lib/store/useChatStore";
 import { cn } from "@/lib/utils";
@@ -113,13 +113,18 @@ export function ChatScreen() {
    * สีหน้าของปุยผูกกับ "สถานะที่รู้จริง" เท่านั้น ไม่ใช่การเดาอารมณ์ของนักเรียน —
    * ถ้าเดาผิด เด็กที่เพิ่งเล่าเรื่องหนักแล้วเจอปุยยิ้มแป้น จะรู้สึกแย่กว่าไม่มีหน้าเลย
    */
-  const expression: FluffyExpression = emergency
-    ? "concerned" // ตาเปิด ปากเรียบ ไม่ยิ้ม และไม่ขยับ
-    : sending
-      ? "breatheOut" // หลับตา ปากสงบ = กำลังคิด ไม่ใช่ค้าง
-      : started
-        ? "content"
-        : "hug";
+  // ปากขยับได้เฉพาะตอนตัวอักษรไหลออกมาจริง ๆ ไม่ใช่ตลอดช่วงที่รอเซิร์ฟเวอร์ —
+  // ปากขยับทั้งที่ยังไม่มีอะไรมาคือการแสดงว่ากำลังพูดอยู่ทั้งที่ยังไม่ได้พูด
+  const talking = !!pending?.content;
+  const expression: PuyExpression = emergency
+    ? "worry" // คิ้วห่วง ไม่ยิ้ม และหยุดขยับทั้งตัว
+    : talking
+      ? "listen" // เงยหน้าขึ้นตอนกำลังตอบ
+      : sending || input.trim()
+        ? "think" // มองลง — ตั้งใจฟังตอนนักเรียนพิมพ์ และตอนปุยกำลังเรียบเรียงคำตอบ
+        : started
+          ? "listen"
+          : "greet";
 
   async function send(raw: string) {
     const text = raw.trim();
@@ -231,7 +236,7 @@ export function ChatScreen() {
           )}
           aria-hidden="true"
         >
-          <FluffyBuddy expression={expression} size={34} />
+          <Puy expression={expression} size={32} motion="still" talking={talking} />
         </span>
         <span className="min-w-0 flex-1">
           <span className="block text-[0.95rem] font-bold leading-tight text-ink">
@@ -285,7 +290,7 @@ export function ChatScreen() {
             )}
           >
             <div className="flex flex-col items-center gap-3 px-2 pb-2 pt-6 text-center">
-              <FluffyBuddy expression="hug" size={112} arms animated />
+              <Puy expression={expression} size={116} />
               <h1 className="font-display th:leading-snug mt-1 text-[1.05rem] font-bold text-ink">
                 วันนี้อยากเล่าอะไรให้ปุยฟังไหม
               </h1>
@@ -318,7 +323,7 @@ export function ChatScreen() {
         {showNudge ? (
           <div className="mx-auto flex max-w-[92%] items-start gap-3 rounded-2xl bg-lavender-50 p-3.5 ring-1 ring-lavender-200">
             <span className="mt-0.5 shrink-0" aria-hidden="true">
-              <FluffyBuddy expression="content" size={30} />
+              <Puy expression="cheer" size={34} motion="still" />
             </span>
             <div className="min-w-0 flex-1">
               <p className="text-[0.84rem] leading-relaxed text-ink">
