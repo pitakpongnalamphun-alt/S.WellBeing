@@ -1,8 +1,8 @@
-import { createOpenAI } from "@ai-sdk/openai";
 import { streamText, type ModelMessage } from "ai";
 import type { NextRequest } from "next/server";
 
 import { CRISIS_MESSAGE, detectCrisis } from "@/lib/wellai/crisis";
+import { gemini, hasAiKey } from "@/lib/wellai/provider";
 import {
   WELLAI_MAX_TOKENS,
   WELLAI_MODELS,
@@ -21,7 +21,7 @@ type ChatMessage = { role: "user" | "assistant"; content: string };
  * "not right now, but here's a human." So this always carries the hotline.
  */
 const FALLBACK_MESSAGE =
-  "ตอนนี้ Well.AI เชื่อมต่อกับผู้ช่วย AI ไม่ได้ชั่วคราว ขอโทษจริง ๆ นะ 🙏 ระหว่างนี้ถ้าอยากระบายหรือคุยกับใครสักคน โทร 1323 ได้ตลอด 24 ชั่วโมงเลยนะ";
+  "ตอนนี้น้องปุยเชื่อมต่อกับผู้ช่วย AI ไม่ได้ชั่วคราว ขอโทษจริง ๆ นะ 🙏 ระหว่างนี้ถ้าอยากระบายหรือคุยกับใครสักคน โทร 1323 ได้ตลอด 24 ชั่วโมงเลยนะ";
 
 /**
  * Well.AI chat endpoint — a two-layer guardrail in front of the LLM.
@@ -51,26 +51,17 @@ export async function POST(req: NextRequest) {
   }
 
   // No key configured: be honest rather than fake a reply.
-  if (!process.env.OPENROUTER_API_KEY) {
+  if (!hasAiKey()) {
     return plainText(
-      "ตอนนี้ Well.AI ยังไม่ได้เชื่อมต่อกับผู้ช่วย AI (ผู้ดูแลระบบต้องตั้งค่า OPENROUTER_API_KEY ก่อน) — แต่ถ้าคุณต้องการคุยกับใครสักคนตอนนี้ โทร 1323 ได้ตลอด 24 ชั่วโมงนะ",
+      "ตอนนี้น้องปุยยังไม่ได้เชื่อมต่อกับผู้ช่วย AI (ผู้ดูแลระบบต้องตั้งค่า GEMINI_API_KEY ก่อน) — แต่ถ้าคุณต้องการคุยกับใครสักคนตอนนี้ โทร 1323 ได้ตลอด 24 ชั่วโมงนะ",
       "unconfigured",
     );
   }
 
-  // 🟢 LAYER 2 — the LLM engine. OpenRouter speaks the OpenAI Chat Completions
-  // protocol, so we point the OpenAI provider at its base URL. `.chat(...)`
-  // forces /chat/completions (OpenRouter has no OpenAI "Responses" API). The
-  // safety-critical path stays Layer 1's.
-  const openrouter = createOpenAI({
-    baseURL: "https://openrouter.ai/api/v1",
-    apiKey: process.env.OPENROUTER_API_KEY,
-    // Optional attribution headers OpenRouter uses for its dashboard/ranking.
-    headers: {
-      "HTTP-Referer": "https://s-well-being.app",
-      "X-Title": "S.Well-Being",
-    },
-  });
+  // 🟢 LAYER 2 — the LLM engine (Gemini). The safety-critical path stays
+  // Layer 1's: this is only ever reached by a message that already passed it.
+  const google = gemini();
+
   // Consume the stream ourselves. Because a failed call ends the stream with
   // zero tokens (silently), "nothing emitted" is how a failure looks from here.
   //
@@ -82,11 +73,12 @@ export async function POST(req: NextRequest) {
     async start(controller) {
       let emitted = false;
 
-      for (const model of WELLAI_MODELS) {
+      for (const { id: model, thinking } of WELLAI_MODELS) {
         const result = streamText({
-          model: openrouter.chat(model),
+          model: google(model),
           system: WELLAI_SYSTEM_PROMPT,
           maxOutputTokens: WELLAI_MAX_TOKENS,
+          providerOptions: { google: { thinkingConfig: { ...thinking } } },
           // Lower temperature = the model picks higher-probability (more
           // standard) Thai words, which cuts down the odd, non-idiomatic
           // phrasing that free Western models drift into. Not too low, or the
@@ -98,6 +90,16 @@ export async function POST(req: NextRequest) {
           // only way to see a bad key / no credit / a degraded provider.
           onError: ({ error }) => {
             console.error(`[wellai] LLM error (${model}):`, error);
+          },
+          // คำตอบที่ถูกตัดเพราะชนเพดานไม่ทำให้เกิด error — มันไหลออกไปหานักเรียน
+          // แบบขาดกลางประโยคอย่างเงียบ ๆ ถ้าไม่เขียนล็อกไว้ก็จะไม่มีใครรู้
+          onFinish: ({ finishReason, usage }) => {
+            if (finishReason === "length") {
+              console.warn(
+                `[wellai] คำตอบถูกตัดเพราะชนเพดานโทเคน (${model})`,
+                JSON.stringify(usage),
+              );
+            }
           },
         });
 

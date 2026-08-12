@@ -1,22 +1,23 @@
-import { createOpenAI } from "@ai-sdk/openai";
 import { generateText } from "ai";
 import type { NextRequest } from "next/server";
+
+import { gemini, hasAiKey } from "@/lib/wellai/provider";
+import type { WellaiModel } from "@/lib/wellai/systemPrompt";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * โมเดลฟรีทั้งหมด — โรงเรียนไม่มีค่าใช้จ่ายต่อการวิเคราะห์หนึ่งครั้ง
+ * เรียงจากตัวที่ทำตามรูปแบบ JSON ได้ดีที่สุด แล้วไล่ลงไปหาตัวที่เบากว่า
  *
- * เรียงตามลำดับการลอง: โมเดลฟรีมีโควตารวมของทั้งโลก พอคิวเต็มจะคืน
- * ResourceExhausted เป็นช่วง ๆ (วัดจริงได้ 1/3 ครั้ง) การมีตัวสำรองจึงไม่ใช่
- * ของฟุ่มเฟือย แต่คือสิ่งที่ทำให้ปุ่มนี้กดแล้วได้คำตอบจริงตอนอยู่หน้าเวที
+ * โควตาฟรีของ Gemini เต็มเป็นช่วง ๆ แล้วคืน 429 — การลองตัวเดียวแล้วยอมแพ้คือ
+ * สาเหตุที่ปุ่มนี้เคยกดแล้วไม่ได้คำตอบตอนอยู่หน้าเวที ตัวสำรองจึงไม่ใช่ของฟุ่มเฟือย
  */
-const INSIGHTS_MODELS = [
-  "google/gemma-4-26b-a4b-it:free",
-  "nvidia/nemotron-3-ultra-550b-a55b:free",
-  "google/gemma-4-31b-it:free",
-] as const;
+const INSIGHTS_MODELS: WellaiModel[] = [
+  { id: "gemini-3.5-flash", thinking: { thinkingLevel: "minimal" } },
+  { id: "gemini-3.6-flash", thinking: { thinkingLevel: "minimal" } },
+  { id: "gemini-3.5-flash-lite", thinking: { thinkingLevel: "minimal" } },
+];
 
 const LEVELS = new Set(["ok", "watch", "attention", "urgent"]);
 
@@ -61,26 +62,20 @@ export async function POST(req: NextRequest) {
   // The aggregate payload is ~1-2KB; anything much larger is not our payload.
   if (body.length > 8000) return json({ error: "too_large" }, 413);
 
-  if (!process.env.OPENROUTER_API_KEY) return json({ error: "no_key" }, 503);
+  if (!hasAiKey()) return json({ error: "no_key" }, 503);
 
-  const openrouter = createOpenAI({
-    baseURL: "https://openrouter.ai/api/v1",
-    apiKey: process.env.OPENROUTER_API_KEY,
-    headers: {
-      "HTTP-Referer": "https://s-well-being.app",
-      "X-Title": "S.Well-Being",
-    },
-  });
+  const google = gemini();
 
   // ไล่ลองโมเดลตามลำดับ ตัวไหนให้ JSON ที่ใช้ได้ก่อนก็ใช้ตัวนั้น
   // (โควตาฟรีเต็มเป็นช่วง ๆ — การลองตัวเดียวแล้วยอมแพ้คือสาเหตุที่ปุ่มนี้เคยพัง)
   const failures: string[] = [];
-  for (const model of INSIGHTS_MODELS) {
+  for (const { id: model, thinking } of INSIGHTS_MODELS) {
     let text = "";
     try {
       const result = await generateText({
-        model: openrouter.chat(model),
+        model: google(model),
         system: SYSTEM_PROMPT,
+        providerOptions: { google: { thinkingConfig: { ...thinking } } },
         prompt: `ข้อมูลรวมประจำสัปดาห์:\n${body}`,
         // เผื่อโควตาให้โมเดลสายคิดในใจ (reasoning) ที่กินโทเคนก่อนตอบจริง
         // 900 เดิมทำให้ JSON ถูกตัดกลางประโยคจนแปลงค่าไม่ได้
