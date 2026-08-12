@@ -73,20 +73,20 @@ export function LoginForm() {
   }
 
   return (
-    <section className="relative flex flex-col bg-surface px-7 py-9 sm:px-11 lg:px-16 lg:py-12">
+    <section className="relative flex flex-col bg-surface px-6 py-7 sm:px-11 sm:py-9 lg:px-16 lg:py-12">
       <div className="flex justify-end">
         <LanguageSwitcher />
       </div>
 
-      <div className="mx-auto my-auto w-full max-w-[25rem] py-6 sm:py-10 lg:py-14">
+      <div className="mx-auto my-auto w-full max-w-[25rem] py-3 sm:py-10 lg:py-14">
         <header className="text-center">
-          <h2 className="font-display text-[2.15rem] font-semibold leading-tight text-ink th:leading-[1.45] sm:text-[2.4rem]">
+          <h2 className="font-display text-[1.7rem] font-semibold leading-tight text-ink th:leading-[1.4] sm:text-[2.4rem]">
             {t.welcome}
           </h2>
           <p className="mt-2.5 text-[0.94rem] text-ink-soft">{t.welcomeSub}</p>
         </header>
 
-        <form onSubmit={handleSubmit} noValidate className="mt-9 space-y-5">
+        <form onSubmit={handleSubmit} noValidate className="mt-7 space-y-5 sm:mt-9">
           <TextField
             ref={emailRef}
             label={t.emailLabel}
