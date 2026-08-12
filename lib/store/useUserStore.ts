@@ -5,6 +5,7 @@ import { fetchMyProfile, upsertMyProfile } from "@/lib/data/profileRepo";
 import { getClient, isSupabaseConfigured } from "@/lib/supabase/client";
 
 import { useCasesStore } from "./useCasesStore";
+import { useMoodDiaryStore } from "./useMoodDiaryStore";
 import { useMyAssessStore } from "./useMyAssessStore";
 
 /** Identity established by SSO (step 1). `email`/`name` may be absent for some
@@ -87,6 +88,7 @@ export const useUserStore = create<UserState>()(
       signOut: () => {
         // เครื่องโรงเรียนใช้ร่วมกัน — ข้อมูลส่วนตัวทุกชุดต้องหายไปพร้อมการออกจากระบบ
         useMyAssessStore.getState().clear();
+        useMoodDiaryStore.getState().clear();
         useCasesStore.getState().clear();
         void getClient()?.auth.signOut();
         set({ session: null, profile: null });
