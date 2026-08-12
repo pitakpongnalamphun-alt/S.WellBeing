@@ -209,7 +209,7 @@ export function InnerCheerGame({ onComplete, className }: InnerCheerGameProps) {
               ถ้าเสียงตำหนิในหัวดังจนเหนื่อย และไล่ยังไงก็ไม่ไป —
               ไม่ต้องสู้กับมันคนเดียวนะ ลองเล่าให้{" "}
               <Link href="/chatbot" className="font-semibold text-lavender-700 underline">
-                Well.AI
+                น้องปุย
               </Link>{" "}
               ฟัง หรือ{" "}
               <Link href="/appointments" className="font-semibold text-lavender-700 underline">

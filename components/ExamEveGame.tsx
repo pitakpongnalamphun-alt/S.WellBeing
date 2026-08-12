@@ -192,7 +192,7 @@ export function ExamEveGame({ onComplete, className }: ExamEveGameProps) {
               </Link>{" "}
               หรือเล่าให้{" "}
               <Link href="/chatbot" className="font-semibold text-lavender-700 underline">
-                Well.AI
+                น้องปุย
               </Link>{" "}
               ฟังก่อนนอนก็ได้นะ
             </p>

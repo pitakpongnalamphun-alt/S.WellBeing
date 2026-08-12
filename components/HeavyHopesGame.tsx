@@ -214,7 +214,7 @@ export function HeavyHopesGame({ onComplete, className }: HeavyHopesGameProps) {
               </Link>{" "}
               ได้ หรือมาซ้อมบทพูดกับ{" "}
               <Link href="/chatbot" className="font-semibold text-lavender-700 underline">
-                Well.AI
+                น้องปุย
               </Link>{" "}
               ก่อนก็ได้เสมอ
             </p>

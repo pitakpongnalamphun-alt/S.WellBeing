@@ -44,7 +44,7 @@ const CARDS: FlameCard[] = [
     tag: "ชาร์จไม่เข้า",
     why: "พักแล้วไม่ฟื้นคือสัญญาณคลาสสิกของไฟใกล้มอด — ปัญหาไม่ใช่ขี้เกียจ แต่คือแบตที่ถูกใช้เกินมานาน",
     urgent:
-      "ถ้าอาการแบบนี้อยู่กับเธอนานหลายสัปดาห์แล้ว ไม่ต้องรอเล่นเกมจบ — เล่าให้ครูแนะแนวหรือ Well.AI ฟังได้เลยนะ นี่เกินคำว่าเหนื่อยธรรมดาแล้ว",
+      "ถ้าอาการแบบนี้อยู่กับเธอนานหลายสัปดาห์แล้ว ไม่ต้องรอเล่นเกมจบ — เล่าให้ครูแนะแนวหรือน้องปุยฟังได้เลยนะ นี่เกินคำว่าเหนื่อยธรรมดาแล้ว",
   },
   {
     id: "numb-favorite",
@@ -184,7 +184,7 @@ export function BurnoutRescueGame({ onComplete, className }: BurnoutRescueGamePr
               ถ้าสัญญาณไฟมอดอยู่กับเธอนานเกิน 2 สัปดาห์และไม่ดีขึ้น —
               นั่นไม่ใช่เรื่องต้องอดทนคนเดียว ลองเล่าให้{" "}
               <Link href="/chatbot" className="font-semibold text-lavender-700 underline">
-                Well.AI
+                น้องปุย
               </Link>{" "}
               ฟัง หรือ{" "}
               <Link href="/appointments" className="font-semibold text-lavender-700 underline">

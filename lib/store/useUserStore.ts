@@ -5,6 +5,7 @@ import { fetchMyProfile, upsertMyProfile } from "@/lib/data/profileRepo";
 import { getClient, isSupabaseConfigured } from "@/lib/supabase/client";
 
 import { useCasesStore } from "./useCasesStore";
+import { useChatStore } from "./useChatStore";
 import { useMoodDiaryStore } from "./useMoodDiaryStore";
 import { useMyAssessStore } from "./useMyAssessStore";
 
@@ -89,6 +90,7 @@ export const useUserStore = create<UserState>()(
         // เครื่องโรงเรียนใช้ร่วมกัน — ข้อมูลส่วนตัวทุกชุดต้องหายไปพร้อมการออกจากระบบ
         useMyAssessStore.getState().clear();
         useMoodDiaryStore.getState().clear();
+        useChatStore.getState().clear();
         useCasesStore.getState().clear();
         void getClient()?.auth.signOut();
         set({ session: null, profile: null });
