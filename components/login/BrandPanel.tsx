@@ -13,7 +13,7 @@ export function BrandPanel() {
   const { t } = useLanguage();
 
   return (
-    <section className="@container relative flex flex-col overflow-hidden bg-linear-to-b from-panel to-panel-deep">
+    <section className="@container relative flex min-w-0 flex-col overflow-hidden bg-linear-to-b from-panel to-panel-deep">
       <div className="px-6 pt-7 sm:px-11 sm:pt-9 lg:px-12 lg:pt-12">
         <div className="flex items-center gap-3">
           <BrandMark className="size-9 shrink-0 text-ink" />

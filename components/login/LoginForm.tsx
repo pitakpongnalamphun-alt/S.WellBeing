@@ -73,7 +73,7 @@ export function LoginForm() {
   }
 
   return (
-    <section className="relative flex flex-col bg-surface px-6 py-7 sm:px-11 sm:py-9 lg:px-16 lg:py-12">
+    <section className="relative flex min-w-0 flex-col bg-surface px-6 py-7 sm:px-11 sm:py-9 lg:px-16 lg:py-12">
       <div className="flex justify-end">
         <LanguageSwitcher />
       </div>
