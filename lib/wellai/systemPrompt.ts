@@ -23,14 +23,27 @@ Your core frameworks are Person-Centered Therapy (PCT) and Cognitive Behavioral 
 - Step 2 (CBT): Gently ask a question to explore their thoughts or reframe the situation (e.g., "ตอนที่เพื่อนพูดแบบนั้น สิ่งแรกที่แวบเข้ามาในหัวคืออะไรหรอ?").`;
 
 /**
- * OpenRouter model id (OpenAI-compatible). The ":free" suffix means genuinely
- * free — no billing. In testing, Nemotron 3 Ultra gave the best free Thai that
- * also obeyed the PCT rules; "nvidia/nemotron-3-nano-30b-a3b:free" is a faster
- * fallback (weaker rule-following). AVOID "google/*:free" — it routes through
- * Google AI Studio's rate-limited free tier (the bottleneck we moved off of).
- * The free catalog rotates; if this 404s, browse openrouter.ai/models?max_price=0.
+ * OpenRouter model ids (OpenAI-compatible) เรียงตามลำดับที่จะลอง — ":free" คือฟรีจริง
+ * ไม่มีบิล
+ *
+ * ทำไมต้องเป็น "รายการ" ไม่ใช่ตัวเดียว: ตัวเดิม (nemotron-3-ultra-550b) ถูกผู้ให้บริการ
+ * ตั้งเป็น DEGRADED — เรียกแล้วได้ 400 ทุกครั้ง แปลว่านักเรียน *ทุกคน* ที่ทักเข้ามาจะ
+ * เจอข้อความ "เชื่อมต่อไม่ได้" โดยที่หน้าจอไม่มีทางรู้ว่าต้องเปลี่ยนโมเดล โมเดลฟรีบน
+ * OpenRouter หมุนเวียนและล้มได้ตลอด การมีตัวสำรองจึงไม่ใช่ของฟุ่มเฟือย
+ *
+ * ที่คัดออกหลังทดสอบด้วยคำถามจริง 2 แบบ (เรื่องเบา / เรื่องหนัก):
+ *   - nemotron-3.5-lightning:free และ nemotron-3-nano-30b-a3b:free — พ่นกระบวนการคิด
+ *     เป็นภาษาอังกฤษออกมาทั้งก้อนแทนคำตอบ เด็กที่เล่าเรื่องพ่อแม่ทะเลาะกันจะได้อ่าน
+ *     "Here's a thinking process:" กลับไป
+ *   - google/gemma-4-31b-it:free — เรียกไม่ผ่านเลยตอนทดสอบ
+ *
+ * ถ้าวันหนึ่งทั้งรายการล้ม: เปิด openrouter.ai/models?max_price=0 แล้วทดสอบตัวใหม่
+ * ด้วยคำถามเรื่องหนักก่อนเสมอ เพราะนั่นคือที่ที่โมเดลอ่อน ๆ พังให้เห็น
  */
-export const WELLAI_MODEL = "nvidia/nemotron-3-ultra-550b-a55b:free";
+export const WELLAI_MODELS = [
+  "nvidia/nemotron-3-super-120b-a12b:free",
+  "openrouter/free",
+] as const;
 
 /** Deliberately short — Well.AI answers in 2-3 sentences. Caps a runaway reply. */
 export const WELLAI_MAX_TOKENS = 1024;

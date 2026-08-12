@@ -5,7 +5,7 @@ import type { NextRequest } from "next/server";
 import { CRISIS_MESSAGE, detectCrisis } from "@/lib/wellai/crisis";
 import {
   WELLAI_MAX_TOKENS,
-  WELLAI_MODEL,
+  WELLAI_MODELS,
   WELLAI_SYSTEM_PROMPT,
 } from "@/lib/wellai/systemPrompt";
 
@@ -71,40 +71,50 @@ export async function POST(req: NextRequest) {
       "X-Title": "S.Well-Being",
     },
   });
-  const result = streamText({
-    model: openrouter.chat(WELLAI_MODEL),
-    system: WELLAI_SYSTEM_PROMPT,
-    maxOutputTokens: WELLAI_MAX_TOKENS,
-    // Lower temperature = the model picks higher-probability (more standard)
-    // Thai words, which cuts down the odd, non-idiomatic phrasing that free
-    // Western models drift into. Not too low, or the empathy turns robotic.
-    temperature: 0.4,
-    messages: messages as ModelMessage[],
-    // Surface the real cause server-side. The SDK does NOT throw this into the
-    // token stream — it ends the stream silently — so logging is the only way
-    // to see a bad key / no credit / network failure.
-    onError: ({ error }) => {
-      console.error("[wellai] LLM error:", error);
-    },
-  });
-
   // Consume the stream ourselves. Because a failed call ends the stream with
-  // zero tokens (silently), we treat "nothing emitted" as failure and send the
-  // caring fallback with the hotline — a student who reached out must never get
-  // a blank, broken bubble.
+  // zero tokens (silently), "nothing emitted" is how a failure looks from here.
+  //
+  // เมื่อไม่มีอะไรออกมาเลย = ยังไม่ได้ส่งอะไรให้ผู้ใช้สักตัวอักษร จึงลองโมเดลถัดไปได้
+  // อย่างปลอดภัย ต่อเมื่อหมดรายการจริง ๆ ค่อยส่งข้อความปลอบพร้อมสายด่วน — นักเรียน
+  // ที่กล้าทักเข้ามาต้องไม่เจอฟองว่างเปล่าเด็ดขาด
   const encoder = new TextEncoder();
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
       let emitted = false;
-      try {
-        for await (const delta of result.textStream) {
-          if (!delta) continue;
-          emitted = true;
-          controller.enqueue(encoder.encode(delta));
+
+      for (const model of WELLAI_MODELS) {
+        const result = streamText({
+          model: openrouter.chat(model),
+          system: WELLAI_SYSTEM_PROMPT,
+          maxOutputTokens: WELLAI_MAX_TOKENS,
+          // Lower temperature = the model picks higher-probability (more
+          // standard) Thai words, which cuts down the odd, non-idiomatic
+          // phrasing that free Western models drift into. Not too low, or the
+          // empathy turns robotic.
+          temperature: 0.4,
+          messages: messages as ModelMessage[],
+          // Surface the real cause server-side. The SDK does NOT throw this into
+          // the token stream — it ends the stream silently — so logging is the
+          // only way to see a bad key / no credit / a degraded provider.
+          onError: ({ error }) => {
+            console.error(`[wellai] LLM error (${model}):`, error);
+          },
+        });
+
+        try {
+          for await (const delta of result.textStream) {
+            if (!delta) continue;
+            emitted = true;
+            controller.enqueue(encoder.encode(delta));
+          }
+        } catch (error) {
+          console.error(`[wellai] LLM stream error (${model}):`, error);
         }
-      } catch (error) {
-        console.error("[wellai] LLM stream error:", error);
+
+        if (emitted) break;
+        console.warn(`[wellai] ${model} returned nothing — trying the next one`);
       }
+
       if (!emitted) controller.enqueue(encoder.encode(FALLBACK_MESSAGE));
       controller.close();
     },
