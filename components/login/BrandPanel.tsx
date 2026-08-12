@@ -14,7 +14,7 @@ export function BrandPanel() {
 
   return (
     <section className="@container relative flex flex-col overflow-hidden bg-linear-to-b from-panel to-panel-deep">
-      <div className="px-8 pt-9 sm:px-11 lg:px-12 lg:pt-12">
+      <div className="px-6 pt-7 sm:px-11 sm:pt-9 lg:px-12 lg:pt-12">
         <div className="flex items-center gap-3">
           <BrandMark className="size-9 shrink-0 text-ink" />
           <span className="text-[0.78rem] font-medium uppercase tracking-[0.22em] text-ink">
@@ -22,7 +22,7 @@ export function BrandPanel() {
           </span>
         </div>
 
-        <h1 className="font-display mt-6 text-[2.15rem] font-semibold leading-[1.06] text-ink th:leading-[1.34] sm:mt-8 sm:text-[3rem] lg:mt-10 lg:text-[3.2rem]">
+        <h1 className="font-display mt-5 text-[1.78rem] font-semibold leading-[1.06] text-ink th:leading-[1.3] sm:mt-8 sm:text-[3rem] lg:mt-10 lg:text-[3.2rem]">
           {t.headline.map((line) => (
             <span key={line} className="block">
               {line}
@@ -30,7 +30,7 @@ export function BrandPanel() {
           ))}
         </h1>
 
-        <p className="mt-5 max-w-[19rem] text-[0.94rem] leading-relaxed text-ink-soft">
+        <p className="mt-4 max-w-[19rem] text-[0.9rem] leading-relaxed text-ink-soft sm:mt-5 sm:text-[0.94rem]">
           {t.tagline}
         </p>
       </div>
@@ -41,7 +41,7 @@ export function BrandPanel() {
           some breakpoint and `slice` crops the sunrise away. `flex-1` then
           absorbs whatever extra height the form side dictates; the scene is
           bottom-anchored, so that surplus becomes sky. */}
-      <div className="relative mt-7 min-h-[min(78cqw,560px)] flex-1 sm:mt-8 lg:mt-10">
+      <div className="relative mt-5 min-h-[min(52cqw,215px)] flex-1 sm:mt-8 sm:min-h-[min(78cqw,560px)] lg:mt-10">
         <SerenityScene
           emotions={t.emotions}
           className="absolute inset-0 size-full"

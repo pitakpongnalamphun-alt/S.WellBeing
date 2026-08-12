@@ -10,7 +10,7 @@ export function LoginScreen() {
   const { t } = useLanguage();
 
   return (
-    <main className="flex min-h-dvh flex-col items-center justify-center gap-9 px-4 py-8 sm:px-6 sm:py-10">
+    <main className="flex min-h-dvh flex-col items-center justify-center gap-6 px-4 py-6 sm:gap-9 sm:px-6 sm:py-10">
       <div
         className={[
           // Stacked, the card stays a narrow app-shaped column — stretching it
