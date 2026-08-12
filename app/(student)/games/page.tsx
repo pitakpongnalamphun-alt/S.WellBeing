@@ -14,6 +14,7 @@ import { LifeSkillGameHub } from "@/components/LifeSkillGameHub";
 import { MirrorHeartGame } from "@/components/MirrorHeartGame";
 import { ParentTranslatorGame } from "@/components/ParentTranslatorGame";
 import { RedFlagScanner } from "@/components/RedFlagScanner";
+import { ThoughtCatcherGame } from "@/components/ThoughtCatcherGame";
 import { REWARDS, useGachaStore } from "@/lib/store/useGachaStore";
 import { localDay } from "@/lib/date";
 
@@ -32,6 +33,7 @@ const STANDALONE_GAMES = new Set([
   "exam-eve",
   "heartbreak-care",
   "dare-to-say-no",
+  "thought-catcher",
 ]);
 
 export default function GamesPage() {
@@ -90,6 +92,8 @@ export default function GamesPage() {
           <HeartbreakCareGame onComplete={handleComplete} />
         ) : playing === "dare-to-say-no" ? (
           <DareToSayNoGame onComplete={handleComplete} />
+        ) : playing === "thought-catcher" ? (
+          <ThoughtCatcherGame onComplete={handleComplete} />
         ) : (
           <LifeSkillGame
             key={playing}
