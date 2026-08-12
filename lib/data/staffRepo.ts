@@ -16,6 +16,26 @@ export type ServerStaff = {
   active: boolean;
 };
 
+/** ทะเบียนฉบับเปิดเผยได้ — ไม่มีอีเมล ใช้โชว์ในหน้าล็อกอินตอนที่ยังไม่ล็อกอิน */
+export type PublicStaff = Pick<ServerStaff, "id" | "name" | "role" | "title" | "emoji">;
+
+/**
+ * รายชื่อเจ้าหน้าที่สำหรับหน้าล็อกอิน (อ่านได้โดยไม่ต้องล็อกอิน)
+ *
+ * อ่านจาก view `staff_public` ไม่ใช่ตาราง `staff` — view ฉายเฉพาะ ชื่อ/บทบาท/ตำแหน่ง
+ * ส่วนอีเมลซึ่งเป็นกุญแจล็อกอินไม่ถูกฉายออกมา เห็นรายชื่อจึงไม่ได้แปลว่าเข้าระบบได้
+ */
+export async function fetchPublicRoster(): Promise<PublicStaff[] | null> {
+  const db = getClient();
+  if (!db) return null;
+  const { data, error } = await db.from("staff_public").select("*").order("name");
+  if (error) {
+    console.warn("[staff] public roster failed:", error.message);
+    return null;
+  }
+  return data as PublicStaff[];
+}
+
 /** ทะเบียนครูทั้งหมด (ต้องล็อกอินก่อน ตาม RLS) */
 export async function fetchStaffRoster(): Promise<ServerStaff[] | null> {
   const db = getClient();
