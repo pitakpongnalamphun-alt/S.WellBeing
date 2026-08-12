@@ -35,13 +35,18 @@ export function BrandPanel() {
         </p>
       </div>
 
-      {/* 78cqw is the scene's own 470/600 aspect measured against this panel's
+      {/* ห้ามย่อต่ำกว่า 78cqw: ฉากตรึงขอบล่าง (xMidYMax slice) การลดความสูงจึงตัด
+          "จากด้านบน" ซึ่งเป็นที่อยู่ของดวงอาทิตย์ (ขอบบน y=22) และยอดเขา (y=80)
+          ในระบบพิกัด 600x470 — ที่ 52cqw ตัดไป 158 หน่วย ภูเขาหายทั้งแถบ
+          ต่ำสุดที่ยังเห็นครบคือ 76cqw ส่วน 78cqw คือสัดส่วนจริงของฉาก
+
+          78cqw is the scene's own 470/600 aspect measured against this panel's
           width — not the viewport's, which is twice the panel in two-column
           mode and equal to it in one. A fixed height goes short-and-wide on
           some breakpoint and `slice` crops the sunrise away. `flex-1` then
           absorbs whatever extra height the form side dictates; the scene is
           bottom-anchored, so that surplus becomes sky. */}
-      <div className="relative mt-5 min-h-[min(52cqw,215px)] flex-1 sm:mt-8 sm:min-h-[min(78cqw,560px)] lg:mt-10">
+      <div className="relative mt-5 min-h-[min(78cqw,560px)] flex-1 sm:mt-8 lg:mt-10">
         <SerenityScene
           emotions={t.emotions}
           className="absolute inset-0 size-full"
