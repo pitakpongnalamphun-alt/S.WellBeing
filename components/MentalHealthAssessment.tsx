@@ -97,9 +97,23 @@ function routeNext(a: Assessment, score: number, answers: Record<string, number>
 
 /* ------------------------------------------------------------------- component */
 
+/** ผลของแบบประเมินหนึ่งชุด */
+export type AssessOutcome = {
+  assessmentId: string;
+  score: number;
+  action: Interpretation["action"];
+};
+
 export type MentalHealthAssessmentProps = {
-  /** Fired when the whole flow reaches a result (useful for logging / follow-up). */
-  onComplete?: (result: { assessmentId: string; score: number; action: Interpretation["action"] }) => void;
+  /**
+   * Fired when the whole flow reaches a result (useful for logging / follow-up).
+   *
+   * ส่งทั้ง "ผลหนักสุด" และ "ทุกแบบที่ทำจบตลอดเส้นทาง" เพราะสองอย่างนี้ใช้คนละที่:
+   * สถิติโรงเรียนต้องการจุดเดียวต่อการทำหนึ่งรอบ (ติดป้ายด้วยระดับหนักสุด ไม่งั้น
+   * 9Q รุนแรงที่ตามด้วย 8Q สะอาดจะถูกฟอกให้ดูปลอดภัย) ส่วนพัฒนาการใจของนักเรียน
+   * ต้องเก็บครบทุกแบบ ไม่งั้นทำ PHQ-A แล้วต่อ 8Q กราฟจะขึ้นแค่ 8Q แบบเดียว
+   */
+  onComplete?: (result: AssessOutcome & { steps: AssessOutcome[] }) => void;
   className?: string;
 };
 
@@ -200,10 +214,20 @@ export function MentalHealthAssessment({ onComplete, className }: MentalHealthAs
     );
     setResult({ assessment: worst.assessment, score: worst.score, interp: worst.interp });
     setView("result");
+    reportComplete(worst);
+  }
+
+  /** ส่งผลออกไปข้างนอก: ผลหนักสุด + ทุกแบบที่ทำจบ (ดูเหตุผลที่ onComplete) */
+  function reportComplete(worst: JourneyStep) {
     onComplete?.({
       assessmentId: worst.assessment.id,
       score: worst.score,
       action: worst.interp.action,
+      steps: journeyRef.current.map((j) => ({
+        assessmentId: j.assessment.id,
+        score: j.score,
+        action: j.interp.action,
+      })),
     });
   }
 
@@ -235,11 +259,7 @@ export function MentalHealthAssessment({ onComplete, className }: MentalHealthAs
     setForceCare(true);
     setPendingId(null);
     setView("result");
-    onComplete?.({
-      assessmentId: worst.assessment.id,
-      score: worst.score,
-      action: worst.interp.action,
-    });
+    reportComplete(worst);
   }
 
   const canGoBack = questionIndex > 0 || ENTRY_POINTS.some((e) => e.id === currentId);
@@ -431,6 +451,46 @@ function Intro({ onPick }: { onPick: (id: string) => void }) {
   );
 }
 
+/** สีประจำระดับผล — ใช้ทั้งในรายการสรุปและที่อื่น ๆ ที่ต้องบอก "ระดับ" ด้วยสี */
+const ACTION_TINT: Record<Interpretation["action"], string> = {
+  safe: "bg-emerald-100 text-emerald-700",
+  monitor: "bg-violet-100 text-violet-700",
+  warning: "bg-amber-100 text-amber-700",
+  emergency: "bg-rose-100 text-rose-700",
+};
+
+/**
+ * ผลรายแบบตลอดเส้นทาง
+ *
+ * เส้นทางหนึ่งรอบทำได้หลายแบบ (เช่น PHQ-A → 8Q) แต่หน้าผลเดิมโชว์แค่ "แบบที่หนักสุด"
+ * แบบเดียว เด็กที่ PHQ-A ปกติแต่ 8Q เสี่ยง จึงไม่เคยเห็นว่า PHQ-A ของตัวเองออกมาปกติ
+ * — แต่ละเครื่องมือมีเกณฑ์ของตัวเอง ต้องอ่านผลแยกกัน ไม่ใช่ยุบเป็นค่าเดียว
+ */
+function JourneyBreakdown({ journey }: { journey: JourneyStep[] }) {
+  if (journey.length < 2) return null;
+  return (
+    <div className="w-full rounded-2xl bg-white/70 p-3 text-left ring-1 ring-slate-200/80">
+      <p className="mb-2 text-[0.72rem] font-semibold text-slate-400">ผลของแต่ละแบบประเมิน</p>
+      <ul className="flex flex-col gap-1.5">
+        {journey.map((j) => (
+          <li key={j.assessment.id} className="flex items-center gap-2 text-[0.78rem]">
+            <span className="font-semibold text-slate-600">{j.assessment.id}</span>
+            <span className="min-w-0 flex-1 truncate text-slate-400">
+              {j.assessment.title.replace(/\s*\(.*\)/, "")}
+            </span>
+            <span className="shrink-0 tabular-nums text-slate-400">{j.score}</span>
+            <span
+              className={`shrink-0 rounded-full px-2 py-0.5 text-[0.68rem] font-semibold ${ACTION_TINT[j.interp.action]}`}
+            >
+              {j.interp.level}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 /**
  * จอคั่นก่อนเข้าแบบประเมินความเสี่ยง (8Q)
  *
@@ -562,6 +622,8 @@ function Result({
         {assessment.title.replace(/\s*\(.*\)/, "")}: {interp.level}
       </span>
       <p className="text-sm leading-relaxed text-slate-600">{styles.body}</p>
+
+      <JourneyBreakdown journey={journey} />
 
       {showCare && (
         <p className="text-xs text-slate-400">
