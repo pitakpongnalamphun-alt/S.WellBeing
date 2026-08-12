@@ -41,10 +41,10 @@ const FEATURES: Feature[] = [
   },
   {
     href: "/chatbot",
-    title: "Well.AI",
+    title: "คุยกับน้องปุย",
     // "ผู้ช่วยพูดคุย", not "ที่ปรึกษา" — it's an AI, and calling it a
     // counsellor sets an expectation the page then has to walk back.
-    desc: "ผู้ช่วยพูดคุยส่วนตัว",
+    desc: "ผู้ช่วยพูดคุย AI ส่วนตัว",
     Icon: MessageCircleHeart,
     badge: "bg-purple-50 text-purple-700",
   },

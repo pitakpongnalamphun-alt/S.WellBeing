@@ -124,7 +124,7 @@ export default function StudentDashboardPage() {
       {/* พัฒนาการใจของฉัน — กราฟก่อน-หลังจากประวัติประเมินส่วนตัว (อยู่แค่เครื่องนี้) */}
       <MyAssessProgress />
 
-      {/* A warm, standing invitation to Well.AI — a gentle middle rung for a
+      {/* A warm, standing invitation to น้องปุย — a gentle middle rung for a
           student who's feeling off but isn't in crisis. Kept softer than the
           แจ้งเหตุ hero: talking it out shouldn't feel like filing a report. */}
       <Link
@@ -143,7 +143,7 @@ export default function StudentDashboardPage() {
               ไม่สบายใจอยู่หรือเปล่า?
             </span>
             <span className="mt-0.5 block text-[0.76rem] leading-snug text-ink-soft">
-              มาคุยกับ Well.AI นะ เพื่อนที่พร้อมรับฟังเธอเสมอ
+              มาคุยกับน้องปุยนะ ผู้ช่วย AI ที่พร้อมรับฟังเสมอ
             </span>
           </span>
           <ChevronRight

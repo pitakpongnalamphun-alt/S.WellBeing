@@ -205,7 +205,7 @@ export function RedFlagScanner({ onComplete, className }: RedFlagScannerProps) {
               </Link>{" "}
               หรือระบายกับ{" "}
               <Link href="/chatbot" className="font-semibold text-lavender-700 underline">
-                Well.AI
+                น้องปุย
               </Link>{" "}
               ก่อนก็ได้
             </p>

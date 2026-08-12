@@ -194,7 +194,7 @@ export function MirrorHeartGame({ onComplete, className }: MirrorHeartGameProps)
               </Link>{" "}
               หรือเริ่มจากระบายกับ{" "}
               <Link href="/chatbot" className="font-semibold text-rose-600 underline">
-                Well.AI
+                น้องปุย
               </Link>{" "}
               ก่อนก็ได้
             </p>
