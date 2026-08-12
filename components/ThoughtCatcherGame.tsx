@@ -313,7 +313,7 @@ export function ThoughtCatcherGame({ onComplete, className }: ThoughtCatcherGame
           <p className="text-[0.78rem] leading-relaxed text-ink-mute">
             ถ้าเสียงในหัวดังจนไม่ไหวเป็นเดือน ๆ ลองเล่าให้{" "}
             <Link href="/chatbot" className="font-semibold text-lavender-700 underline">
-              Well.AI
+              น้องปุย
             </Link>{" "}
             ฟัง หรือ{" "}
             <Link href="/appointments" className="font-semibold text-lavender-700 underline">
