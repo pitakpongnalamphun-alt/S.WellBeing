@@ -7,7 +7,11 @@ import { LockKeyhole } from "lucide-react";
 
 import { GoogleSignInButton } from "@/components/login/GoogleSignInButton";
 import { STAFF_ROLE_META } from "@/data/staff";
-import { findStaffByEmail } from "@/lib/data/staffRepo";
+import {
+  fetchPublicRoster,
+  findStaffByEmail,
+  type PublicStaff,
+} from "@/lib/data/staffRepo";
 import { useStaffSessionStore } from "@/lib/store/useStaffSessionStore";
 import {
   useStaffAccountsStore,
@@ -28,6 +32,13 @@ export function StaffLoginScreen() {
   useEffect(() => setMounted(true), []);
   const accounts = useStaffAccountsStore((s) => s.accounts);
   const staffList = accounts.filter((a) => a.active);
+
+  // ทะเบียนที่โชว์ในหน้านี้ — null = ยังไม่ได้ผล/ดึงไม่สำเร็จ (ไม่ต้องโชว์อะไร)
+  const [roster, setRoster] = useState<PublicStaff[] | null>(null);
+  useEffect(() => {
+    if (!isSupabaseConfigured()) return;
+    void fetchPublicRoster().then(setRoster);
+  }, []);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [passcode, setPasscode] = useState("");
@@ -118,6 +129,51 @@ export function StaffLoginScreen() {
               สิทธิ์ทั้งหมดตัดสินจากอีเมลที่ Google ยืนยัน — ถ้าเข้าไม่ได้
               ให้ผู้ดูแลระบบเพิ่มอีเมลของคุณในหน้า “บัญชีเจ้าหน้าที่” ก่อน
             </p>
+
+            {/* ทะเบียนจริงจากเซิร์ฟเวอร์ (view staff_public — ไม่มีอีเมล)
+                โชว์เพื่อให้ครูรู้ว่าตัวเองถูกเพิ่มไว้แล้วหรือยังก่อนกดล็อกอิน
+                เห็นรายชื่อไม่ได้แปลว่าเข้าได้ กุญแจคืออีเมลซึ่งไม่ถูกฉายออกมา */}
+            {roster !== null && roster.length > 0 && (
+              <div className="mt-5 border-t border-neutral-200 pt-4">
+                <p className="mb-2 text-[0.76rem] font-medium text-ink-soft">
+                  บัญชีเจ้าหน้าที่ในระบบ ({roster.length})
+                </p>
+                <ul className="space-y-1.5">
+                  {roster.map((s) => {
+                    const meta = STAFF_ROLE_META[s.role];
+                    return (
+                      <li
+                        key={s.id}
+                        className="flex items-center gap-2.5 rounded-xl bg-neutral-50 px-3 py-2"
+                      >
+                        <span className="grid size-8 shrink-0 place-items-center rounded-full bg-white text-base">
+                          {s.emoji}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-[0.84rem] font-semibold text-ink">
+                            {s.name}
+                          </span>
+                          <span className="block truncate text-[0.7rem] text-ink-mute">
+                            {s.title}
+                          </span>
+                        </span>
+                        <span
+                          className={cn(
+                            "shrink-0 rounded-full px-2 py-0.5 text-[0.66rem] font-medium",
+                            meta.tint,
+                          )}
+                        >
+                          {meta.label}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+                <p className="mt-2.5 text-[0.7rem] leading-relaxed text-ink-mute">
+                  ล็อกอินด้วยบัญชี Google ที่ผูกกับชื่อของคุณเท่านั้น — รายชื่อนี้ไม่แสดงอีเมล
+                </p>
+              </div>
+            )}
           </div>
         )}
 

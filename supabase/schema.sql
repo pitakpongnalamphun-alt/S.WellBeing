@@ -152,6 +152,29 @@ create policy staff_write_admin on public.staff
   using (public.current_staff_role() = 'admin')
   with check (public.current_staff_role() = 'admin');
 
+-- ---------- ทะเบียนครูฉบับ "เปิดเผยได้" สำหรับหน้าล็อกอิน ----------
+-- ตาราง staff ยังปิดสนิท — view นี้ฉายเฉพาะคอลัมน์ที่ไม่ใช่ความลับ ชื่อ/บทบาท/ตำแหน่ง
+-- คือสิ่งที่นักเรียนเห็นอยู่แล้วในหน้าจองนัด ส่วน email ซึ่งเป็นกุญแจเดียวที่ใช้ล็อกอิน
+-- ได้จริง ไม่ถูกฉายออกมาเด็ดขาด (กันการเก็บอีเมลครูไปทำฟิชชิง)
+--
+-- ตั้งใจให้เป็น view แบบ security definer (ค่าเริ่มต้น) เพราะต้องข้าม RLS ของตารางแม่
+-- ถ้าใช้ security_invoker ผู้ที่ยังไม่ล็อกอินจะได้ 0 แถว view นี้ก็ไม่มีประโยชน์
+create or replace view public.staff_public as
+  select id, name, role, title, emoji
+  from public.staff
+  where active;
+
+-- ถอนสิทธิ์ทั้งหมดก่อนแล้วค่อยให้เฉพาะ select — view ธรรมดาเป็น auto-updatable และ
+-- Supabase ให้สิทธิ์เต็มกับ anon/authenticated บน public schema เป็นค่าเริ่มต้น (พึ่ง RLS)
+-- แต่ view ไม่มี RLS ของตัวเองและตัวนี้เป็น security definer จึงข้าม RLS ของตารางแม่
+-- ถ้า grant select เฉย ๆ ผู้ที่ยังไม่ล็อกอินจะ UPDATE ชื่อครูผ่าน view นี้ได้จริง
+revoke all on public.staff_public from anon;
+revoke all on public.staff_public from authenticated;
+revoke all on public.staff_public from public;
+
+grant select on public.staff_public to anon;
+grant select on public.staff_public to authenticated;
+
 -- ---------- profiles: เจ้าของเท่านั้น ----------
 drop policy if exists profiles_own on public.profiles;
 create policy profiles_own on public.profiles

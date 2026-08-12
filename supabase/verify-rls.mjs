@@ -164,6 +164,20 @@ for (const table of [
   check("ยัดสถิติอารมณ์ไม่ได้", error !== null, error?.code ?? "เขียนสำเร็จ (อันตราย!)");
 }
 
+// view สาธารณะ: ต้องอ่านได้ "โดยไม่ล็อกอิน" แต่ต้องไม่มีอีเมลติดมาด้วย
+{
+  const { data, error } = await db.from("staff_public").select("*").limit(50);
+  const rows = data ?? [];
+  check("อ่านทะเบียนสาธารณะได้ (ตั้งใจให้อ่านได้)", error === null, error?.code ?? `คืน ${rows.length} แถว`);
+  const leaked = rows.some((r) => "email" in r);
+  check("ทะเบียนสาธารณะไม่มีอีเมลหลุด", !leaked, leaked ? "พบคอลัมน์ email (อันตราย!)" : "ไม่มีคอลัมน์ email");
+}
+{
+  const { data, error } = await db.from("staff_public").update({ name: "hacked" }).neq("id", "").select();
+  const n = data?.length ?? 0;
+  check("แก้ทะเบียนผ่าน view ไม่ได้", error !== null || n === 0, error?.code ?? `แก้ไปจริง ${n} แถว`);
+}
+
 console.log(
   failures === 0
     ? "\nRLS ปิดสนิททุกช่องทาง ✓\n"
