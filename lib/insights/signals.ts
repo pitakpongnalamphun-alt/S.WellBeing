@@ -131,7 +131,7 @@ export function computeSignals(inp: SignalInputs): Signal[] {
       level: "attention",
       title: "ผลประเมินระดับควรดูแลหลายราย",
       evidence: `ระดับควรดูแล ${warning7} ครั้ง จากแบบประเมิน ${assess7.length} ครั้งในสัปดาห์นี้`,
-      suggestion: "เพิ่มการสื่อสารช่องทางนัดพูดคุย/Well.AI ให้เห็นง่ายขึ้น",
+      suggestion: "เพิ่มการสื่อสารช่องทางนัดพูดคุย/คุยกับน้องปุย ให้เห็นง่ายขึ้น",
       source: "แบบประเมินใจ (นิรนาม)",
     });
   } else if (warning7 >= 1) {
