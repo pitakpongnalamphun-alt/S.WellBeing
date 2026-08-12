@@ -48,7 +48,11 @@ export const ASSESS_ACTION_META: Record<
 
 type AssessState = {
   records: AssessRecord[];
+  /** ผลที่เขียนลงเครื่องแล้วแต่ยังส่งขึ้นไม่สำเร็จ — กันสถิติหายเงียบตอนเน็ตหลุด */
+  pending: string[];
   record: (r: { assessmentId: string; score: number; action: AssessAction }) => void;
+  /** ส่งของที่ค้างคิวซ้ำ — StatsPush เรียกตอนเปิดแอปและตอนกลับมาที่แท็บ */
+  flushPending: () => Promise<void>;
   /**
    * ดึงสถิติจากเซิร์ฟเวอร์มาแทนที่ของในเครื่อง — เรียกจากฝั่งแดชบอร์ดครูเท่านั้น
    * (StatsSync ใน layout ของแอดมิน) เพราะ RLS ให้เฉพาะเจ้าหน้าที่อ่านตารางนี้
@@ -58,17 +62,38 @@ type AssessState = {
 
 export const useAssessmentStore = create<AssessState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       records: [],
+      pending: [],
+
       record: (r) => {
         const rec: AssessRecord = {
           ...r,
           id: `as-${Date.now()}-${Math.floor(Math.random() * 1e6)}`,
           at: new Date().toISOString(),
         };
-        set((s) => ({ records: [rec, ...s.records] }));
+        set((s) => ({ records: [rec, ...s.records], pending: [...s.pending, rec.id] }));
         // ส่งขึ้นสถิติกลางทันที — ไม่มีคอลัมน์ผู้ส่ง จึงไม่มีอะไรผูกกลับมาที่เด็กคนนี้
-        void insertAssessStat(rec);
+        void insertAssessStat(rec).then((ok) => {
+          if (ok || !isSupabaseConfigured()) {
+            set((s) => ({ pending: s.pending.filter((p) => p !== rec.id) }));
+          }
+        });
+      },
+
+      flushPending: async () => {
+        if (!isSupabaseConfigured() || get().pending.length === 0) return;
+        if (!(await hasSession())) return;
+        for (const id of [...get().pending]) {
+          const rec = get().records.find((x) => x.id === id);
+          if (!rec) {
+            set((s) => ({ pending: s.pending.filter((p) => p !== id) }));
+            continue;
+          }
+          if (await insertAssessStat(rec)) {
+            set((s) => ({ pending: s.pending.filter((p) => p !== id) }));
+          }
+        }
       },
 
       syncFromServer: async () => {
@@ -77,12 +102,18 @@ export const useAssessmentStore = create<AssessState>()(
         if (!(await hasSession())) return;
         const remote = await fetchAssessStats();
         if (remote === null) return;
-        set({ records: remote });
+        // ของที่ยังส่งไม่ขึ้นต้องไม่ถูกลบทิ้งตอนดึงของจริงมาแทน (กันซ้ำด้วย id)
+        const remoteIds = new Set(remote.map((r) => r.id));
+        const stillPending = get().pending;
+        const localOnly = get().records.filter(
+          (r) => stillPending.includes(r.id) && !remoteIds.has(r.id),
+        );
+        set({ records: [...localOnly, ...remote] });
       },
     }),
     {
       name: "swb.assessments",
-      partialize: (s) => ({ records: s.records }),
+      partialize: (s) => ({ records: s.records, pending: s.pending }),
     },
   ),
 );
