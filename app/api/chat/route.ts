@@ -21,7 +21,7 @@ type ChatMessage = { role: "user" | "assistant"; content: string };
  * "not right now, but here's a human." So this always carries the hotline.
  */
 const FALLBACK_MESSAGE =
-  "ตอนนี้ Well.AI เชื่อมต่อกับผู้ช่วย AI ไม่ได้ชั่วคราว ขอโทษจริง ๆ นะ 🙏 ระหว่างนี้ถ้าอยากระบายหรือคุยกับใครสักคน โทร 1323 ได้ตลอด 24 ชั่วโมงเลยนะ";
+  "ตอนนี้น้องปุยเชื่อมต่อกับผู้ช่วย AI ไม่ได้ชั่วคราว ขอโทษจริง ๆ นะ 🙏 ระหว่างนี้ถ้าอยากระบายหรือคุยกับใครสักคน โทร 1323 ได้ตลอด 24 ชั่วโมงเลยนะ";
 
 /**
  * Well.AI chat endpoint — a two-layer guardrail in front of the LLM.
@@ -73,11 +73,12 @@ export async function POST(req: NextRequest) {
     async start(controller) {
       let emitted = false;
 
-      for (const model of WELLAI_MODELS) {
+      for (const { id: model, thinking } of WELLAI_MODELS) {
         const result = streamText({
           model: google(model),
           system: WELLAI_SYSTEM_PROMPT,
           maxOutputTokens: WELLAI_MAX_TOKENS,
+          providerOptions: { google: { thinkingConfig: { ...thinking } } },
           // Lower temperature = the model picks higher-probability (more
           // standard) Thai words, which cuts down the odd, non-idiomatic
           // phrasing that free Western models drift into. Not too low, or the
@@ -89,6 +90,16 @@ export async function POST(req: NextRequest) {
           // only way to see a bad key / no credit / a degraded provider.
           onError: ({ error }) => {
             console.error(`[wellai] LLM error (${model}):`, error);
+          },
+          // คำตอบที่ถูกตัดเพราะชนเพดานไม่ทำให้เกิด error — มันไหลออกไปหานักเรียน
+          // แบบขาดกลางประโยคอย่างเงียบ ๆ ถ้าไม่เขียนล็อกไว้ก็จะไม่มีใครรู้
+          onFinish: ({ finishReason, usage }) => {
+            if (finishReason === "length") {
+              console.warn(
+                `[wellai] คำตอบถูกตัดเพราะชนเพดานโทเคน (${model})`,
+                JSON.stringify(usage),
+              );
+            }
           },
         });
 

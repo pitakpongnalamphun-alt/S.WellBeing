@@ -53,14 +53,40 @@ Example of the right tone on the same topic: "ฟังแล้วหนัก�
  * ตัวแรกเป็น flash เพราะภาษาไทยและการทำตามกฎดีกว่า ส่วนตัวสำรองเป็น flash-lite
  * ที่เบากว่าและโควตาหมดยากกว่า — เวลาโควตาตัวแรกเต็ม ยังมีคนคุยด้วยเสมอ
  *
+ * ห้ามใช้ตระกูล 2.5 (gemini-2.5-flash / gemini-2.5-flash-lite): ทดสอบด้วยคีย์จริงแล้ว
+ * คืน "no longer available to new users" — คีย์ที่ออกใหม่เรียกไม่ได้อีกแล้ว
+ *
  * ถ้าวันหนึ่งชื่อโมเดลเปลี่ยน: ai.google.dev/gemini-api/docs/models แล้วทดสอบตัวใหม่
  * ด้วย "คำถามเรื่องหนัก" ก่อนเสมอ เพราะนั่นคือที่ที่โมเดลอ่อน ๆ พังให้เห็น (เคยเจอ
  * โมเดลที่พ่นกระบวนการคิดภาษาอังกฤษออกมาแทนคำตอบ)
  */
-export const WELLAI_MODELS = [
-  "gemini-3.5-flash",
-  "gemini-2.5-flash-lite",
-] as const;
+export type WellaiModel = {
+  id: string;
+  /**
+   * ระดับการ "คิดในใจ" ก่อนตอบ
+   *
+   * ค่าตั้งต้นของ Gemini คือคิดเยอะ ซึ่งวัดจริงแล้วกินโควตา 825 จาก 876 โทเคน
+   * เหลือเป็นข้อความจริงแค่ 51 — คำตอบจึงถูกตัดกลางประโยคเวลาความคิดยาวกว่าปกติ
+   * ปุยตอบแค่ 2-3 ประโยค ไม่ต้องใช้การให้เหตุผลหลายชั้น
+   *
+   * Gemini 3.x ใช้ thinkingLevel ส่วน 2.5 ใช้ thinkingBudget (0 = ปิด) — ใส่ผิดตระกูล
+   * แล้วค่าจะถูกเมิน ไม่ error ให้เห็น จึงต้องผูกไว้กับโมเดลทีละตัวแบบนี้
+   */
+  thinking: Record<string, string | number>;
+};
 
-/** Deliberately short — Well.AI answers in 2-3 sentences. Caps a runaway reply. */
-export const WELLAI_MAX_TOKENS = 1024;
+export const WELLAI_MODELS: WellaiModel[] = [
+  { id: "gemini-3.5-flash", thinking: { thinkingLevel: "minimal" } },
+  { id: "gemini-3.5-flash-lite", thinking: { thinkingLevel: "minimal" } },
+];
+
+/**
+ * เพดานโทเคนของคำตอบ
+ *
+ * ต้องเผื่อไว้มากกว่าความยาวคำตอบจริงพอสมควร เพราะโทเคนที่โมเดลใช้คิดในใจถูกนับ
+ * รวมในเพดานนี้ด้วย — เพดานที่ตึงเกินไปไม่ได้ทำให้คำตอบสั้นลง แต่ทำให้คำตอบ
+ * "ขาดกลางประโยค" ซึ่งแย่กว่ามากสำหรับเด็กที่กำลังเล่าเรื่องหนักอยู่
+ *
+ * ความสั้น 2-3 ประโยคมาจากกฎในพรอมป์ต์ ไม่ใช่จากเพดานนี้
+ */
+export const WELLAI_MAX_TOKENS = 2048;

@@ -2,6 +2,7 @@ import { generateText } from "ai";
 import type { NextRequest } from "next/server";
 
 import { gemini, hasAiKey } from "@/lib/wellai/provider";
+import type { WellaiModel } from "@/lib/wellai/systemPrompt";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -12,11 +13,11 @@ export const dynamic = "force-dynamic";
  * โควตาฟรีของ Gemini เต็มเป็นช่วง ๆ แล้วคืน 429 — การลองตัวเดียวแล้วยอมแพ้คือ
  * สาเหตุที่ปุ่มนี้เคยกดแล้วไม่ได้คำตอบตอนอยู่หน้าเวที ตัวสำรองจึงไม่ใช่ของฟุ่มเฟือย
  */
-const INSIGHTS_MODELS = [
-  "gemini-3.5-flash",
-  "gemini-2.5-flash",
-  "gemini-2.5-flash-lite",
-] as const;
+const INSIGHTS_MODELS: WellaiModel[] = [
+  { id: "gemini-3.5-flash", thinking: { thinkingLevel: "minimal" } },
+  { id: "gemini-3.6-flash", thinking: { thinkingLevel: "minimal" } },
+  { id: "gemini-3.5-flash-lite", thinking: { thinkingLevel: "minimal" } },
+];
 
 const LEVELS = new Set(["ok", "watch", "attention", "urgent"]);
 
@@ -68,12 +69,13 @@ export async function POST(req: NextRequest) {
   // ไล่ลองโมเดลตามลำดับ ตัวไหนให้ JSON ที่ใช้ได้ก่อนก็ใช้ตัวนั้น
   // (โควตาฟรีเต็มเป็นช่วง ๆ — การลองตัวเดียวแล้วยอมแพ้คือสาเหตุที่ปุ่มนี้เคยพัง)
   const failures: string[] = [];
-  for (const model of INSIGHTS_MODELS) {
+  for (const { id: model, thinking } of INSIGHTS_MODELS) {
     let text = "";
     try {
       const result = await generateText({
         model: google(model),
         system: SYSTEM_PROMPT,
+        providerOptions: { google: { thinkingConfig: { ...thinking } } },
         prompt: `ข้อมูลรวมประจำสัปดาห์:\n${body}`,
         // เผื่อโควตาให้โมเดลสายคิดในใจ (reasoning) ที่กินโทเคนก่อนตอบจริง
         // 900 เดิมทำให้ JSON ถูกตัดกลางประโยคจนแปลงค่าไม่ได้
