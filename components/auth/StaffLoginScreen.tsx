@@ -109,95 +109,100 @@ export function StaffLoginScreen() {
           <div className="mt-4">
             <GoogleSignInButton
               onVerified={({ email }) => void googleSignIn(email)}
-              onDemo={() => setError("ยังไม่ได้ตั้งค่า Google — ใช้รหัสผ่านด้านล่างแทนได้")}
+              onDemo={() => setError("ยังตั้งค่าการล็อกอินด้วย Google ไม่สำเร็จ — แจ้งผู้ดูแลระบบให้ตรวจการตั้งค่า")}
             />
             {error && (
               <p className="mt-2 text-[0.8rem] font-medium text-rose-600">{error}</p>
             )}
-            <div className="my-5 flex items-center gap-3" role="separator">
-              <span className="h-px flex-1 bg-neutral-200" />
-              <span className="text-[0.76rem] text-ink-mute">หรือใช้รหัสผ่าน (โหมดสาธิต)</span>
-              <span className="h-px flex-1 bg-neutral-200" />
-            </div>
+            <p className="mt-4 text-center text-[0.74rem] leading-relaxed text-ink-mute">
+              สิทธิ์ทั้งหมดตัดสินจากอีเมลที่ Google ยืนยัน — ถ้าเข้าไม่ได้
+              ให้ผู้ดูแลระบบเพิ่มอีเมลของคุณในหน้า “บัญชีเจ้าหน้าที่” ก่อน
+            </p>
           </div>
         )}
 
-        <ul className="mt-4 space-y-2">
-          {!mounted ? (
-            <li className="py-6 text-center text-[0.84rem] text-ink-mute">กำลังโหลด…</li>
-          ) : staffList.length === 0 ? (
-            <li className="py-6 text-center text-[0.84rem] text-ink-mute">
-              ยังไม่มีบัญชีเจ้าหน้าที่ที่เปิดใช้งาน
-            </li>
-          ) : (
-            staffList.map((s) => {
-            const active = selectedId === s.id;
-            const roleMeta = STAFF_ROLE_META[s.role];
-            return (
-              <li key={s.id}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedId(s.id);
-                    setError(null);
-                  }}
-                  aria-pressed={active}
-                  className={cn(
-                    "flex w-full items-center gap-3 rounded-2xl border-2 p-3 text-left transition",
-                    active
-                      ? "border-mint-400 bg-mint-50"
-                      : "border-neutral-200 hover:border-neutral-300",
-                  )}
-                >
-                  <span className="grid size-10 shrink-0 place-items-center rounded-full bg-neutral-100 text-xl">
-                    {s.emoji}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-[0.92rem] font-bold text-ink">{s.name}</span>
-                    <span className="block text-[0.74rem] text-ink-mute">{s.title}</span>
-                  </span>
-                  <span className={cn("shrink-0 rounded-full px-2.5 py-1 text-[0.68rem] font-medium", roleMeta.tint)}>
-                    {roleMeta.label}
-                  </span>
-                </button>
+        {/* โหมดสาธิตเท่านั้น — เชื่อมฐานข้อมูลแล้วต้องไม่มีประตูนี้ให้เห็นหรือให้กด
+            (verifyStaff ปฏิเสธซ้ำอีกชั้นในสโตร์ ซ่อนแต่ UI ไม่พอ) */}
+        {!isSupabaseConfigured() && (
+          <>
+          <ul className="mt-4 space-y-2">
+            {!mounted ? (
+              <li className="py-6 text-center text-[0.84rem] text-ink-mute">กำลังโหลด…</li>
+            ) : staffList.length === 0 ? (
+              <li className="py-6 text-center text-[0.84rem] text-ink-mute">
+                ยังไม่มีบัญชีเจ้าหน้าที่ที่เปิดใช้งาน
               </li>
-            );
-            })
+            ) : (
+              staffList.map((s) => {
+              const active = selectedId === s.id;
+              const roleMeta = STAFF_ROLE_META[s.role];
+              return (
+                <li key={s.id}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedId(s.id);
+                      setError(null);
+                    }}
+                    aria-pressed={active}
+                    className={cn(
+                      "flex w-full items-center gap-3 rounded-2xl border-2 p-3 text-left transition",
+                      active
+                        ? "border-mint-400 bg-mint-50"
+                        : "border-neutral-200 hover:border-neutral-300",
+                    )}
+                  >
+                    <span className="grid size-10 shrink-0 place-items-center rounded-full bg-neutral-100 text-xl">
+                      {s.emoji}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[0.92rem] font-bold text-ink">{s.name}</span>
+                      <span className="block text-[0.74rem] text-ink-mute">{s.title}</span>
+                    </span>
+                    <span className={cn("shrink-0 rounded-full px-2.5 py-1 text-[0.68rem] font-medium", roleMeta.tint)}>
+                      {roleMeta.label}
+                    </span>
+                  </button>
+                </li>
+              );
+              })
+            )}
+          </ul>
+
+          <label className="mt-4 block">
+            <span className="mb-1.5 flex items-center gap-1.5 text-[0.82rem] font-medium text-ink">
+              <LockKeyhole className="size-4 text-ink-mute" aria-hidden="true" />
+              รหัสผ่าน
+            </span>
+            <input
+              type="password"
+              inputMode="numeric"
+              autoComplete="off"
+              value={passcode}
+              onChange={(e) => {
+                setPasscode(e.target.value);
+                setError(null);
+              }}
+              onKeyDown={(e) => e.key === "Enter" && submit()}
+              placeholder="••••"
+              className="w-full rounded-2xl border border-neutral-300 bg-white px-3.5 py-3 text-[0.95rem] tracking-widest text-ink placeholder:tracking-normal placeholder:text-ink-mute focus:border-mint-400 focus:outline-none focus:ring-4 focus:ring-mint-100"
+            />
+          </label>
+
+          {error && (
+            <p className="mt-2 text-[0.8rem] font-medium text-rose-600">{error}</p>
           )}
-        </ul>
 
-        <label className="mt-4 block">
-          <span className="mb-1.5 flex items-center gap-1.5 text-[0.82rem] font-medium text-ink">
-            <LockKeyhole className="size-4 text-ink-mute" aria-hidden="true" />
-            รหัสผ่าน
-          </span>
-          <input
-            type="password"
-            inputMode="numeric"
-            autoComplete="off"
-            value={passcode}
-            onChange={(e) => {
-              setPasscode(e.target.value);
-              setError(null);
-            }}
-            onKeyDown={(e) => e.key === "Enter" && submit()}
-            placeholder="••••"
-            className="w-full rounded-2xl border border-neutral-300 bg-white px-3.5 py-3 text-[0.95rem] tracking-widest text-ink placeholder:tracking-normal placeholder:text-ink-mute focus:border-mint-400 focus:outline-none focus:ring-4 focus:ring-mint-100"
-          />
-        </label>
-
-        {error && (
-          <p className="mt-2 text-[0.8rem] font-medium text-rose-600">{error}</p>
+          <button
+            type="button"
+            onClick={submit}
+            disabled={submitting}
+            className="mt-4 w-full rounded-2xl bg-mint-700 py-3.5 text-[0.95rem] font-medium text-white transition hover:bg-mint-600 disabled:opacity-60"
+          >
+            เข้าสู่ระบบ
+          </button>
+          </>
         )}
-
-        <button
-          type="button"
-          onClick={submit}
-          disabled={submitting}
-          className="mt-4 w-full rounded-2xl bg-mint-700 py-3.5 text-[0.95rem] font-medium text-white transition hover:bg-mint-600 disabled:opacity-60"
-        >
-          เข้าสู่ระบบ
-        </button>
 
         <p className="mt-4 text-center text-[0.78rem] text-ink-mute">
           เป็นนักเรียน?{" "}
