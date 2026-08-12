@@ -12,7 +12,7 @@ export type FluffyFriend = {
   emoji: string;
   desc: string;
   rarity: Rarity;
-  /** #15 is the mascot in gold — rendered as a <FluffyBuddy> instead of an emoji. */
+  /** #15 is the mascot's golden form — the crown jewel of the collection. */
   goldenFluffy?: boolean;
 };
 
@@ -81,11 +81,4 @@ export const DUPLICATE_SHARDS: Record<Rarity, number> = {
   common: 5,
   rare: 15,
   superRare: 40,
-};
-
-/** The golden mascot renders as a real FluffyBuddy — these are its recolour props. */
-export const GOLDEN_FLUFFY = {
-  gradient: "linear-gradient(to bottom right, #fef3c7, #fcd34d, #f59e0b)",
-  ink: "#78350f",
-  glow: "rgba(251,191,36,0.7)",
 };

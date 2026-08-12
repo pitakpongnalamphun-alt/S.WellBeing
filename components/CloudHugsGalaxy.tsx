@@ -20,17 +20,30 @@ import { localDay } from "@/lib/date";
 
 const HUG_REWARD = 5;
 
-/** Stable scatter derived from the cloud id only, so adding a cloud never shuffles the rest. */
-function seededPos(id: string) {
+/**
+ * เมฆวางบน "ตาราง" ไม่ใช่สุ่มตำแหน่งอิสระ แล้วขยับออกจากจุดกึ่งกลางช่องเล็กน้อย
+ * ตามค่าแฮชของ id เพื่อไม่ให้ดูเป็นแถวทหาร
+ *
+ * ของเดิมสุ่มพิกัดจาก id ตรง ๆ ซึ่งไม่มีอะไรกันเมฆทับกันเลย พอเมฆเยอะขึ้นก็มีก้อนที่
+ * ถูกก้อนอื่นบังจนกดส่งกอดไม่ได้ — ตารางการันตีว่าทุกก้อนมีช่องของตัวเองที่กดโดนเสมอ
+ * ส่วนความรู้สึก "ลอยอยู่ในอวกาศ" มาจากการขยับเล็กน้อยนี้ + แอนิเมชันลอยของแต่ละก้อน
+ */
+function seededJitter(id: string) {
   let h = 0;
   for (let k = 0; k < id.length; k += 1) h = (h * 31 + id.charCodeAt(k)) >>> 0;
-  return { left: 9 + (h % 80), top: 15 + ((h >> 4) % 60) };
+  // >>> ไม่ใช่ >> : h เป็นเลข 32 บิตแบบไม่มีเครื่องหมาย ถ้าใช้ >> ค่าที่เกิน 2^31
+  // จะกลายเป็นลบ แล้วระยะขยับจะเบ้ไปทางเดียวทั้งหมด
+  return { x: (h % 13) - 6, y: ((h >>> 5) % 13) - 6 };
 }
 
 const floatVariants: Variants = {
+  /** ก้อนที่อยู่นอกจอ — หยุดนิ่งตรงจุดตั้งต้น ไม่กิน GPU */
+  rest: { x: 0, y: 0 },
   float: (i: number) => ({
-    y: [0, -16, 6, 0],
-    x: [0, 10, -8, 0],
+    // แอมพลิจูดต้องเล็กกว่าครึ่งของช่องไฟระหว่างแถว (gap-y-10 = 40px) เผื่อสองแถว
+    // ลอยเข้าหากันพร้อมกัน ไม่งั้นป้ายชื่อจะเหลื่อมกันจนบังปุ่มของอีกก้อน
+    y: [0, -10, 4, 0],
+    x: [0, 7, -6, 0],
     transition: { duration: 11 + (i % 5) * 1.2, repeat: Infinity, ease: "easeInOut", delay: (i % 6) * 0.5 },
   }),
 };
@@ -100,12 +113,93 @@ function CloudFace({ color, size = 46 }: { color: { glow: string; text: string }
   );
 }
 
+/**
+ * เมฆหนึ่งก้อนพร้อมแอนิเมชันลอย
+ *
+ * แยกออกมาเป็นคอมโพเนนต์ของตัวเองเพราะแต่ละก้อนต้องมี IntersectionObserver ของ
+ * ตัวเอง: ก้อนที่เลื่อนพ้นจอจะหยุดลอย เหลือแต่ก้อนที่มองเห็นจริงที่ยังขยับ
+ * ทุกก้อนมี drop-shadow กับ backdrop-blur ซึ่งกิน GPU มาก ถ้าปล่อยให้หลายร้อยก้อน
+ * แอนิเมชันพร้อมกันทั้งที่เห็นแค่ 6 ก้อน มือถือจะกระตุกทันทีที่กาแล็กซีเริ่มแน่น
+ */
+function CloudItem({
+  cloud,
+  index,
+  hugged,
+  onOpen,
+}: {
+  cloud: MoodCloud;
+  index: number;
+  hugged: boolean;
+  onOpen: () => void;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  // เริ่มที่ "เห็น" ไว้ก่อน เผื่อเบราว์เซอร์ไม่รองรับ observer — เมฆจะได้ไม่แข็งทื่อ
+  const [inView, setInView] = useState(true);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(
+      ([entry]) => setInView(entry.isIntersecting),
+      // เผื่อขอบไว้หน่อย ก้อนที่กำลังจะเลื่อนเข้ามาจะได้ลอยอยู่ก่อนแล้ว ไม่ใช่กระตุกเริ่ม
+      { rootMargin: "120px 0px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  const jitter = seededJitter(cloud.id);
+  const color = CLOUD_COLORS[cloud.coreColor];
+
+  return (
+    <div ref={ref} style={{ transform: `translate(${jitter.x}px, ${jitter.y}px)` }}>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.3 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.25 + Math.min(index, 12) * 0.07, duration: 0.55, ease: [0.34, 1.3, 0.68, 1] }}
+      >
+        <motion.button
+          type="button"
+          onClick={onOpen}
+          aria-label={`ก้อนเมฆความรู้สึก ${cloud.tertiaryEmotion}${cloud.mine ? " (ของฉัน)" : ""} ได้รับกอดแล้ว ${cloud.hugsReceived} ครั้ง`}
+          className="flex flex-col items-center gap-1.5 rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+          variants={floatVariants}
+          custom={index}
+          animate={inView ? "float" : "rest"}
+          whileHover={{ scale: 1.09 }}
+          whileTap={{ scale: 0.94 }}
+        >
+          <span
+            className="relative grid size-16 place-items-center rounded-full"
+            style={{ background: `radial-gradient(circle at 50% 42%, ${color.glow}, transparent 72%)`, filter: `drop-shadow(0 0 14px ${color.glow})` }}
+          >
+            <CloudFace color={color} size={46} />
+            {cloud.mine && <span className="absolute -left-1 -top-1 text-xs">🫧</span>}
+            {hugged && <span className="absolute -right-1 -top-1 text-sm">💖</span>}
+          </span>
+          <span className="max-w-[7.5rem] rounded-full bg-white/10 px-2.5 py-1 text-center text-[0.68rem] font-medium backdrop-blur" style={{ color: color.text }}>
+            {cloud.tertiaryEmotion}
+          </span>
+          <span className="text-[0.6rem] text-white/45">🫂 {cloud.hugsReceived}{cloud.mine ? " · ของฉัน" : ""}</span>
+        </motion.button>
+      </motion.div>
+    </div>
+  );
+}
+
 export function CloudHugsGalaxy() {
   const [mounted, setMounted] = useState(false);
   const coins = useGachaStore((s) => s.coins);
   const earn = useGachaStore((s) => s.earn);
   const clouds = useCloudHugsStore((s) => s.clouds);
   const hug = useCloudHugsStore((s) => s.hug);
+  const ensureMonth = useCloudHugsStore((s) => s.ensureMonth);
+  const syncFromServer = useCloudHugsStore((s) => s.syncFromServer);
+
+  const monthLabel = useMemo(
+    () => new Date().toLocaleDateString("th-TH", { month: "long" }),
+    [],
+  );
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [huggedIds, setHuggedIds] = useState<Set<string>>(() => new Set());
@@ -119,8 +213,25 @@ export function CloudHugsGalaxy() {
   );
   const selected = clouds.find((c) => c.id === selectedId) ?? null;
 
+  // ดึงท้องฟ้าจากเซิร์ฟเวอร์ตอนเปิดหน้า ตอนกลับมาที่แท็บ และทุก 60 วิ — เมฆที่เพื่อน
+  // เพิ่งปล่อยจะได้โผล่มาเองโดยไม่ต้องรีเฟรช (ซิงก์เฉพาะหน้านี้ ไม่ต้องยิงทั้งแอป)
+  useEffect(() => {
+    void syncFromServer();
+    const onFocus = () => {
+      if (document.visibilityState === "visible") void syncFromServer();
+    };
+    document.addEventListener("visibilitychange", onFocus);
+    const t = window.setInterval(() => void syncFromServer(), 60_000);
+    return () => {
+      document.removeEventListener("visibilitychange", onFocus);
+      window.clearInterval(t);
+    };
+  }, [syncFromServer]);
+
   useEffect(() => {
     setMounted(true);
+    // ขึ้นเดือนใหม่แล้วล้างท้องฟ้า — ทำหลัง mount เท่านั้น สโตร์ persist ยังไม่พร้อมก่อนหน้านี้
+    ensureMonth();
     const day = localDay();
     const already = useGachaStore
       .getState()
@@ -168,7 +279,7 @@ export function CloudHugsGalaxy() {
 
   return (
     <motion.div
-      className="relative flex min-h-[calc(100dvh-5rem)] w-full flex-col overflow-hidden rounded-[1.75rem] bg-gradient-to-b from-indigo-950 via-slate-900 to-purple-950"
+      className="relative flex h-[calc(100dvh-5rem)] w-full flex-col overflow-hidden rounded-[1.75rem] bg-gradient-to-b from-indigo-950 via-slate-900 to-purple-950"
       initial={{ opacity: 0, scale: 1.05 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.65, ease: [0.4, 0, 0.2, 1] }}
@@ -195,14 +306,15 @@ export function CloudHugsGalaxy() {
         </div>
 
         <header className="relative z-20 flex items-center justify-between px-5 py-4">
-          <motion.h1
-            className="text-[1.05rem] font-bold text-white/95"
+          <motion.div
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1, duration: 0.5 }}
           >
-            กาแล็กซีแห่งการโอบกอด
-          </motion.h1>
+            <h1 className="text-[1.05rem] font-bold text-white/95">กาแล็กซีแห่งการโอบกอด</h1>
+            {/* บอกให้รู้ว่าท้องฟ้าเริ่มใหม่ทุกเดือน ไม่งั้นวันที่ 1 เมฆหายหมดจะงงว่าพัง */}
+            <p className="text-[0.7rem] text-white/45">ท้องฟ้าเดือน{monthLabel} · เริ่มใหม่ทุกเดือน</p>
+          </motion.div>
           <span
             className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-sm font-semibold text-amber-200 ring-1 ring-white/15 backdrop-blur"
             aria-label={`เหรียญดาวของคุณ ${mounted ? coins : 0} เหรียญ`}
@@ -211,46 +323,35 @@ export function CloudHugsGalaxy() {
           </span>
         </header>
 
-        <div className="relative flex-1">
-          {clouds.map((cloud, i) => {
-            const pos = seededPos(cloud.id);
-            const color = CLOUD_COLORS[cloud.coreColor];
-            const hugged = huggedIds.has(cloud.id);
-            return (
-              <div key={cloud.id} className="absolute -translate-x-1/2 -translate-y-1/2" style={{ left: `${pos.left}%`, top: `${pos.top}%` }}>
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.3 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.25 + Math.min(i, 12) * 0.07, duration: 0.55, ease: [0.34, 1.3, 0.68, 1] }}
-                >
-                  <motion.button
-                    type="button"
-                    onClick={() => openCloud(cloud.id)}
-                    aria-label={`ก้อนเมฆความรู้สึก ${cloud.tertiaryEmotion}${cloud.mine ? " (ของฉัน)" : ""} ได้รับกอดแล้ว ${cloud.hugsReceived} ครั้ง`}
-                    className="flex flex-col items-center gap-1.5 rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
-                    variants={floatVariants}
-                    custom={i}
-                    animate="float"
-                    whileHover={{ scale: 1.09 }}
-                    whileTap={{ scale: 0.94 }}
-                  >
-                    <span
-                      className="relative grid size-16 place-items-center rounded-full"
-                      style={{ background: `radial-gradient(circle at 50% 42%, ${color.glow}, transparent 72%)`, filter: `drop-shadow(0 0 14px ${color.glow})` }}
-                    >
-                      <CloudFace color={color} size={46} />
-                      {cloud.mine && <span className="absolute -left-1 -top-1 text-xs">🫧</span>}
-                      {hugged && <span className="absolute -right-1 -top-1 text-sm">💖</span>}
-                    </span>
-                    <span className="max-w-[8.5rem] rounded-full bg-white/10 px-2.5 py-1 text-center text-[0.68rem] font-medium backdrop-blur" style={{ color: color.text }}>
-                      {cloud.tertiaryEmotion}
-                    </span>
-                    <span className="text-[0.6rem] text-white/45">🫂 {cloud.hugsReceived}{cloud.mine ? " · ของฉัน" : ""}</span>
-                  </motion.button>
-                </motion.div>
-              </div>
-            );
-          })}
+        {/* ท้องฟ้าเลื่อนได้ — เมฆเยอะกว่าหนึ่งหน้าจอก็ยังเข้าถึงได้ครบ ไม่ถูกตัดหาย
+            ช่องกว้างขั้นต่ำ 9rem กว้างกว่าป้ายชื่อ (7.5rem) พอที่จะไม่ชนกันแม้ขยับแล้ว */}
+        <div className="relative z-10 flex-1 overflow-y-auto overscroll-contain px-3 pb-8">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(9rem,1fr))] justify-items-center gap-x-2 gap-y-10 py-4">
+            {clouds.map((cloud, i) => (
+              <CloudItem
+                key={cloud.id}
+                cloud={cloud}
+                index={i}
+                hugged={huggedIds.has(cloud.id)}
+                onOpen={() => openCloud(cloud.id)}
+              />
+            ))}
+          </div>
+
+          {/* ท้องฟ้าว่างจริง ๆ ดีกว่าเติมเมฆปลอมให้ดูมีคน — และชวนให้เป็นคนแรกแทน */}
+          {mounted && clouds.length === 0 && (
+            <div className="flex flex-col items-center gap-2 px-6 py-16 text-center">
+              <span className="text-3xl" aria-hidden="true">☁️</span>
+              <p className="text-[0.9rem] font-medium text-white/80">
+                เดือนนี้ยังไม่มีใครปล่อยเมฆเลย
+              </p>
+              <p className="text-[0.78rem] leading-relaxed text-white/45">
+                ถ้าวันไหนรู้สึกหนัก ลองปล่อยเมฆก้อนแรกของเดือนดูไหม
+                <br />
+                แล้วเพื่อน ๆ จะแวะมาส่งกอดให้เอง
+              </p>
+            </div>
+          )}
         </div>
 
         <p className="relative z-20 pb-4 text-center text-[0.68rem] text-white/40">ทุกก้อนเมฆไม่ระบุตัวตน · ส่งได้แค่ความอบอุ่น 🔒</p>

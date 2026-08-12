@@ -1,13 +1,23 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+import {
+  fetchAppointments,
+  insertAppointment,
+  patchAppointment,
+} from "@/lib/data/appointmentsRepo";
+import { hasSession } from "@/lib/data/casesRepo";
+import { isSupabaseConfigured } from "@/lib/supabase/client";
 import { localDay } from "@/lib/date";
 
 /**
  * A student's talk-appointments. Kept deliberately simple and pressure-free —
  * booking time to talk is never rewarded or gamified (it's help-seeking, not a
- * task to farm). Persisted locally so "my appointments" survives a refresh; a
- * real build would move this to the server behind auth + RLS.
+ * task to farm).
+ *
+ * เขียนลงเครื่องก่อนเสมอ แล้วค่อยส่งขึ้นเซิร์ฟเวอร์พร้อมคิวส่งซ้ำ — แบบเดียวกับเคส
+ * และ SOS เพราะก่อนหน้านี้นัดอยู่แค่ localStorage ของเครื่องที่จอง ครูที่เปิด
+ * แดชบอร์ดคนละเครื่องจึงเห็นคิวว่างเปล่า ทั้งที่นักเรียนจองเข้ามาแล้ว
  */
 
 export type AppointmentFormat = "onsite" | "video" | "phone";
@@ -60,6 +70,10 @@ type NewAppointment = Pick<
 
 type AppointmentState = {
   appointments: Appointment[];
+  /** นัดที่เขียนลงเครื่องแล้วแต่ยังส่งขึ้นเซิร์ฟเวอร์ไม่สำเร็จ (คิวส่งซ้ำ) */
+  pending: string[];
+  /** ดึงนัดจากเซิร์ฟเวอร์: นักเรียนเห็นของตัวเอง ครูเห็นทุกใบ (RLS ตัดสิน) */
+  syncFromServer: () => Promise<void>;
   /**
    * Create a booking. Defaults to "pending" (a student asking for time). Staff
    * booking directly for a student pass "confirmed" — they're the one arranging
@@ -77,6 +91,7 @@ export const useAppointmentStore = create<AppointmentState>()(
   persist(
     (set, get) => ({
       appointments: [],
+      pending: [],
 
       book: (input, status = "pending") => {
         // Keep the human-facing code unique so it can't ambiguously point at two bookings.
@@ -90,34 +105,73 @@ export const useAppointmentStore = create<AppointmentState>()(
           status,
           createdAt: localDay(),
         };
-        set((s) => ({ appointments: [appt, ...s.appointments] }));
+        // ลงเครื่องก่อน แล้วค่อยส่ง — จองแล้วต้องเห็นทันทีแม้เน็ตจะช้า
+        set((s) => ({
+          appointments: [appt, ...s.appointments],
+          pending: [...s.pending, appt.id],
+        }));
+        void insertAppointment(appt).then((ok) => {
+          if (ok || !isSupabaseConfigured()) {
+            set((s) => ({ pending: s.pending.filter((p) => p !== appt.id) }));
+          }
+        });
         return appt;
       },
 
-      cancel: (id) =>
+      cancel: (id) => {
         set((s) => ({
           appointments: s.appointments.map((a) =>
             a.id === id ? { ...a, status: "cancelled" } : a,
           ),
-        })),
+        }));
+        void patchAppointment(id, { status: "cancelled" });
+      },
 
-      setStatus: (id, status) =>
+      setStatus: (id, status) => {
         set((s) => ({
           appointments: s.appointments.map((a) =>
             a.id === id ? { ...a, status } : a,
           ),
-        })),
+        }));
+        void patchAppointment(id, { status });
+      },
 
-      reschedule: (id, date, time) =>
+      reschedule: (id, date, time) => {
         set((s) => ({
           appointments: s.appointments.map((a) =>
             a.id === id ? { ...a, date, time, status: "confirmed" } : a,
           ),
-        })),
+        }));
+        void patchAppointment(id, { date, time, status: "confirmed" });
+      },
+
+      syncFromServer: async () => {
+        if (!isSupabaseConfigured()) return;
+        // ยังไม่ล็อกอิน = RLS คืน 0 แถวเสมอ ห้ามเอาไปแทนที่ของในเครื่อง
+        if (!(await hasSession())) return;
+
+        // 1) ดูก่อนว่าเซิร์ฟเวอร์มีอะไรบ้าง
+        const remote = await fetchAppointments();
+        if (remote === null) return;
+        const remoteIds = new Set(remote.map((r) => r.id));
+
+        // 2) นัดในเครื่องที่เซิร์ฟเวอร์ยังไม่มี = ต้องส่งขึ้น ไม่ใช่แค่ที่ค้างคิว
+        //    รวมถึงนัดเก่าที่จองไว้ตั้งแต่ยังไม่มีเซิร์ฟเวอร์ — ถ้าไม่ส่งขึ้นให้
+        //    มันจะหายจากจอทันทีที่ซิงก์ครั้งแรก ทั้งที่นักเรียนจองไว้จริง
+        const stuck: string[] = [];
+        for (const a of get().appointments) {
+          if (remoteIds.has(a.id)) continue;
+          if (!(await insertAppointment(a))) stuck.push(a.id);
+        }
+
+        // 3) รวมจอ: ของเซิร์ฟเวอร์เป็นหลัก + ที่ยังส่งไม่ขึ้นคงไว้ให้เห็น
+        const localOnly = get().appointments.filter((a) => stuck.includes(a.id));
+        set({ appointments: [...localOnly, ...remote], pending: stuck });
+      },
     }),
     {
       name: "swb.appointments",
-      partialize: (s) => ({ appointments: s.appointments }),
+      partialize: (s) => ({ appointments: s.appointments, pending: s.pending }),
     },
   ),
 );

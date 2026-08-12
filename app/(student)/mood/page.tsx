@@ -8,8 +8,11 @@ import { Coins, Flame } from "lucide-react";
 import { DailyMoodPet } from "@/components/DailyMoodPet";
 import { MonthlyMoodStickerBook } from "@/components/MonthlyMoodStickerBook";
 import { CloudHugsGalaxy } from "@/components/CloudHugsGalaxy";
+import type { CoreKey } from "@/data/emotionWheel";
 import { useGachaStore } from "@/lib/store/useGachaStore";
+import { useMoodDiaryStore } from "@/lib/store/useMoodDiaryStore";
 import { useMoodStatsStore } from "@/lib/store/useMoodStatsStore";
+import { useUserStore } from "@/lib/store/useUserStore";
 
 type Tab = "today" | "book" | "galaxy";
 type Reward = { earned: number; streak: number; streakBonus: boolean };
@@ -36,6 +39,8 @@ function MoodPageInner() {
   const [reward, setReward] = useState<Reward | null>(null);
   const dailyMoodCheckIn = useGachaStore((s) => s.dailyMoodCheckIn);
   const recordMood = useMoodStatsStore((s) => s.record);
+  const recordDiary = useMoodDiaryStore((s) => s.record);
+  const owner = useUserStore((s) => s.profile?.studentId);
 
   // Saving today's feeling pays coins + advances the daily streak (with a 7-day
   // bonus), then shows the sticker book. The individual entry stays private in
@@ -43,12 +48,20 @@ function MoodPageInner() {
   // for the school's aggregate mood statistics — never who felt what.
   const handleSave = useCallback(
     (entry: { core: string; secondary: string; tertiary: string }) => {
+      // สมุดส่วนตัว: เขียนทุกครั้ง (เช็คอินซ้ำในวันเดียวกัน = เปลี่ยนใจ ทับดวงเดิม)
+      recordDiary({
+        core: entry.core as CoreKey,
+        secondary: entry.secondary,
+        tertiary: entry.tertiary,
+        owner,
+      });
+      // สถิติโรงเรียน: นับครั้งแรกของวันเท่านั้น ตัวเลขรวมจะได้ไม่เฟ้อ
       recordMood({ core: entry.core, tertiary: entry.tertiary });
       const result = dailyMoodCheckIn();
       if (result.earned > 0) setReward(result);
       setTab("book");
     },
-    [dailyMoodCheckIn, recordMood],
+    [dailyMoodCheckIn, recordMood, recordDiary, owner],
   );
 
   // Auto-dismiss the little reward note.

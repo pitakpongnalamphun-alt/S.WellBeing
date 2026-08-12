@@ -6,8 +6,10 @@ import {
   Eye,
   EyeOff,
   KeyRound,
+  Mail,
   Pencil,
   Trash2,
+  TriangleAlert,
   UserPlus,
   X,
 } from "lucide-react";
@@ -19,8 +21,10 @@ import {
   type StaffAccount,
   type StaffRole,
 } from "@/data/staff";
+import { hasSession } from "@/lib/data/casesRepo";
 import { useStaffAccountsStore } from "@/lib/store/useStaffAccountsStore";
 import { useStaffSessionStore } from "@/lib/store/useStaffSessionStore";
+import { isSupabaseConfigured } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
 const FIELD_LABEL = "mb-1.5 block text-[0.74rem] font-medium text-ink-mute";
@@ -57,17 +61,21 @@ function RoleSelect({
 function AddStaffForm({ onClose }: { onClose: () => void }) {
   const add = useStaffAccountsStore((s) => s.add);
   const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [title, setTitle] = useState("");
   const [emoji, setEmoji] = useState("🙂");
   const [role, setRole] = useState<StaffRole>("counselor");
   const [passcode, setPasscode] = useState("");
 
-  const canSave = name.trim().length > 0 && passcode.trim().length > 0;
+  // ผูกอีเมลไว้ = ล็อกอินด้วย Google ได้ ไม่ต้องตั้งรหัสผ่านสาธิตก็ได้
+  const canSave =
+    name.trim().length > 0 && (email.trim().length > 0 || passcode.trim().length > 0);
 
   function submit() {
     if (!canSave) return;
     add({
       name: name.trim(),
+      email: email.trim() || undefined,
       title: title.trim() || STAFF_ROLE_META[role].label,
       emoji: emoji.trim() || "🙂",
       role,
@@ -112,6 +120,24 @@ function AddStaffForm({ onClose }: { onClose: () => void }) {
           </div>
         </div>
 
+        <div className="sm:col-span-2">
+          <label htmlFor="as-email" className={FIELD_LABEL}>
+            อีเมล Google ของโรงเรียน
+          </label>
+          <input
+            id="as-email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="teacher@school.ac.th"
+            className={FIELD_INPUT}
+          />
+          <p className="mt-1 text-[0.72rem] leading-relaxed text-ink-mute">
+            อีเมลนี้คือสิ่งที่ระบบใช้ตัดสินสิทธิ์ตอนล็อกอิน — ไม่ใส่ก็ใช้ได้ แต่จะเข้าได้เฉพาะโหมดสาธิตด้วยรหัสผ่าน
+            และมองไม่เห็นข้อมูลบนเซิร์ฟเวอร์
+          </p>
+        </div>
+
         <div>
           <label htmlFor="as-role" className={FIELD_LABEL}>
             บทบาท
@@ -134,7 +160,12 @@ function AddStaffForm({ onClose }: { onClose: () => void }) {
 
         <div>
           <label htmlFor="as-pass" className={FIELD_LABEL}>
-            รหัสผ่าน <span className="text-rose-500">*</span>
+            รหัสผ่าน{" "}
+            {email.trim() ? (
+              <span className="font-normal text-ink-mute">(ไม่บังคับ — ใช้ Google แทนได้)</span>
+            ) : (
+              <span className="text-rose-500">*</span>
+            )}
           </label>
           <input
             id="as-pass"
@@ -192,6 +223,7 @@ function StaffRow({
   const [confirming, setConfirming] = useState(false);
 
   const [name, setName] = useState(account.name);
+  const [email, setEmail] = useState(account.email ?? "");
   const [title, setTitle] = useState(account.title);
   const [emoji, setEmoji] = useState(account.emoji);
   const [role, setRole] = useState<StaffRole>(account.role);
@@ -204,6 +236,7 @@ function StaffRow({
 
   function startEdit() {
     setName(account.name);
+    setEmail(account.email ?? "");
     setTitle(account.title);
     setEmoji(account.emoji);
     setRole(account.role);
@@ -217,6 +250,7 @@ function StaffRow({
     if (!name.trim() || !passcode.trim() || demotingLastAdmin) return;
     update(account.id, {
       name: name.trim(),
+      email: email.trim() || undefined,
       title: title.trim() || STAFF_ROLE_META[role].label,
       emoji: emoji.trim() || "🙂",
       role,
@@ -255,6 +289,19 @@ function StaffRow({
                 className={FIELD_INPUT}
               />
             </div>
+          </div>
+          <div className="sm:col-span-2">
+            <label htmlFor={`e-email-${account.id}`} className={FIELD_LABEL}>
+              อีเมล Google ของโรงเรียน
+            </label>
+            <input
+              id={`e-email-${account.id}`}
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="teacher@school.ac.th"
+              className={FIELD_INPUT}
+            />
           </div>
           <div>
             <label htmlFor={`e-role-${account.id}`} className={FIELD_LABEL}>
@@ -352,6 +399,19 @@ function StaffRow({
             )}
           </div>
           <p className="mt-0.5 text-[0.76rem] text-ink-mute">{account.title}</p>
+          {/* อีเมล = สิทธิ์จริง ถ้าไม่มีต้องบอกตรง ๆ ว่าคนนี้ยังล็อกอินด้วย Google ไม่ได้
+              ไม่ใช่ปล่อยให้ผู้ดูแลระบบเข้าใจว่าเพิ่มบัญชีแล้วจบ */}
+          {account.email ? (
+            <p className="mt-1 inline-flex items-center gap-1.5 text-[0.74rem] text-ink-soft">
+              <Mail className="size-3.5 shrink-0 text-ink-mute" aria-hidden="true" />
+              <span className="break-all">{account.email}</span>
+            </p>
+          ) : (
+            <p className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2 py-0.5 text-[0.72rem] font-medium text-amber-700 ring-1 ring-amber-200">
+              <TriangleAlert className="size-3 shrink-0" aria-hidden="true" />
+              ยังไม่ผูกอีเมล — ล็อกอินด้วย Google ไม่ได้
+            </p>
+          )}
         </div>
 
         {/* passcode */}
@@ -450,6 +510,20 @@ export function AdminStaffBoard() {
   useEffect(() => setMounted(true), []);
 
   const accounts = useStaffAccountsStore((s) => s.accounts);
+  const syncFromServer = useStaffAccountsStore((s) => s.syncFromServer);
+
+  // ทะเบียนกลางอยู่บนเซิร์ฟเวอร์ — ถ้าไม่ดึงมารวม หน้านี้จะโชว์แต่บัญชีในเครื่อง
+  // แล้วผู้ดูแลระบบจะไม่มีวันเห็นครูที่ถูกเพิ่มจากเครื่องอื่น
+  useEffect(() => {
+    void syncFromServer();
+  }, [syncFromServer]);
+
+  // ล็อกอินด้วยรหัสผ่านสาธิต = ไม่มี session ⇒ RLS ปฏิเสธการเขียนทะเบียนกลาง
+  // ต้องบอกให้รู้ ไม่ใช่ขึ้นว่า "ซิงก์แล้ว" ทั้งที่การแก้ไขไปไม่ถึงเซิร์ฟเวอร์
+  const [linked, setLinked] = useState(false);
+  useEffect(() => {
+    void hasSession().then(setLinked);
+  }, []);
   const myId = useStaffSessionStore((s) => s.staffId);
   const [adding, setAdding] = useState(false);
 
@@ -468,6 +542,30 @@ export function AdminStaffBoard() {
           <p className="mt-1 text-[0.88rem] text-ink-soft">
             เพิ่ม แก้ไข เปิด/ปิดการใช้งาน และตั้งรหัสผ่านของผู้ที่เข้าใช้ฝั่งเจ้าหน้าที่
           </p>
+          {mounted ? (
+            <p
+              className={cn(
+                "mt-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.74rem] font-medium ring-1",
+                linked
+                  ? "bg-mint-50 text-mint-700 ring-mint-200"
+                  : "bg-amber-50 text-amber-700 ring-amber-200",
+              )}
+            >
+              {linked ? (
+                <>
+                  <Mail className="size-3.5" aria-hidden="true" />
+                  ซิงก์กับทะเบียนกลาง — บัญชีที่ผูกอีเมลไว้ล็อกอินด้วย Google ได้ทุกเครื่อง
+                </>
+              ) : (
+                <>
+                  <TriangleAlert className="size-3.5" aria-hidden="true" />
+                  {isSupabaseConfigured()
+                    ? "ยังไม่ได้ล็อกอินด้วย Google — การแก้ไขจะบันทึกเฉพาะในเครื่องนี้"
+                    : "โหมดสาธิต — บัญชีเก็บอยู่ในเครื่องนี้เท่านั้น"}
+                </>
+              )}
+            </p>
+          ) : null}
         </div>
         <button
           type="button"

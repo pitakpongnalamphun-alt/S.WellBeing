@@ -1,8 +1,10 @@
 import type { ReactNode } from "react";
 
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
+import { AppointmentsSync } from "@/components/data/AppointmentsSync";
 import { CasesSync } from "@/components/data/CasesSync";
 import { SosSync } from "@/components/data/SosSync";
+import { StatsSync } from "@/components/data/StatsSync";
 import { ConsentGuard } from "@/components/consent/ConsentGuard";
 import { StaffGuard } from "@/components/auth/StaffGuard";
 import { RoleGuard } from "@/components/auth/RoleGuard";
@@ -20,7 +22,9 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       <StaffGuard>
         <ConsentGuard role="admin">
           <CasesSync />
-        <SosSync />
+          <SosSync />
+          <AppointmentsSync />
+          <StatsSync />
           <div className="flex min-h-dvh bg-neutral-50">
             <AdminSidebar />
             <main className="min-w-0 flex-1 px-5 py-6 lg:px-8 lg:py-8">

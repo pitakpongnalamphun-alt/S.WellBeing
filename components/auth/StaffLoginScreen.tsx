@@ -82,6 +82,7 @@ export function StaffLoginScreen() {
     // เซิร์ฟเวอร์จะล็อกอินผ่านแล้วเด้งกลับ ถ้าไม่มีแถวนี้ในเครื่อง)
     useStaffAccountsStore.getState().upsertFromServer({
       id: staff.id,
+      email: staff.email,
       name: staff.name,
       role: staff.role,
       title: staff.title,

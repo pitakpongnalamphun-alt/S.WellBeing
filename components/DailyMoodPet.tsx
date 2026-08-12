@@ -8,6 +8,7 @@ import { FluffyBuddy } from "@/components/FluffyBuddy";
 import { EMOTION_WHEEL, type CoreEmotion, type SecondaryEmotion } from "@/data/emotionWheel";
 import { NEGATIVE_CORES } from "@/data/cloudHugs";
 import { useCloudHugsStore } from "@/lib/store/useCloudHugsStore";
+import { localDay } from "@/lib/date";
 
 /** A gentle crossfade + drift. Deliberately soft and non-bouncy. */
 const swap = {
@@ -37,6 +38,8 @@ export type DailyMoodPetProps = {
 
 export function DailyMoodPet({ onSave, onExit, onReleaseCloud, className }: DailyMoodPetProps) {
   const release = useCloudHugsStore((s) => s.release);
+  const lastReleasedDay = useCloudHugsStore((s) => s.lastReleasedDay);
+  const releasedToday = lastReleasedDay === localDay();
   const [step, setStep] = useState<Step>("core");
   const [core, setCore] = useState<CoreEmotion | null>(null);
   const [secondary, setSecondary] = useState<SecondaryEmotion | null>(null);
@@ -83,8 +86,8 @@ export function DailyMoodPet({ onSave, onExit, onReleaseCloud, className }: Dail
   function releaseMyCloud() {
     if (!core || !tertiary || released) return;
     // ไม่ต้องยัดชนิดข้อมูลแล้ว — CoreColor ครอบคลุมคีย์ของวงล้อครบทุกสี
-    release(tertiary, core.key);
-    setReleased(true);
+    // คืน null = วันนี้ปล่อยไปแล้ว (สโตร์เป็นคนตัดสิน ปุ่มจะได้ไม่หลอกว่ากดได้)
+    if (release(tertiary, core.key) !== null) setReleased(true);
   }
 
   return (
@@ -230,10 +233,41 @@ export function DailyMoodPet({ onSave, onExit, onReleaseCloud, className }: Dail
                       <p className="text-[0.78rem] leading-relaxed text-indigo-500">
                         เดี๋ยวเพื่อน ๆ จะแวะมาส่งกอดให้นะ เธอไม่ได้อยู่คนเดียว
                       </p>
+
+                      {/* ปล่อยเมฆกับบันทึกลงไดอารี่เป็นคนละปุ่มโดยตั้งใจ (คนละปลายทาง คนละคำยินยอม)
+                          แต่คนที่กดปล่อยเมฆแล้วกด "ไปดูกาแล็กซี" ต่อจะออกจากหน้านี้ทันที
+                          แล้วความรู้สึกวันนั้นจะไม่ถูกเก็บที่ไหนเลย — เตือนไว้ก่อนถึงปุ่มนั้น */}
+                      <p className="flex items-start gap-1.5 rounded-xl bg-amber-50 px-3 py-2 text-left text-[0.76rem] leading-relaxed text-amber-800 ring-1 ring-amber-200">
+                        <BookHeart className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
+                        <span>
+                          อย่าลืมกด <span className="font-semibold">“บันทึกลงไดอารี่”</span> ด้านล่างด้วยนะ
+                          ไม่งั้นความรู้สึกวันนี้จะไม่ถูกเก็บไว้ในสมุดของเธอ
+                        </span>
+                      </p>
+
                       <button
                         type="button"
                         onClick={() => onReleaseCloud?.()}
                         className="inline-flex items-center gap-1.5 rounded-full bg-indigo-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-600 active:scale-95"
+                      >
+                        <Cloud className="size-4" />
+                        ไปดูกาแล็กซี
+                      </button>
+                    </div>
+                  ) : releasedToday ? (
+                    /* ปล่อยได้วันละก้อน — บอกให้รู้แทนที่จะโชว์ปุ่มที่กดแล้วไม่เกิดอะไร
+                       (จอนี้เข้าถึงได้หลัง mount เสมอ อ่านสโตร์ตรงนี้จึงไม่ชน hydration) */
+                    <div className="flex w-full flex-col items-center gap-2 rounded-2xl bg-slate-50 p-4 text-center ring-1 ring-slate-200">
+                      <p className="text-[0.82rem] font-medium text-slate-600">
+                        วันนี้ปล่อยเมฆไปแล้วหนึ่งก้อนนะ ☁️
+                      </p>
+                      <p className="text-[0.76rem] leading-relaxed text-slate-500">
+                        พรุ่งนี้ปล่อยได้ใหม่ — ระหว่างนี้แวะไปส่งกอดให้เพื่อนก็ได้นะ
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => onReleaseCloud?.()}
+                        className="mt-0.5 inline-flex items-center gap-1.5 rounded-full bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-300 active:scale-95"
                       >
                         <Cloud className="size-4" />
                         ไปดูกาแล็กซี
@@ -252,6 +286,7 @@ export function DailyMoodPet({ onSave, onExit, onReleaseCloud, className }: Dail
                         <Send className="size-4" />
                         ปล่อยเมฆของฉัน ☁️
                       </button>
+                      <p className="text-[0.7rem] text-slate-400">ปล่อยได้วันละหนึ่งก้อน</p>
                     </div>
                   ))}
 

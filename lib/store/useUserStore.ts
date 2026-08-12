@@ -1,9 +1,11 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-import { getClient } from "@/lib/supabase/client";
+import { fetchMyProfile, upsertMyProfile } from "@/lib/data/profileRepo";
+import { getClient, isSupabaseConfigured } from "@/lib/supabase/client";
 
 import { useCasesStore } from "./useCasesStore";
+import { useMoodDiaryStore } from "./useMoodDiaryStore";
 import { useMyAssessStore } from "./useMyAssessStore";
 
 /** Identity established by SSO (step 1). `email`/`name` may be absent for some
@@ -31,6 +33,12 @@ type UserState = {
   setReady: () => void;
   signIn: (provider: string, email?: string, name?: string) => void;
   completeProfile: (username: string, studentId: string) => void;
+  /**
+   * ดึงโปรไฟล์ของตัวเองจากเซิร์ฟเวอร์ถ้าในเครื่องยังว่าง — คนที่เคยกรอกไว้แล้ว
+   * เปลี่ยนเครื่องหรือล้างเบราว์เซอร์จะไม่ต้องกรอกชื่อ-รหัสนักเรียนใหม่
+   * เขียนทับของในเครื่องไม่ได้เด็ดขาด เพราะอาจกำลังพิมพ์อยู่พอดี
+   */
+  syncFromServer: () => Promise<void>;
   signOut: () => void;
 };
 
@@ -55,18 +63,32 @@ type UserState = {
  */
 export const useUserStore = create<UserState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       session: null,
       profile: null,
       ready: false,
       setReady: () => set({ ready: true }),
       signIn: (provider, email, name) =>
         set({ session: { provider, email: email ?? null, name: name ?? null } }),
-      completeProfile: (username, studentId) =>
-        set({ profile: { username, studentId } }),
+      completeProfile: (username, studentId) => {
+        const profile = { username, studentId };
+        set({ profile });
+        // เก็บไว้ฝั่งเซิร์ฟเวอร์ด้วย (RLS: เจ้าของเท่านั้น) เพื่อให้ข้ามเครื่องได้
+        // และให้ใบนัดที่ครูสร้างให้ ใช้รหัสนักเรียนนี้เดินทางกลับมาหาเจ้าตัวได้
+        void upsertMyProfile(profile);
+      },
+
+      syncFromServer: async () => {
+        if (!isSupabaseConfigured()) return;
+        if (get().profile) return; // ในเครื่องมีแล้ว — ห้ามทับ
+        const remote = await fetchMyProfile();
+        if (!remote || get().profile) return;
+        set({ profile: remote });
+      },
       signOut: () => {
         // เครื่องโรงเรียนใช้ร่วมกัน — ข้อมูลส่วนตัวทุกชุดต้องหายไปพร้อมการออกจากระบบ
         useMyAssessStore.getState().clear();
+        useMoodDiaryStore.getState().clear();
         useCasesStore.getState().clear();
         void getClient()?.auth.signOut();
         set({ session: null, profile: null });

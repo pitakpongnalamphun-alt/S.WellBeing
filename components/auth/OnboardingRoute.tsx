@@ -22,8 +22,14 @@ export function OnboardingRoute() {
   const session = useUserStore((s) => s.session);
   const profile = useUserStore((s) => s.profile);
   const completeProfile = useUserStore((s) => s.completeProfile);
+  const syncFromServer = useUserStore((s) => s.syncFromServer);
 
   const validRole = isRole(roleParam);
+
+  // เคยกรอกไว้แล้วบนเครื่องอื่น → ดึงกลับมาก่อนตัดสินใจว่าจะให้กรอกใหม่ไหม
+  useEffect(() => {
+    if (ready && session) void syncFromServer();
+  }, [ready, session, syncFromServer]);
 
   useEffect(() => {
     if (!ready) return;

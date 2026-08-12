@@ -1,36 +1,30 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { X } from "lucide-react";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
 
 import { FluffyBuddy } from "@/components/FluffyBuddy";
 import { CORE_BY_KEY, EMOTION_WHEEL, type CoreKey } from "@/data/emotionWheel";
+import { useMoodDiaryStore } from "@/lib/store/useMoodDiaryStore";
+import { localDay } from "@/lib/date";
 
-/* ------------------------------------------------------------------ mock data */
+/* ------------------------------------------------------------------ data */
 
 type MoodEntry = { date: number; coreColor: CoreKey; secondary: string; tertiary: string };
 
-/** A mock "this month" — weighted a little blue so the summary has something to say. */
-const MONTH_LABEL = "กรกฎาคม 2026";
-const MONTH_YEAR = 2026;
-const MONTH_INDEX = 6; // July (0-based)
-
-const ENTRIES: MoodEntry[] = [
-  { date: 2, coreColor: "yellow", secondary: "สงบ", tertiary: "ขอบคุณ" },
-  { date: 5, coreColor: "blue", secondary: "เหงา", tertiary: "ถูกทอดทิ้ง" },
-  { date: 7, coreColor: "green", secondary: "เครียด", tertiary: "กดดัน" },
-  { date: 10, coreColor: "blue", secondary: "ซึมเศร้า", tertiary: "ว่างเปล่า" },
-  { date: 12, coreColor: "blue", secondary: "เหงา", tertiary: "โดดเดี่ยว/แปลกแยก" },
-  { date: 14, coreColor: "orange", secondary: "กังวล", tertiary: "ระทมทุกข์/วิตกจริต" },
-  { date: 17, coreColor: "yellow", secondary: "ภูมิใจ", tertiary: "มีความมั่นใจ" },
-  { date: 19, coreColor: "blue", secondary: "สิ้นหวัง", tertiary: "โศกศัลย์/อาลัย" },
-  { date: 22, coreColor: "red", secondary: "ข้องใจ", tertiary: "หงุดหงิด/รำคาญใจ" },
-  { date: 25, coreColor: "blue", secondary: "รู้สึกผิด", tertiary: "สำนึกผิด/ผิดบาป" },
-  { date: 27, coreColor: "purple", secondary: "ตื่นเต้น", tertiary: "กระตือรือร้น" },
+const WEEKDAYS = ["อา", "จ", "อ", "พ", "พฤ", "ศ", "ส"];
+const MONTH_NAMES = [
+  "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
+  "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม",
 ];
 
-const WEEKDAYS = ["อา", "จ", "อ", "พ", "พฤ", "ศ", "ส"];
+/** "2026-08-12" → [2026, 7, 12] (เดือนฐานศูนย์) — อ่านจากสตริงตรง ๆ ไม่ผ่าน Date
+ *  จะได้ไม่โดน timezone เลื่อนวันข้ามคืน */
+function partsOf(day: string): [number, number, number] {
+  const [y, m, d] = day.split("-").map(Number);
+  return [y, m - 1, d];
+}
 
 /** An empathetic line for whichever colour showed up most this month. */
 const MONTH_MESSAGE: Record<CoreKey, string> = {
@@ -48,15 +42,46 @@ const MONTH_MESSAGE: Record<CoreKey, string> = {
 export function MonthlyMoodStickerBook({ className }: { className?: string }) {
   const [selected, setSelected] = useState<MoodEntry | null>(null);
 
+  // สมุดของจริงจากเครื่องนักเรียนเอง — เดิมหน้านี้เป็นข้อมูลตัวอย่างฮาร์ดโค้ด
+  // นักเรียนจึงบันทึกอารมณ์แล้วไม่เคยเห็นดวงของตัวเองสักครั้ง
+  const entries = useMoodDiaryStore((s) => s.entries);
+
+  // เดือนที่กำลังเปิดดู — เริ่มที่เดือนปัจจุบันจริง ไม่ใช่เดือนที่เขียนค้างไว้ในโค้ด
+  const [cursor, setCursor] = useState(() => {
+    const [y, m] = partsOf(localDay());
+    return { year: y, month: m };
+  });
+
+  // เรนเดอร์หลัง mount เท่านั้น: สโตร์ persist ทำให้ครั้งแรกยังว่างเสมอ
+  // ถ้าเรนเดอร์ตรง ๆ จะ hydration mismatch
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  const monthEntries = useMemo(() => {
+    if (!mounted) return [];
+    return entries.filter((e) => {
+      const [y, m] = partsOf(e.day);
+      return y === cursor.year && m === cursor.month;
+    });
+  }, [entries, cursor, mounted]);
+
   const byDate = useMemo(() => {
     const map = new Map<number, MoodEntry>();
-    for (const e of ENTRIES) map.set(e.date, e);
+    for (const e of monthEntries) {
+      const [, , d] = partsOf(e.day);
+      map.set(d, {
+        date: d,
+        coreColor: e.core,
+        secondary: e.secondary,
+        tertiary: e.tertiary,
+      });
+    }
     return map;
-  }, []);
+  }, [monthEntries]);
 
   const dominant = useMemo(() => {
     const counts = new Map<CoreKey, number>();
-    for (const e of ENTRIES) counts.set(e.coreColor, (counts.get(e.coreColor) ?? 0) + 1);
+    for (const e of monthEntries) counts.set(e.core, (counts.get(e.core) ?? 0) + 1);
     let top: CoreKey = "yellow";
     let max = -1;
     for (const c of EMOTION_WHEEL) {
@@ -67,11 +92,30 @@ export function MonthlyMoodStickerBook({ className }: { className?: string }) {
       }
     }
     return top;
-  }, []);
+  }, [monthEntries]);
   const dominantCore = CORE_BY_KEY[dominant];
 
-  const firstWeekday = new Date(MONTH_YEAR, MONTH_INDEX, 1).getDay();
-  const daysInMonth = new Date(MONTH_YEAR, MONTH_INDEX + 1, 0).getDate();
+  // ย้อนได้ไม่เกินเดือนแรกที่มีบันทึก และไปหน้าไม่เกินเดือนปัจจุบัน
+  const bounds = useMemo(() => {
+    const [ny, nm] = partsOf(localDay());
+    const now = ny * 12 + nm;
+    let oldest = now;
+    for (const e of entries) {
+      const [y, m] = partsOf(e.day);
+      oldest = Math.min(oldest, y * 12 + m);
+    }
+    return { oldest, now };
+  }, [entries]);
+  const cursorIndex = cursor.year * 12 + cursor.month;
+  const step = (delta: number) => {
+    const next = cursorIndex + delta;
+    if (next < bounds.oldest || next > bounds.now) return;
+    setCursor({ year: Math.floor(next / 12), month: next % 12 });
+  };
+
+  const monthLabel = `${MONTH_NAMES[cursor.month]} ${cursor.year + 543}`;
+  const firstWeekday = new Date(cursor.year, cursor.month, 1).getDay();
+  const daysInMonth = new Date(cursor.year, cursor.month + 1, 0).getDate();
   const cells: (number | null)[] = [
     ...Array.from({ length: firstWeekday }, () => null),
     ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
@@ -89,7 +133,27 @@ export function MonthlyMoodStickerBook({ className }: { className?: string }) {
       {/* Header — soft mint */}
       <div className="bg-gradient-to-b from-emerald-100 to-emerald-50 px-6 py-5 text-center">
         <h2 className="text-lg font-bold text-emerald-800">สมุดสะสมอารมณ์ของฉัน</h2>
-        <p className="mt-0.5 text-sm font-medium text-emerald-600/80">{MONTH_LABEL}</p>
+        <div className="mt-1 flex items-center justify-center gap-1">
+          <button
+            type="button"
+            onClick={() => step(-1)}
+            disabled={cursorIndex <= bounds.oldest}
+            aria-label="เดือนก่อนหน้า"
+            className="grid size-7 place-items-center rounded-full text-emerald-700 transition enabled:hover:bg-emerald-100 disabled:opacity-25"
+          >
+            <ChevronLeft className="size-4" />
+          </button>
+          <p className="min-w-[9rem] text-sm font-medium text-emerald-600/80">{monthLabel}</p>
+          <button
+            type="button"
+            onClick={() => step(1)}
+            disabled={cursorIndex >= bounds.now}
+            aria-label="เดือนถัดไป"
+            className="grid size-7 place-items-center rounded-full text-emerald-700 transition enabled:hover:bg-emerald-100 disabled:opacity-25"
+          >
+            <ChevronRight className="size-4" />
+          </button>
+        </div>
       </div>
 
       <div className="p-5">
@@ -139,17 +203,28 @@ export function MonthlyMoodStickerBook({ className }: { className?: string }) {
           })}
         </div>
 
-        {/* Monthly summary */}
-        <div className="mt-6 flex flex-col items-center gap-3 rounded-3xl p-5" style={{ backgroundColor: dominantCore.soft }}>
-          <FluffyBuddy
-            size={96}
-            expression={dominantCore.face}
-            gradient={dominantCore.gradient}
-            ink={dominantCore.ink}
-            glowColor={dominantCore.glow}
-          />
-          <p className="text-center text-sm font-medium leading-relaxed text-slate-600">{MONTH_MESSAGE[dominant]}</p>
-        </div>
+        {/* Monthly summary — เดือนที่ยังไม่มีบันทึกต้องไม่สรุปอารมณ์ที่ไม่เคยเกิดขึ้น */}
+        {monthEntries.length > 0 ? (
+          <div className="mt-6 flex flex-col items-center gap-3 rounded-3xl p-5" style={{ backgroundColor: dominantCore.soft }}>
+            <FluffyBuddy
+              size={96}
+              expression={dominantCore.face}
+              gradient={dominantCore.gradient}
+              ink={dominantCore.ink}
+              glowColor={dominantCore.glow}
+            />
+            <p className="text-center text-sm font-medium leading-relaxed text-slate-600">{MONTH_MESSAGE[dominant]}</p>
+          </div>
+        ) : (
+          <div className="mt-6 flex flex-col items-center gap-3 rounded-3xl bg-slate-50 p-5">
+            <FluffyBuddy size={80} expression="content" />
+            <p className="text-center text-sm font-medium leading-relaxed text-slate-500">
+              {mounted && cursorIndex === bounds.now
+                ? "เดือนนี้ยังไม่มีดวงอารมณ์เลย — ไปแท็บ “วันนี้” แล้วบันทึกความรู้สึกดวงแรกกันไหม ☁️"
+                : "เดือนนี้ยังไม่มีบันทึกไว้นะ"}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Detail popover */}

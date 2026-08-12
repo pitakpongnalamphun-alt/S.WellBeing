@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Check, MapPin, Siren, Undo2, User, X } from "lucide-react";
+import { Check, HandHeart, MapPin, Siren, Undo2, User, X } from "lucide-react";
 
 import { Card } from "@/components/ui/Card";
 import {
@@ -11,6 +11,7 @@ import {
   useSosStore,
   type SosStatus,
 } from "@/lib/store/useSosStore";
+import { useStaffSession } from "@/lib/store/useStaffSessionStore";
 import { cn } from "@/lib/utils";
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
@@ -37,6 +38,9 @@ export function AdminSosBoard() {
 
   const alerts = useSosStore((s) => s.alerts);
   const resolve = useSosStore((s) => s.resolve);
+  const acknowledge = useSosStore((s) => s.acknowledge);
+  // ชื่อที่จะไปโผล่ฝั่งนักเรียนว่า "ใครกำลังมา" — ต้องเป็นคนจริง ไม่ใช่ "เจ้าหน้าที่" ลอย ๆ
+  const staffName = useStaffSession()?.name ?? "เจ้าหน้าที่";
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [zoneFilter, setZoneFilter] = useState<string>("all");
@@ -270,8 +274,25 @@ export function AdminSosBoard() {
                       </span>
                       · {fmt(a.createdAt)}
                     </span>
+                    {a.acknowledgedAt ? (
+                      <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-white/70 px-2 py-0.5 text-[0.72rem] font-medium text-risk-high ring-1 ring-risk-high/25">
+                        <HandHeart className="size-3" aria-hidden="true" />
+                        {a.acknowledgedBy ?? "เจ้าหน้าที่"} รับเรื่องแล้ว · {fmt(a.acknowledgedAt)}
+                      </span>
+                    ) : null}
                   </span>
 
+                  {/* รับเรื่อง — บอกคนที่กดปุ่มฉุกเฉินว่ามีคนเห็นแล้วและกำลังไป
+                      โดยที่เหตุยังเปิดอยู่ (คนละเรื่องกับปิดเหตุ) */}
+                  {active && !closing && !a.acknowledgedAt && (
+                    <button
+                      type="button"
+                      onClick={() => acknowledge(a.id, staffName)}
+                      className="shrink-0 rounded-lg bg-risk-high px-3 py-1.5 text-[0.78rem] font-semibold text-white transition hover:opacity-90"
+                    >
+                      รับเรื่อง
+                    </button>
+                  )}
                   {active && !closing && (
                     <button
                       type="button"

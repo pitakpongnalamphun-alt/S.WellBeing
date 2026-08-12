@@ -1,15 +1,14 @@
 "use client";
 
-import { FluffyBuddy } from "@/components/FluffyBuddy";
 import { FriendSprite } from "@/components/gacha/FriendSprite";
-import { GOLDEN_FLUFFY, type FluffyFriend } from "@/data/fluffyFriends";
+import type { FluffyFriend } from "@/data/fluffyFriends";
 import { DECO_BY_ID } from "@/data/cozyShop";
 import type { EquippedSet } from "@/lib/store/useGachaStore";
 
 /**
  * Renders one Fluffy Friend at any size, with whatever it's wearing layered on
- * top. The golden mascot is a real <FluffyBuddy>; everyone else is a hand-drawn
- * animated <FriendSprite> (emoji only as fallback for unknown ids).
+ * top. Everyone — the golden mascot included — is a hand-drawn animated
+ * <FriendSprite> (emoji only as fallback for unknown ids).
  * Decoration emojis sit in three fixed spots: hat on top, face over the eyes,
  * something held at the bottom-right.
  */
@@ -32,17 +31,7 @@ export function FriendAvatar({
       style={{ width: size, height: size, filter: unowned ? "grayscale(1) opacity(0.35)" : undefined }}
       aria-hidden="true"
     >
-      {friend.goldenFluffy ? (
-        <FluffyBuddy
-          expression="happy"
-          size={size * 0.92}
-          gradient={GOLDEN_FLUFFY.gradient}
-          ink={GOLDEN_FLUFFY.ink}
-          glowColor={GOLDEN_FLUFFY.glow}
-        />
-      ) : (
-        <FriendSprite id={friend.id} size={size * 0.98} fallback={friend.emoji} />
-      )}
+      <FriendSprite id={friend.id} size={size * 0.98} fallback={friend.emoji} />
 
       {showDeco && !unowned && equipped?.hat && DECO_BY_ID[equipped.hat] && (
         <span className="pointer-events-none absolute" style={{ top: "-8%", fontSize: size * 0.36, lineHeight: 1 }}>

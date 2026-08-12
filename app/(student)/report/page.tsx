@@ -17,6 +17,7 @@ import {
   Loader2,
   Lock,
   Phone,
+  Search,
   ShieldAlert,
   ShieldCheck,
   X,
@@ -25,7 +26,13 @@ import {
 import { FluffyMascot } from "@/components/FluffyMascot";
 import { LocationPicker } from "@/components/shared/LocationPicker";
 import { type Place } from "@/data/locations";
-import { useCasesStore, type CaseExpectation } from "@/lib/store/useCasesStore";
+import {
+  CASE_STATUS_META,
+  CASE_STATUS_ORDER,
+  useCasesStore,
+  type CaseExpectation,
+} from "@/lib/store/useCasesStore";
+import { useStaffAccountsStore } from "@/lib/store/useStaffAccountsStore";
 import { cn } from "@/lib/utils";
 
 /* ============================================================================
@@ -721,25 +728,39 @@ function AnonymousThanks({
    Success — identified ticket tracker
    ========================================================================== */
 
-const TRACK_STATUSES = [
-  { label: "รอรับเรื่อง", en: "Pending" },
-  { label: "กำลังดูแล", en: "In Progress" },
-  { label: "คลี่คลายแล้ว", en: "Resolved" },
-  { label: "ติดตามผลระยะยาว", en: "Long-term Follow-up" },
-];
+/** วัน-เวลาแบบสั้น สำหรับบอกว่า "ครูรับเรื่องเมื่อไหร่" */
+const fmtWhen = (iso: string) =>
+  new Date(iso).toLocaleString("th-TH", {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 
 function TicketTracker({
   ticket,
   expectation,
   sensitive,
   onReset,
+  mode = "fresh",
 }: {
   ticket: string;
-  expectation: Exclude<Expectation, "anonymous">;
-  sensitive: boolean;
+  /** เผื่อกรณีอ่านเคสจาก store ไม่ได้ — ปกติใช้ค่าจากตัวเคสจริง */
+  expectation?: Exclude<Expectation, "anonymous">;
+  sensitive?: boolean;
   onReset: () => void;
+  /** "fresh" = เพิ่งกดส่ง, "lookup" = กลับมาตามด้วยรหัส */
+  mode?: "fresh" | "lookup";
 }) {
   const [copied, setCopied] = useState(false);
+
+  // เคสตัวจริง — แถวเดียวกับที่ครูเปิดดูในหน้าจัดการเคส CasesSync ดึงซ้ำทุก 60 วิ
+  // และตอนกลับมาที่แท็บ สถานะที่ครูกดเปลี่ยนจึงมาถึงหน้านี้เอง
+  const c = useCasesStore((s) => s.cases.find((x) => x.id === ticket));
+  const accounts = useStaffAccountsStore((s) => s.accounts);
+  const assignee = c?.assignedTo
+    ? accounts.find((a) => a.id === c.assignedTo)?.name
+    : undefined;
 
   function copy() {
     navigator.clipboard?.writeText(ticket).then(() => {
@@ -748,18 +769,31 @@ function TicketTracker({
     });
   }
 
-  // The current stage right after submitting is the first one.
-  const currentIndex = 0;
+  const status = c?.status ?? "pending";
+  const currentIndex = Math.max(0, CASE_STATUS_ORDER.indexOf(status));
+  const urgent = (c?.expectation ?? expectation) === "urgent";
+  const isSensitive = c?.sensitive ?? sensitive ?? false;
 
   const intro =
-    expectation === "urgent"
-      ? "ครูแนะแนวได้รับเรื่องแล้ว และจะรีบติดต่อกลับโดยเร็วที่สุด"
-      : "ครูแนะแนวได้รับเรื่องแล้ว และจะรอให้คุณพร้อมก่อนค่อยทักไปคุย";
+    mode === "lookup"
+      ? "นี่คือสถานะล่าสุดของเรื่องที่คุณแจ้งไว้"
+      : urgent
+        ? "ครูแนะแนวได้รับเรื่องแล้ว และจะรีบติดต่อกลับโดยเร็วที่สุด"
+        : "ครูแนะแนวได้รับเรื่องแล้ว และจะรอให้คุณพร้อมก่อนค่อยทักไปคุย";
 
+  // คำอธิบายใต้ขั้นที่กำลังเกิดขึ้นจริง — เปลี่ยนตามสถานะที่ครูกด ไม่ใช่ข้อความตายตัว
   const activeHint =
-    expectation === "urgent"
-      ? "เรื่องด่วน — ครูกำลังจะรับเรื่องเร็ว ๆ นี้"
-      : "อยู่ในคิว ครูจะติดต่อเมื่อคุณพร้อม";
+    status === "pending"
+      ? urgent
+        ? "เรื่องด่วน — ครูกำลังจะรับเรื่องเร็ว ๆ นี้"
+        : "อยู่ในคิว ครูจะติดต่อเมื่อคุณพร้อม"
+      : status === "in_progress"
+        ? assignee
+          ? `${assignee} รับเรื่องแล้ว และกำลังดูแลอยู่`
+          : "ครูรับเรื่องแล้ว และกำลังดูแลอยู่"
+        : status === "resolved"
+          ? "เรื่องนี้คลี่คลายแล้ว — ถ้ายังไม่สบายใจ บอกครูได้เสมอ"
+          : "ครูจะติดตามผลกับคุณเป็นระยะ ไม่ได้ปล่อยให้เผชิญคนเดียว";
 
   return (
     <div className="space-y-6 pb-4">
@@ -805,12 +839,13 @@ function TicketTracker({
         </h2>
 
         <ol className="relative">
-          {TRACK_STATUSES.map((status, i) => {
+          {CASE_STATUS_ORDER.map((key, i) => {
+            const meta = CASE_STATUS_META[key];
             const done = i < currentIndex;
             const active = i === currentIndex;
-            const last = i === TRACK_STATUSES.length - 1;
+            const last = i === CASE_STATUS_ORDER.length - 1;
             return (
-              <li key={status.en} className="flex gap-3.5">
+              <li key={key} className="flex gap-3.5">
                 {/* Rail + node */}
                 <div className="flex flex-col items-center">
                   <span
@@ -850,12 +885,18 @@ function TicketTracker({
                       active ? "text-ink" : "text-ink-mute",
                     )}
                   >
-                    {status.label}
+                    {meta.label}
                   </p>
-                  <p className="text-[0.72rem] text-ink-mute">{status.en}</p>
+                  <p className="text-[0.72rem] text-ink-mute">{meta.en}</p>
                   {active ? (
                     <p className="mt-1 text-[0.78rem] leading-relaxed text-mint-700">
                       {activeHint}
+                    </p>
+                  ) : null}
+                  {/* ครูรับเรื่องตอนไหน — จุดที่นักเรียนอยากรู้ที่สุดว่า "มีคนเห็นแล้วจริง" */}
+                  {key === "in_progress" && c?.acknowledgedAt ? (
+                    <p className="mt-0.5 text-[0.72rem] text-ink-mute">
+                      รับเรื่องเมื่อ {fmtWhen(c.acknowledgedAt)}
                     </p>
                   ) : null}
                 </div>
@@ -863,9 +904,15 @@ function TicketTracker({
             );
           })}
         </ol>
+
+        {!c ? (
+          <p className="mt-3 rounded-xl bg-neutral-50 px-3 py-2 text-[0.75rem] leading-relaxed text-ink-mute">
+            ยังโหลดสถานะล่าสุดไม่ได้ — ลองเปิดหน้านี้อีกครั้งเมื่อออนไลน์
+          </p>
+        ) : null}
       </div>
 
-      <HotlineCard sensitive={sensitive} />
+      <HotlineCard sensitive={isSensitive} />
 
       <div className="flex flex-col gap-2.5">
         <Link
@@ -879,7 +926,7 @@ function TicketTracker({
           onClick={onReset}
           className="rounded-2xl border border-neutral-300 py-3.5 text-[0.9rem] font-medium text-ink-soft transition-colors hover:border-neutral-400 hover:text-ink"
         >
-          แจ้งเรื่องใหม่
+          {mode === "lookup" ? "กลับไปหน้าแจ้งเหตุ" : "แจ้งเรื่องใหม่"}
         </button>
       </div>
     </div>
@@ -890,6 +937,12 @@ function TicketTracker({
    Wizard
    ========================================================================== */
 
+/** SWB-K7Q2XM / k7q2xm / "swb k7q2xm" → SWB-K7Q2XM */
+function normaliseTicket(raw: string): string {
+  const s = raw.trim().toUpperCase().replace(/[\s-]/g, "");
+  return `SWB-${s.startsWith("SWB") ? s.slice(3) : s}`;
+}
+
 export default function ReportPage() {
   const [step, setStep] = useState(1);
   const [form, setForm] = useState<FormState>(EMPTY);
@@ -898,10 +951,30 @@ export default function ReportPage() {
   const [submitted, setSubmitted] = useState(false);
   const [ticket, setTicket] = useState<string | null>(null);
 
+  // ตามสถานะด้วยรหัสที่เคยได้ไป — ไม่งั้นรหัส SWB-XXXXXX ที่บอกให้ "เก็บไว้ติดตาม"
+  // ก็ใช้ทำอะไรไม่ได้เลยเมื่อออกจากหน้าจอนี้ไปแล้ว
+  const [tracking, setTracking] = useState<string | null>(null);
+  const [lookupOpen, setLookupOpen] = useState(false);
+  const [lookupCode, setLookupCode] = useState("");
+  const [lookupError, setLookupError] = useState<string | null>(null);
+
   // The shared case store is the seam to the admin side: an identified report
   // opens a trackable case; an anonymous one leaves only an aggregate signal.
   const openCase = useCasesStore((s) => s.openCase);
   const addAnonymous = useCasesStore((s) => s.addAnonymous);
+  const cases = useCasesStore((s) => s.cases);
+
+  function submitLookup() {
+    const code = normaliseTicket(lookupCode);
+    if (!cases.some((c) => c.id === code)) {
+      setLookupError("ไม่พบรหัสนี้ — ลองตรวจตัวอักษรอีกครั้ง");
+      return;
+    }
+    setLookupError(null);
+    setLookupCode("");
+    setLookupOpen(false);
+    setTracking(code);
+  }
 
   const regionRef = useRef<HTMLDivElement>(null);
 
@@ -987,6 +1060,19 @@ export default function ReportPage() {
     setTicket(null);
   }
 
+  // ตามด้วยรหัส — จอเดียวกับตอนเพิ่งส่ง แต่อ่านสถานะล่าสุดของเคสนั้น
+  if (tracking) {
+    return (
+      <div className="pt-2">
+        <TicketTracker
+          ticket={tracking}
+          mode="lookup"
+          onReset={() => setTracking(null)}
+        />
+      </div>
+    );
+  }
+
   if (submitted) {
     // Sexual harassment and feeling unsafe both put the 1323 line front-and-centre.
     const sensitive =
@@ -1063,6 +1149,70 @@ export default function ReportPage() {
           })}
         </ol>
       </header>
+
+      {/* มีรหัสอยู่แล้ว → ตามสถานะได้เลย โผล่เฉพาะขั้นแรกเพื่อไม่ให้รกกลางฟอร์ม */}
+      {step === 1 ? (
+        <div className="mb-5">
+          {lookupOpen ? (
+            <div className="rounded-2xl bg-lavender-50 p-3.5 ring-1 ring-lavender-200/70">
+              <label
+                htmlFor="ticket-lookup"
+                className="text-[0.78rem] font-medium text-ink-soft"
+              >
+                กรอกรหัสรับเรื่องของคุณ
+              </label>
+              <div className="mt-2 flex gap-2">
+                <input
+                  id="ticket-lookup"
+                  value={lookupCode}
+                  onChange={(e) => {
+                    setLookupCode(e.target.value);
+                    setLookupError(null);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") submitLookup();
+                  }}
+                  placeholder="SWB-XXXXXX"
+                  autoComplete="off"
+                  className="min-w-0 flex-1 rounded-xl border border-neutral-300 bg-white px-3 py-2.5 text-[0.9rem] uppercase tracking-wider text-ink placeholder:normal-case placeholder:tracking-normal placeholder:text-ink-mute focus:border-lavender-400 focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={submitLookup}
+                  className="rounded-xl bg-lavender-600 px-4 text-[0.85rem] font-medium text-white transition-colors hover:bg-lavender-500"
+                >
+                  ดูสถานะ
+                </button>
+              </div>
+              {lookupError ? (
+                <p className="mt-2 text-[0.78rem] font-medium text-rose-600">
+                  {lookupError}
+                </p>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => {
+                  setLookupOpen(false);
+                  setLookupError(null);
+                }}
+                className="mt-2 text-[0.76rem] text-ink-mute underline-offset-2 hover:underline"
+              >
+                ปิด
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setLookupOpen(true)}
+              className="flex w-full items-center gap-2 rounded-2xl border border-neutral-200 bg-white px-3.5 py-3 text-left text-[0.82rem] text-ink-soft transition-colors hover:border-lavender-300 hover:text-ink"
+            >
+              <Search className="size-4 shrink-0 text-lavender-500" aria-hidden="true" />
+              เคยแจ้งไว้แล้ว? ติดตามสถานะด้วยรหัสรับเรื่อง
+              <ChevronRight className="ml-auto size-4 shrink-0 text-ink-mute" aria-hidden="true" />
+            </button>
+          )}
+        </div>
+      ) : null}
 
       {/* Step body — keyed so it re-animates on each change. */}
       <div

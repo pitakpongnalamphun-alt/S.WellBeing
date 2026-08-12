@@ -49,6 +49,14 @@ export type SosAlert = {
   name?: string;
   /** Set by staff at close time; absent while active/cancelled or if closed unclassified. */
   outcome?: SosOutcome;
+  /**
+   * เมื่อไหร่ที่เจ้าหน้าที่กด "รับเรื่อง" (ISO) — เหตุยังคง active อยู่ นี่ไม่ใช่การปิดเคส
+   * แต่เป็นสัญญาณกลับไปหาคนกดว่า "มีคนเห็นแล้ว และกำลังไป" ซึ่งเป็นข้อมูลที่คนกำลัง
+   * ตกใจต้องการที่สุด ระหว่างรอความช่วยเหลือ
+   */
+  acknowledgedAt?: string;
+  /** ชื่อเจ้าหน้าที่ที่รับเรื่อง — โชว์ให้นักเรียนเห็นว่ากำลังรอใครอยู่ */
+  acknowledgedBy?: string;
 };
 
 type SosState = {
@@ -61,6 +69,11 @@ type SosState = {
    */
   pending: string[];
   raise: (place: { th: string; en: string }, name?: string) => string;
+  /**
+   * Staff-side "รับเรื่องแล้ว กำลังไป" — เหตุยังเปิดอยู่ แค่มีคนรับผิดชอบแล้ว
+   * กดซ้ำไม่เขียนทับคนแรก (เวลาที่ตอบสนองครั้งแรกคือค่าที่มีความหมาย)
+   */
+  acknowledge: (id: string, by: string) => void;
   resolve: (id: string, outcome?: SosOutcome) => void;
   /** Student-side withdraw ("ฉันกดผิด") — only an active alert can be cancelled. */
   cancel: (id: string) => void;
@@ -103,6 +116,18 @@ export const useSosStore = create<SosState>()(
           // ส่งไม่สำเร็จทั้งที่ตั้งค่าไว้ → ค้างคิว แล้ว syncFromServer ส่งซ้ำให้
         });
         return id;
+      },
+
+      acknowledge: (id, by) => {
+        const target = get().alerts.find((a) => a.id === id);
+        if (!target || target.status !== "active" || target.acknowledgedAt) return;
+        const at = new Date().toISOString();
+        set((s) => ({
+          alerts: s.alerts.map((a) =>
+            a.id === id ? { ...a, acknowledgedAt: at, acknowledgedBy: by } : a,
+          ),
+        }));
+        void patchSos(id, { acknowledged_at: at, acknowledged_by: by });
       },
 
       resolve: (id, outcome) => {

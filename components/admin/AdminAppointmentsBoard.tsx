@@ -1,7 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { CalendarClock, CalendarPlus, Check, Clock, Search, X } from "lucide-react";
+import {
+  CalendarClock,
+  CalendarPlus,
+  Check,
+  Clock,
+  Search,
+  TriangleAlert,
+  X,
+} from "lucide-react";
 
 import { Card } from "@/components/ui/Card";
 import {
@@ -133,6 +141,18 @@ function NewAppointmentForm({
         <CalendarPlus className="size-4 text-mint-600" aria-hidden="true" />
         <h2 className="text-[0.95rem] font-semibold text-ink">สร้างนัดใหม่ให้นักเรียน</h2>
       </div>
+
+      {/* ใบนัดผูกกับ "บัญชีคนสร้าง" ตาม RLS — ใบที่ครูสร้างจึงไม่ไปโผล่ในแอปของนักเรียน
+          ต้องบอกให้รู้ตรงนี้ ไม่ใช่ปล่อยให้เข้าใจว่าเด็กได้รับแจ้งอัตโนมัติแล้ว
+          (จะให้ไปถึงเด็กได้ ต้องมีรหัสนักเรียนที่โรงเรียนยืนยัน ไม่ใช่รหัสที่เด็กพิมพ์เอง
+          ไม่งั้นใครก็สวมรหัสเพื่อนเพื่อดูใบนัดของเพื่อนได้) */}
+      <p className="mb-4 flex items-start gap-2 rounded-xl bg-amber-50 px-3 py-2.5 text-[0.78rem] leading-relaxed text-amber-800 ring-1 ring-amber-200">
+        <TriangleAlert className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
+        <span>
+          นัดที่สร้างจากหน้านี้ <span className="font-semibold">นักเรียนจะยังไม่เห็นในแอป</span> —
+          แจ้งวันเวลาและรหัสนัดให้เขาโดยตรงด้วย
+        </span>
+      </p>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
@@ -521,6 +541,9 @@ export function AdminAppointmentsBoard() {
             สร้างนัดให้ <span className="font-medium">{justCreated.name}</span> แล้ว · รหัส{" "}
             <span className="font-mono">{justCreated.code}</span> · {fmtDate(justCreated.date)}{" "}
             {justCreated.time} น.
+            <span className="mt-0.5 block text-[0.76rem] text-ink-soft">
+              อย่าลืมแจ้งนักเรียนโดยตรง — ใบนัดที่ครูสร้างยังไม่ขึ้นในแอปของเขา
+            </span>
           </p>
           <button
             type="button"
