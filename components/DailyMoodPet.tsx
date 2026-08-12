@@ -230,6 +230,18 @@ export function DailyMoodPet({ onSave, onExit, onReleaseCloud, className }: Dail
                       <p className="text-[0.78rem] leading-relaxed text-indigo-500">
                         เดี๋ยวเพื่อน ๆ จะแวะมาส่งกอดให้นะ เธอไม่ได้อยู่คนเดียว
                       </p>
+
+                      {/* ปล่อยเมฆกับบันทึกลงไดอารี่เป็นคนละปุ่มโดยตั้งใจ (คนละปลายทาง คนละคำยินยอม)
+                          แต่คนที่กดปล่อยเมฆแล้วกด "ไปดูกาแล็กซี" ต่อจะออกจากหน้านี้ทันที
+                          แล้วความรู้สึกวันนั้นจะไม่ถูกเก็บที่ไหนเลย — เตือนไว้ก่อนถึงปุ่มนั้น */}
+                      <p className="flex items-start gap-1.5 rounded-xl bg-amber-50 px-3 py-2 text-left text-[0.76rem] leading-relaxed text-amber-800 ring-1 ring-amber-200">
+                        <BookHeart className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
+                        <span>
+                          อย่าลืมกด <span className="font-semibold">“บันทึกลงไดอารี่”</span> ด้านล่างด้วยนะ
+                          ไม่งั้นความรู้สึกวันนี้จะไม่ถูกเก็บไว้ในสมุดของเธอ
+                        </span>
+                      </p>
+
                       <button
                         type="button"
                         onClick={() => onReleaseCloud?.()}
