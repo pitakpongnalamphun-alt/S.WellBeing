@@ -16,6 +16,17 @@ const NEGATIVE = new Set(["green", "orange", "red", "gray", "blue"]);
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+/**
+ * เส้นอ้างอิงแนวนอนของกราฟแท่ง
+ *
+ * ตอนค่าสูงสุดน้อย ๆ (เช่น 1) การหาร 3 ระดับจะได้ "1 / 1 / 0" ซึ่งอ่านแล้วเหมือน
+ * กราฟพัง — จึงตัดค่าที่ซ้ำกันออก เหลือเท่าที่บอกอะไรได้จริง
+ */
+function gridTicks(max: number): number[] {
+  const raw = [0, 0.5, 1].map((f) => Math.round(max * f));
+  return [...new Set(raw)];
+}
+
 export function AdminMoodStats() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -254,23 +265,34 @@ export function AdminMoodStats() {
           <p className="py-4 text-[0.84rem] text-ink-mute">กำลังโหลด…</p>
         ) : (
           <>
-            <div className="mt-4 flex h-28 items-end gap-1.5">
-              {trend.map((d) => {
-                const h = (d.total / trendMax) * 100;
-                const negH = d.total > 0 ? (d.neg / d.total) * 100 : 0;
-                return (
-                  <div key={d.day} className="flex flex-1 flex-col justify-end" title={`${d.day} · ${d.total} ครั้ง (ไม่สบายใจ ${d.neg})`}>
+            {/*
+              เดิมกราฟนี้ไม่ขึ้นเลยสักแท่ง: ความสูงตั้งเป็น % แต่กล่องแม่ของแต่ละแท่ง
+              สูงตามเนื้อหา (auto) เปอร์เซ็นต์จึงตีเป็นศูนย์ทั้งหมด — การ์ดว่างเปล่า
+              โดยไม่มี error ให้เห็น ตอนนี้วัดจากกล่องที่สูงแน่นอนด้วย absolute แทน
+            */}
+            <div className="relative mt-4 h-28">
+              <div className="absolute inset-0 flex items-end gap-1.5">
+                {trend.map((d) => (
+                  <div
+                    key={d.day}
+                    className="relative h-full flex-1"
+                    title={`${d.day} · ${d.total} ครั้ง (ไม่สบายใจ ${d.neg})`}
+                  >
                     <div
-                      className="w-full overflow-hidden rounded-t bg-neutral-100"
-                      style={{ height: `${Math.max(h, d.total > 0 ? 6 : 2)}%` }}
+                      className="absolute inset-x-0 bottom-0 overflow-hidden rounded-t bg-slate-300"
+                      style={{
+                        height: `${(d.total / trendMax) * 100}%`,
+                        minHeight: d.total > 0 ? 3 : 0,
+                      }}
                     >
-                      <div className="h-full w-full bg-slate-300">
-                        <div className="w-full bg-rose-300" style={{ height: `${negH}%` }} />
-                      </div>
+                      <div
+                        className="absolute inset-x-0 bottom-0 bg-rose-400"
+                        style={{ height: d.total > 0 ? `${(d.neg / d.total) * 100}%` : 0 }}
+                      />
                     </div>
                   </div>
-                );
-              })}
+                ))}
+              </div>
             </div>
             <div className="mt-1.5 flex justify-between text-[0.68rem] text-ink-mute">
               <span>{trend[0]?.day.slice(5)}</span>
@@ -379,14 +401,14 @@ export function AdminMoodStats() {
               <>
                 {/* กราฟรายวัน — มีเส้นอ้างอิงและตัวเลขสูงสุด ไม่ใช่แท่งลอย ๆ ที่อ่านค่าไม่ได้ */}
                 <div className="relative mt-5 h-40">
-                  {[0, 0.5, 1].map((f) => (
+                  {gridTicks(monthly.dayMax).map((t) => (
                     <div
-                      key={f}
+                      key={t}
                       className="absolute inset-x-0 border-t border-dashed border-neutral-200"
-                      style={{ bottom: `${f * 100}%` }}
+                      style={{ bottom: `${(monthly.dayMax ? t / monthly.dayMax : 0) * 100}%` }}
                     >
                       <span className="absolute -top-2 -left-1 bg-white pr-1 text-[0.62rem] tabular-nums text-ink-mute">
-                        {Math.round(monthly.dayMax * f)}
+                        {t}
                       </span>
                     </div>
                   ))}

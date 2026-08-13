@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Sparkles, Ticket, X } from "lucide-react";
 
+import { DecoSprite } from "@/components/gacha/DecoSprite";
 import { FriendAvatar } from "@/components/gacha/FriendAvatar";
 import {
   FLUFFY_FRIENDS,
@@ -64,7 +65,9 @@ export function FriendsCollection({ className }: { className?: string }) {
     return () => clearTimeout(t);
   }, [celebrate]);
 
-  const ownedCount = Object.values(friends).filter((c) => c > 0).length;
+  // นับเฉพาะตัวที่อยู่ในพูลกาชาจริง — ปุยแต่งตัวได้แต่ไม่ใช่ของสะสม ถ้านับรวมเข้ามา
+  // ตัวเลขจะกลายเป็น 16/15 และแถบความคืบหน้าจะล้นกรอบ
+  const ownedCount = FLUFFY_FRIENDS.filter((f) => (friends[f.id] ?? 0) > 0).length;
   const canRedeem = shards >= SHARDS_PER_TICKET;
   const superRares = FLUFFY_FRIENDS.filter((f) => f.rarity === "superRare");
 
@@ -372,7 +375,7 @@ export function FriendsCollection({ className }: { className?: string }) {
                                     : "bg-white ring-1 ring-slate-100",
                                 )}
                               >
-                                <span aria-hidden="true">{d.emoji}</span>
+                                <DecoSprite id={d.id} size={26} fallback={d.emoji} />
                               </button>
                             );
                           })}
