@@ -38,6 +38,8 @@ export type SafeCase = {
   updatedAt: string; // ISO
   categoryId: string;
   categoryLabel: string;
+  /** หัวข้อย่อย (ตอนนี้ใช้กับหมวดกลั่นแกล้ง) — เลือกได้หลายข้อ และไม่บังคับ */
+  subCategories?: string[];
   expectation: CaseExpectation;
   sensitive: boolean; // "unsafe" / "harassment" — surface the 1323 line louder
   contact: CaseContact;
@@ -57,6 +59,8 @@ export type AnonReport = {
   createdAt: string;
   categoryId: string;
   categoryLabel: string;
+  /** หัวข้อย่อยยังเก็บได้แม้ไม่ระบุตัวตน เพราะเป็นชื่อหมวด ไม่ใช่เรื่องราวของใคร */
+  subCategories?: string[];
   sensitive: boolean;
 };
 
@@ -125,6 +129,7 @@ function makeTicket(used: Set<string>): string {
 type NewCase = {
   categoryId: string;
   categoryLabel: string;
+  subCategories?: string[];
   expectation: CaseExpectation;
   sensitive: boolean;
   contact: CaseContact;
@@ -153,7 +158,12 @@ type CasesState = {
   /** Open an identified case; returns the ticket code shown to the student. */
   openCase: (input: NewCase) => string;
   /** Record an anonymous report as an aggregate signal (no identity, no story). */
-  addAnonymous: (categoryId: string, categoryLabel: string, sensitive: boolean) => void;
+  addAnonymous: (
+    categoryId: string,
+    categoryLabel: string,
+    sensitive: boolean,
+    subCategories?: string[],
+  ) => void;
   setStatus: (id: string, status: CaseStatus) => void;
   setNote: (id: string, note: string) => void;
   /** Assign (or, with "", unassign) the responsible staff member. */
@@ -199,12 +209,13 @@ export const useCasesStore = create<CasesState>()(
         return ticket;
       },
 
-      addAnonymous: (categoryId, categoryLabel, sensitive) => {
+      addAnonymous: (categoryId, categoryLabel, sensitive, subCategories) => {
         const r: AnonReport = {
           id: `anon-${Date.now()}-${Math.floor(Math.random() * 1e6)}`,
           createdAt: new Date().toISOString(),
           categoryId,
           categoryLabel,
+          subCategories,
           sensitive,
         };
         set((s) => ({ anonymous: [r, ...s.anonymous] }));

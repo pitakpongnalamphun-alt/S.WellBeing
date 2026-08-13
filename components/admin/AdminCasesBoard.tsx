@@ -28,6 +28,7 @@ import {
   useCasesStore,
 } from "@/lib/store/useCasesStore";
 import { TRIAGE_BAND_META, triageScore } from "@/lib/insights/triage";
+import { subtopicLabels } from "@/data/reportTopics";
 import { useAuditStore } from "@/lib/store/useAuditStore";
 import { useStaffSession } from "@/lib/store/useStaffSessionStore";
 import { useStaffAccountsStore } from "@/lib/store/useStaffAccountsStore";
@@ -247,6 +248,21 @@ function CaseCard({ c, now }: { c: SafeCase; now: number }) {
         <span className="text-[0.9rem] font-bold text-ink">{c.categoryLabel}</span>
         <span className="ml-auto font-mono text-[0.74rem] text-ink-mute">{c.id}</span>
       </div>
+
+      {/* ลักษณะย่อยที่นักเรียนเลือกไว้ — "โดนล้อ" กับ "โดนดักตี" ต้องอ่านต่างกันได้ทันที
+          โดยไม่ต้องเปิดเข้าไปอ่านเนื้อเรื่อง */}
+      {subtopicLabels(c.subCategories).length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {subtopicLabels(c.subCategories).map((label) => (
+            <span
+              key={label}
+              className="rounded-full bg-lavender-50 px-2.5 py-0.5 text-[0.72rem] text-lavender-700 ring-1 ring-lavender-200"
+            >
+              {label}
+            </span>
+          ))}
+        </div>
+      )}
       <div className="mt-1 flex flex-wrap items-center justify-between gap-2">
         <p className="text-[0.72rem] text-ink-mute">แจ้งเมื่อ {fmt(c.createdAt)}</p>
         <span className="flex flex-wrap items-center gap-1.5">

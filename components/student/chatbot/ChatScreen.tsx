@@ -19,6 +19,7 @@ import Link from "next/link";
 import { Puy, type PuyExpression } from "@/components/Puy";
 import { CRISIS_MESSAGE, detectCrisis } from "@/lib/wellai/crisis";
 import { useChatStore } from "@/lib/store/useChatStore";
+import { useGachaStore } from "@/lib/store/useGachaStore";
 import { cn } from "@/lib/utils";
 
 import { MessageBubble, type Message } from "./MessageBubble";
@@ -57,6 +58,8 @@ export function ChatScreen() {
   const messages = useChatStore((s) => s.messages);
   const append = useChatStore((s) => s.append);
   const clearChat = useChatStore((s) => s.clear);
+  // ของที่นักเรียนแต่งให้ปุยไว้ในคลังเพื่อน — ตัวเดียวกัน ใส่ชุดเดียวกันทั้งแอป
+  const puyOutfit = useGachaStore((s) => s.equipped.puy);
 
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
@@ -236,7 +239,7 @@ export function ChatScreen() {
           )}
           aria-hidden="true"
         >
-          <Puy expression={expression} size={32} motion="still" talking={talking} />
+          <Puy expression={expression} size={32} motion="still" talking={talking} equipped={puyOutfit} />
         </span>
         <span className="min-w-0 flex-1">
           <span className="block text-[0.95rem] font-bold leading-tight text-ink">
@@ -290,7 +293,7 @@ export function ChatScreen() {
             )}
           >
             <div className="flex flex-col items-center gap-3 px-2 pb-2 pt-6 text-center">
-              <Puy expression={expression} size={116} />
+              <Puy expression={expression} size={116} equipped={puyOutfit} />
               <h1 className="font-display th:leading-snug mt-1 text-[1.05rem] font-bold text-ink">
                 วันนี้อยากเล่าอะไรให้ปุยฟังไหม
               </h1>

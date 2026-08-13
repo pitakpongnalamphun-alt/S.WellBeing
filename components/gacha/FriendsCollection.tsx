@@ -4,10 +4,12 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Sparkles, Ticket, X } from "lucide-react";
 
+import { DecoSprite } from "@/components/gacha/DecoSprite";
 import { FriendAvatar } from "@/components/gacha/FriendAvatar";
 import {
   FLUFFY_FRIENDS,
   FRIEND_BY_ID,
+  PUY_FRIEND,
   RARITY_META,
   type FluffyFriend,
   type Rarity,
@@ -63,7 +65,9 @@ export function FriendsCollection({ className }: { className?: string }) {
     return () => clearTimeout(t);
   }, [celebrate]);
 
-  const ownedCount = Object.values(friends).filter((c) => c > 0).length;
+  // นับเฉพาะตัวที่อยู่ในพูลกาชาจริง — ปุยแต่งตัวได้แต่ไม่ใช่ของสะสม ถ้านับรวมเข้ามา
+  // ตัวเลขจะกลายเป็น 16/15 และแถบความคืบหน้าจะล้นกรอบ
+  const ownedCount = FLUFFY_FRIENDS.filter((f) => (friends[f.id] ?? 0) > 0).length;
   const canRedeem = shards >= SHARDS_PER_TICKET;
   const superRares = FLUFFY_FRIENDS.filter((f) => f.rarity === "superRare");
 
@@ -213,6 +217,22 @@ export function FriendsCollection({ className }: { className?: string }) {
         )}
       </div>
 
+      {/* ปุยอยู่บนสุดและปลดล็อกเสมอ — ตัวที่นักเรียนคุยด้วยทุกวันไม่ควรถูกล็อกไว้หลังการสุ่ม */}
+      <button
+        onClick={() => openFriend(PUY_FRIEND.id)}
+        className="mt-5 flex w-full items-center gap-3 rounded-2xl bg-white p-3 text-left shadow-sm ring-1 ring-rose-100 transition active:scale-[0.99]"
+      >
+        <FriendAvatar
+          friend={PUY_FRIEND}
+          size={54}
+          equipped={equipped[PUY_FRIEND.id]}
+        />
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-bold text-slate-700">แต่งตัวให้น้องปุย</span>
+          <span className="block text-xs text-slate-400">{PUY_FRIEND.desc}</span>
+        </span>
+      </button>
+
       {/* Rarity sections */}
       <div className="mt-5 space-y-6">
         {RARITY_ORDER.map((rarity) => {
@@ -355,7 +375,7 @@ export function FriendsCollection({ className }: { className?: string }) {
                                     : "bg-white ring-1 ring-slate-100",
                                 )}
                               >
-                                <span aria-hidden="true">{d.emoji}</span>
+                                <DecoSprite id={d.id} size={26} fallback={d.emoji} />
                               </button>
                             );
                           })}

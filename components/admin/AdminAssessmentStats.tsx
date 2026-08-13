@@ -32,6 +32,16 @@ type PerAssess = {
   actions: Record<AssessAction, number>;
 };
 
+/**
+ * เส้นอ้างอิงแนวนอนของกราฟแท่ง
+ *
+ * ตอนค่าสูงสุดน้อย ๆ (เช่น 1) การหาร 3 ระดับจะได้ "1 / 1 / 0" ซึ่งอ่านแล้วเหมือน
+ * กราฟพัง — จึงตัดค่าที่ซ้ำกันออก เหลือเท่าที่บอกอะไรได้จริง
+ */
+function gridTicks(max: number): number[] {
+  return [...new Set([0, 0.5, 1].map((f) => Math.round(max * f)))];
+}
+
 export function AdminAssessmentStats() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -354,14 +364,14 @@ export function AdminAssessmentStats() {
             ) : (
               <>
                 <div className="relative mt-5 h-40">
-                  {[0, 0.5, 1].map((f) => (
+                  {gridTicks(monthly.dayMax).map((t) => (
                     <div
-                      key={f}
+                      key={t}
                       className="absolute inset-x-0 border-t border-dashed border-neutral-200"
-                      style={{ bottom: `${f * 100}%` }}
+                      style={{ bottom: `${(monthly.dayMax ? t / monthly.dayMax : 0) * 100}%` }}
                     >
                       <span className="absolute -top-2 -left-1 bg-white pr-1 text-[0.62rem] tabular-nums text-ink-mute">
-                        {Math.round(monthly.dayMax * f)}
+                        {t}
                       </span>
                     </div>
                   ))}

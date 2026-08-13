@@ -43,6 +43,16 @@ const fmt = (iso: string) =>
 
 type StatusFilter = "all" | SosStatus;
 
+/**
+ * เส้นอ้างอิงแนวนอนของกราฟแท่ง
+ *
+ * ตอนค่าสูงสุดน้อย ๆ (เช่น 1) การหาร 3 ระดับจะได้ "1 / 1 / 0" ซึ่งอ่านแล้วเหมือน
+ * กราฟพัง — จึงตัดค่าที่ซ้ำกันออก เหลือเท่าที่บอกอะไรได้จริง
+ */
+function gridTicks(max: number): number[] {
+  return [...new Set([0, 0.5, 1].map((f) => Math.round(max * f)))];
+}
+
 export function AdminSosBoard() {
   const [mounted, setMounted] = useState(false);
   const [now, setNow] = useState(0);
@@ -383,14 +393,14 @@ export function AdminSosBoard() {
             ) : (
               <>
                 <div className="relative mt-5 h-40">
-                  {[0, 0.5, 1].map((f) => (
+                  {gridTicks(monthly.dayMax).map((t) => (
                     <div
-                      key={f}
+                      key={t}
                       className="absolute inset-x-0 border-t border-dashed border-neutral-200"
-                      style={{ bottom: `${f * 100}%` }}
+                      style={{ bottom: `${(monthly.dayMax ? t / monthly.dayMax : 0) * 100}%` }}
                     >
                       <span className="absolute -top-2 -left-1 bg-white pr-1 text-[0.62rem] tabular-nums text-ink-mute">
-                        {Math.round(monthly.dayMax * f)}
+                        {t}
                       </span>
                     </div>
                   ))}
@@ -513,6 +523,11 @@ export function AdminSosBoard() {
                     )}
                   >
                     {monthLabel(m.key)}
+                  </span>
+                  {/* ตัวเลขบนหัวแท่งคือ "เหตุจริง" — ถ้าไม่บอกยอดรวมด้วย เดือนที่มีแต่
+                      การกดผิดจะขึ้นเลข 0 บนแท่งสูง ๆ ซึ่งอ่านแล้วงง */}
+                  <span className="text-center text-[0.66rem] tabular-nums text-ink-mute">
+                    {m.total > 0 ? `จาก ${m.total} ครั้ง` : "ไม่มี"}
                   </span>
                 </button>
               );
