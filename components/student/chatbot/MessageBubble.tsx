@@ -1,4 +1,5 @@
-import { Phone, ShieldAlert } from "lucide-react";
+import { Phone, ShieldAlert, Siren } from "lucide-react";
+import Link from "next/link";
 
 import { CRISIS_HOTLINES } from "@/lib/wellai/crisis";
 import { cn } from "@/lib/utils";
@@ -72,6 +73,22 @@ function CrisisBubble({ content }: { content: string }) {
       <p className="mt-3 text-[0.84rem] leading-relaxed text-ink-soft">
         {closing}
       </p>
+
+      {/*
+        ทางลัดไปหาคนจริงในโรงเรียน — วางไว้ให้กดได้ทันทีในจังหวะที่ด่านฉุกเฉินทำงาน
+        แต่ไม่ยิงแจ้งเตือนให้เอง 2 เหตุผล:
+        1) ครูเวรที่ได้รับแจ้งต้องรู้ว่าเด็กอยู่ตรงไหนถึงจะไปหาได้ ซึ่งห้องแชทไม่รู้ —
+           หน้า /sos ถามสถานที่ก่อนส่ง การยิงแจ้งแบบไม่มีสถานที่คือแจ้งเตือนที่ตามหาใครไม่ได้
+        2) ถ้าสิ่งที่พิมพ์ในห้องแชทถูกส่งต่อให้ครูโดยอัตโนมัติ เด็กจะเรียนรู้ว่าที่นี่ไม่ปลอดภัย
+           ที่จะพูดความจริง แล้วเราจะไม่ได้ยินอะไรอีกเลย ซึ่งอันตรายกว่า
+      */}
+      <Link
+        href="/sos"
+        className="mt-3 flex items-center justify-center gap-2 rounded-xl bg-rose-600 px-4 py-3 text-[0.86rem] font-semibold text-white transition-colors hover:bg-rose-700"
+      >
+        <Siren className="size-4" aria-hidden="true" />
+        แจ้งครูเวรให้มาหาตอนนี้
+      </Link>
     </div>
   );
 }
