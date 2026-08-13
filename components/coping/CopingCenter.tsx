@@ -26,7 +26,6 @@ import {
 
 import { GroundingWalk } from "./GroundingWalk";
 import { ReframeWalk } from "./ReframeWalk";
-import { SighPlayer } from "./SighPlayer";
 
 /**
  * คลังวิธีรับมือ — หน้ารวมสองศูนย์ และหน้ารายละเอียดของแต่ละวิธี
@@ -113,7 +112,6 @@ function GuideDetail({ guide, onBack }: { guide: Guide; onBack: () => void }) {
           มากกว่าต้องการอ่าน */}
       {guide.practice ? (
         <div className="mt-5">
-          {guide.practice === "sigh" ? <SighPlayer /> : null}
           {guide.practice === "grounding" ? <GroundingWalk /> : null}
           {guide.practice === "reframe" ? <ReframeWalk /> : null}
         </div>
