@@ -58,9 +58,11 @@ import { cn } from "@/lib/utils";
    pressure of reaching out, not raise it. Five choices, each its own hue so
    they read as distinct doors. */
 import {
+  BULLY_SUBTOPIC_BY_ID,
   BULLY_SUBTOPICS,
   subtopicSensitive,
 } from "@/data/reportTopics";
+import { guideForSubtopics } from "@/data/copingGuides";
 
 type Category = {
   id: "bully" | "academic" | "family" | "unsafe" | "harassment" | "other";
@@ -261,6 +263,11 @@ function StepCategory({
   form: FormState;
   set: (patch: Partial<FormState>) => void;
 }) {
+  const suggestedGuide = guideForSubtopics(
+    form.subCategories,
+    (id) => BULLY_SUBTOPIC_BY_ID[id]?.weight ?? 0,
+  );
+
   return (
     <div className="space-y-5">
       <div className="flex flex-col items-center text-center">
@@ -401,6 +408,36 @@ function StepCategory({
               );
             })}
           </div>
+
+          {/*
+            เด็กที่เพิ่งบอกว่าโดนแบบไหน คือคนที่เรารู้บริบทของเขามากที่สุดในทั้งแอป
+            เสนอวิธีรับมือที่ตรงกับข้อที่หนักที่สุดที่เขาติ๊กไว้ — เพราะระหว่างรอครูอ่านเรื่อง
+            เขายังต้องกลับไปเจอสถานการณ์เดิมอยู่ดี และแบบฟอร์มที่ให้ได้แค่ "รอนะ" คือ
+            แบบฟอร์มที่ปล่อยเขาไว้กลางทาง
+
+            ลิงก์เปิดแท็บใหม่ เพื่อไม่ให้เรื่องที่พิมพ์ค้างไว้ในฟอร์มหายไป
+          */}
+          {suggestedGuide ? (
+            <a
+              href={`/coping?g=${suggestedGuide.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 flex items-center gap-3 rounded-xl bg-white p-3 ring-1 ring-lavender-200 transition active:scale-[0.99]"
+            >
+              <span className="text-[1.3rem]" aria-hidden="true">
+                {suggestedGuide.emoji}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[0.82rem] font-semibold leading-snug text-ink">
+                  ระหว่างรอครู ลองอ่านวิธีรับมือ
+                </span>
+                <span className="mt-0.5 block text-[0.74rem] leading-snug text-ink-mute">
+                  {suggestedGuide.title}
+                </span>
+              </span>
+              <ChevronRight className="size-4 shrink-0 text-lavender-500" aria-hidden="true" />
+            </a>
+          ) : null}
         </div>
       ) : null}
     </div>
