@@ -59,16 +59,38 @@ export type AvatarSpec = {
   glasses?: "round" | "square";
 };
 
+/**
+ * การ์ดในสำรับมีสองชนิด
+ *
+ * quote — คำพูดของนักจิตวิทยา (ของเดิม)
+ * practice — วิธีที่ลองทำได้จริงในแอปนี้ ไม่มีการอ้างคำพูดของใคร
+ *
+ * ที่เพิ่มชนิดที่สองแทนการหาคำคมมาใส่เพิ่ม เพราะคำคมที่แพร่บนอินเทอร์เน็ตถูกใส่ชื่อ
+ * ผิดคนบ่อยมาก (ไฟล์นี้เตือนไว้เองตั้งแต่บรรทัดแรก) การเติมของที่ตรวจสอบไม่ได้เข้าไป
+ * อีกสิบใบ คือการเพิ่มความเสี่ยงให้แอปที่เด็กใช้ ส่วนวิธีปฏิบัติเป็นสิ่งที่พิสูจน์ได้จาก
+ * การลองทำ ไม่ต้องอ้างใคร และพาไปทำต่อในแอปได้ทันที
+ */
+export type WisdomKind = "quote" | "practice";
+
 export type Wisdom = {
   id: string;
-  name: string;
-  nameEn: string;
-  field: string;
-  era: string;
+  kind: WisdomKind;
   quote: string;
   application: string;
   category: WisdomCategory;
-  avatar: AvatarSpec;
+
+  /** เฉพาะการ์ดคำพูด */
+  name?: string;
+  nameEn?: string;
+  field?: string;
+  era?: string;
+  avatar?: AvatarSpec;
+
+  /** เฉพาะการ์ดวิธีทำ */
+  title?: string;
+  emoji?: string;
+  /** พาไปทำจริงในแอป — ปุ่มนี้คือความต่างระหว่าง "อ่านแล้วรู้สึกดี" กับ "ได้ลองจริง" */
+  action?: { label: string; href: string };
 };
 
 const GRAY = "#c2bcb0";
@@ -80,6 +102,7 @@ const SKIN = "#f1c9a5";
 
 export const WISDOMS: Wisdom[] = [
   {
+    kind: "quote",
     id: "frankl",
     name: "วิกเตอร์ แฟรงเคิล",
     nameEn: "Viktor Frankl",
@@ -91,6 +114,7 @@ export const WISDOMS: Wisdom[] = [
     avatar: { skin: SKIN, hair: GRAY, hairStyle: "sides", glasses: "square" },
   },
   {
+    kind: "quote",
     id: "rogers",
     name: "คาร์ล โรเจอร์ส",
     nameEn: "Carl Rogers",
@@ -102,6 +126,7 @@ export const WISDOMS: Wisdom[] = [
     avatar: { skin: SKIN, hair: WHITE, hairStyle: "full", glasses: "round" },
   },
   {
+    kind: "quote",
     id: "jung",
     name: "คาร์ล ยุง",
     nameEn: "Carl Jung",
@@ -113,6 +138,7 @@ export const WISDOMS: Wisdom[] = [
     avatar: { skin: SKIN, hair: GRAY, hairStyle: "receding", glasses: "round", beard: "mustache" },
   },
   {
+    kind: "quote",
     id: "maslow",
     name: "อับราฮัม มาสโลว์",
     nameEn: "Abraham Maslow",
@@ -124,6 +150,7 @@ export const WISDOMS: Wisdom[] = [
     avatar: { skin: SKIN, hair: DARK, hairStyle: "full", beard: "mustache" },
   },
   {
+    kind: "quote",
     id: "james",
     name: "วิลเลียม เจมส์",
     nameEn: "William James",
@@ -135,6 +162,7 @@ export const WISDOMS: Wisdom[] = [
     avatar: { skin: SKIN, hair: GRAY, hairStyle: "sides", beard: "full" },
   },
   {
+    kind: "quote",
     id: "brown",
     name: "บรีเน บราวน์",
     nameEn: "Brené Brown",
@@ -146,6 +174,7 @@ export const WISDOMS: Wisdom[] = [
     avatar: { skin: SKIN, hair: BLONDE, hairStyle: "bob" },
   },
   {
+    kind: "quote",
     id: "erikson",
     name: "เอริก อีริกสัน",
     nameEn: "Erik Erikson",
@@ -157,6 +186,7 @@ export const WISDOMS: Wisdom[] = [
     avatar: { skin: SKIN, hair: WHITE, hairStyle: "full", beard: "mustache" },
   },
   {
+    kind: "quote",
     id: "winnicott",
     name: "โดนัลด์ วินนิคอตต์",
     nameEn: "Donald Winnicott",
@@ -167,7 +197,121 @@ export const WISDOMS: Wisdom[] = [
     category: "acceptance",
     avatar: { skin: SKIN, hair: GRAY, hairStyle: "sides", glasses: "round" },
   },
+  // ---------------------------------------------------------------- วิธีที่ลองทำได้จริง
+  {
+    kind: "practice",
+    id: "name-it",
+    title: "เรียกชื่อความรู้สึกให้ถูก",
+    emoji: "🎯",
+    quote: "ความรู้สึกที่ยังไม่มีชื่อ มักใหญ่กว่าความจริงเสมอ",
+    application: "แทนที่จะบอกว่า “แย่” ลองหาคำที่ตรงกว่านั้น — น้อยใจ? อาย? กลัว? พอเรียกถูกชื่อ มันจะเล็กลงเอง",
+    category: "self",
+    action: { label: "ไปบันทึกอารมณ์", href: "/mood" },
+  },
+  {
+    kind: "practice",
+    id: "breathe-4",
+    title: "หายใจให้ร่างกายรู้ว่าปลอดภัย",
+    emoji: "🌬️",
+    quote: "ใจสั่งร่างกายไม่ได้ตอนตกใจ แต่ร่างกายสั่งใจได้",
+    application: "หายใจออกให้ยาวกว่าหายใจเข้า สัก 6 รอบ — ระบบประสาทจะเริ่มถอยจากโหมดตื่นตัวเอง",
+    category: "stress",
+    action: { label: "ไปฝึกหายใจ", href: "/breathing" },
+  },
+  {
+    kind: "practice",
+    id: "catch-thought",
+    title: "จับความคิดที่หลอกเรา",
+    emoji: "🪤",
+    quote: "ความคิดไม่ใช่ข้อเท็จจริง แม้มันจะดังมากก็ตาม",
+    application: "เวลาคิดว่า “ทุกคนเกลียดเรา” ลองถามว่ามีหลักฐานอะไรบ้าง และมีหลักฐานอะไรที่ค้านมัน",
+    category: "self",
+    action: { label: "ไปเล่นเกมจับความคิด", href: "/games" },
+  },
+  {
+    kind: "practice",
+    id: "friend-voice",
+    title: "พูดกับตัวเองเหมือนพูดกับเพื่อน",
+    emoji: "💌",
+    quote: "เราไม่เคยพูดกับเพื่อนแบบที่พูดกับตัวเองเลยสักครั้ง",
+    application: "เขียนสิ่งที่กำลังด่าตัวเองลงไป แล้วเขียนใหม่ด้วยประโยคที่จะพูดกับเพื่อนที่เจอเรื่องเดียวกัน",
+    category: "acceptance",
+    action: { label: "ไปเขียนไดอารี่", href: "/mood" },
+  },
+  {
+    kind: "practice",
+    id: "ten-minutes",
+    title: "กฎสิบนาทีแรก",
+    emoji: "⏱️",
+    quote: "งานที่ไม่อยากเริ่ม มักไม่ได้หนักเท่ากับการเริ่ม",
+    application: "ตั้งเวลา 10 นาที แล้วทำแบบห่วย ๆ ก็ได้ ครบแล้วจะหยุดก็ได้ — ส่วนใหญ่จะไม่หยุด",
+    category: "growth",
+  },
+  {
+    kind: "practice",
+    id: "let-go-cloud",
+    title: "วางเรื่องที่แบกไว้ให้คนอื่นช่วยถือ",
+    emoji: "☁️",
+    quote: "เรื่องที่พูดออกมาแล้ว หนักน้อยกว่าเรื่องที่เก็บไว้เสมอ",
+    application: "ปล่อยความรู้สึกวันนี้เป็นก้อนเมฆหนึ่งก้อน แล้วดูว่ามีใครแวะมาส่งกอดให้บ้าง",
+    category: "hope",
+    action: { label: "ไปกาแล็กซีแห่งการโอบกอด", href: "/galaxy" },
+  },
+  {
+    kind: "practice",
+    id: "ask-for-help",
+    title: "ขอความช่วยเหลือให้เป็น",
+    emoji: "🤝",
+    quote: "การขอความช่วยเหลือคือทักษะ ไม่ใช่ความอ่อนแอ",
+    application: "ไม่ต้องเล่าทั้งหมดก็ได้ เริ่มจากประโยคเดียว — “ช่วงนี้หนูไม่ค่อยไหว อยากคุยด้วยได้ไหม”",
+    category: "courage",
+    action: { label: "ไปนัดคุยกับครู", href: "/appointments" },
+  },
+  {
+    kind: "practice",
+    id: "one-small-step",
+    title: "ก้าวแรกที่เล็กพอจะก้าวได้จริง",
+    emoji: "🐾",
+    quote: "แผนที่ทำไม่ได้ ไม่ใช่แผน",
+    application: "แทนที่จะตั้งเป้าว่า “จะอ่านหนังสือให้ทัน” ลองตั้งว่า “คืนนี้เปิดสมุดหน้าแรก”",
+    category: "growth",
+  },
+  {
+    kind: "practice",
+    id: "feed-break",
+    title: "พักสายตาจากชีวิตคนอื่น",
+    emoji: "📵",
+    quote: "ฟีดคือหน้าที่ดีที่สุดของคนอื่น ไม่ใช่ทั้งชีวิตของเขา",
+    application: "คืนไหนที่เลื่อนฟีดแล้วรู้สึกแย่ลง ให้วางมือถือแล้วทำอย่างอื่น 20 นาที ก่อนกลับมาดูใหม่",
+    category: "stress",
+  },
+  {
+    kind: "practice",
+    id: "talk-to-puy",
+    title: "เล่าให้ใครสักคนฟังก่อนนอน",
+    emoji: "🩷",
+    quote: "เรื่องที่วนอยู่ในหัวทั้งคืน มักหยุดวนเมื่อถูกเล่าออกไป",
+    application: "ถ้ายังไม่พร้อมเล่าให้คนจริงฟัง เล่าให้ปุยฟังก่อนก็ได้ ไม่มีใครอ่านนอกจากเครื่องนี้",
+    category: "hope",
+    action: { label: "ไปคุยกับน้องปุย", href: "/chatbot" },
+  },
 ];
+
+/**
+ * อารมณ์ที่นักเรียนเลือกวันนี้ → หมวดแง่คิดที่น่าหยิบมาอ่านที่สุด
+ *
+ * ไม่ได้พยายามจับคู่ให้ตรงเป๊ะ เพราะไม่มีคำคมไหนแก้ความรู้สึกใครได้ แต่การหยิบใบที่
+ * "พูดถึงเรื่องที่เขากำลังเจอ" ขึ้นมาก่อน ดีกว่าสุ่มใบไหนก็ได้ในวันที่เขาไม่ไหว
+ */
+export const MOOD_TO_CATEGORY: Record<string, WisdomCategory> = {
+  yellow: "growth", // สุข — ต่อยอดวันดีให้ไปต่อ
+  purple: "self", // ประหลาดใจ
+  green: "stress", // ทุกข์/กังวล
+  orange: "courage", // กลัว
+  red: "acceptance", // โกรธ
+  gray: "acceptance", // รังเกียจ
+  blue: "hope", // เสียใจ
+};
 
 export const WISDOM_BY_ID: Record<string, Wisdom> = Object.fromEntries(
   WISDOMS.map((w) => [w.id, w]),

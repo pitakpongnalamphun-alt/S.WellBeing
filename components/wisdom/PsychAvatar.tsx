@@ -9,8 +9,18 @@ import type { AvatarSpec } from "@/data/wisdom";
 export function PsychAvatar({ spec, size = 88 }: { spec: AvatarSpec; size?: number }) {
   const { skin, hair, hairStyle, beard, glasses } = spec;
   const eyeY = 47;
+  // กรอบกลมของภาพเหมือน — ไหล่ที่ไม่ถูกตัดขอบจะอ่านเป็นก้อนสีเนื้อลอยอยู่ใต้หัว
+  // โดยเฉพาะตอนย่อเหลือ 28–50px บนการ์ดและแถบหน้าแรก
+  const clipId = `psych-clip-${hairStyle}-${beard ?? "none"}-${glasses ?? "none"}`;
   return (
     <svg width={size} height={size} viewBox="0 0 100 100" aria-hidden="true" role="presentation">
+      <defs>
+        <clipPath id={clipId}>
+          <circle cx="50" cy="50" r="50" />
+        </clipPath>
+      </defs>
+      <circle cx="50" cy="50" r="50" fill="#ffffff" opacity="0.6" />
+      <g clipPath={`url(#${clipId})`}>
       {/* shoulders + collar */}
       <path d="M24 99 Q50 73 76 99 Z" fill={skin} />
       <path d="M31 99 Q50 84 69 99 Z" fill="#dcd5c6" />
@@ -75,6 +85,7 @@ export function PsychAvatar({ spec, size = 88 }: { spec: AvatarSpec; size?: numb
 
       {/* mouth */}
       <path d="M45 59 Q50 62 55 59" fill="none" stroke={beard === "full" ? "#7a4a3a" : "#a86a5a"} strokeWidth="1.8" strokeLinecap="round" />
+      </g>
     </svg>
   );
 }
