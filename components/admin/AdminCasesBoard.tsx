@@ -3,7 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   Check,
+  ChevronLeft,
+  ChevronRight,
   Download,
+  EyeOff,
   Lock,
   MapPin,
   Phone,
@@ -19,6 +22,7 @@ import {
   CASE_STATUS_ORDER,
   isOpenStatus,
   slaState,
+  type AnonReport,
   type CaseStatus,
   type SafeCase,
   useCasesStore,
@@ -30,7 +34,7 @@ import { useStaffAccountsStore } from "@/lib/store/useStaffAccountsStore";
 import { COUNSELOR_BY_ID } from "@/data/counselors";
 import type { StaffAccount } from "@/data/staff";
 import { downloadCsv } from "@/lib/csv";
-import { localDay } from "@/lib/date";
+import { localDay, monthKey, monthLabel, shiftMonth } from "@/lib/date";
 import { cn } from "@/lib/utils";
 
 const PAGE_SIZE = 8;
@@ -396,6 +400,335 @@ function CaseCard({ c, now }: { c: SafeCase; now: number }) {
   );
 }
 
+/**
+ * สรุปรายเดือนของ "เรื่องที่แจ้งเข้ามา" โดยแยกระบุตัวตน / ไม่ระบุตัวตน
+ *
+ * ทำไมต้องแยก: เคสที่ระบุตัวตนตามต่อได้ มีคนรับผิดชอบ มี SLA มีวันปิดเคส ส่วนเรื่อง
+ * ที่แจ้งแบบไม่ระบุตัวตนเก็บได้แค่ "หมวด + เวลา" ตามหลักนิรนามของแอป แปลว่าโรงเรียน
+ * รู้ว่ามีปัญหาแต่ไปหาคนนั้นไม่ได้เลย
+ *
+ * ตัวเลขที่สำคัญที่สุดในการ์ดนี้จึงไม่ใช่ยอดรวม แต่คือ "หมวดที่คนเลือกไม่ระบุตัวตน
+ * มากที่สุด" — นั่นคือเรื่องที่นักเรียนกลัวที่จะเอาชื่อตัวเองไปผูกด้วยมากที่สุด และเป็น
+ * จุดที่มาตรการของโรงเรียนยังไปไม่ถึง
+ */
+function MonthlyReports({
+  cases,
+  anonymous,
+}: {
+  cases: SafeCase[];
+  anonymous: AnonReport[];
+}) {
+  const [month, setMonth] = useState<string | null>(null);
+  useEffect(() => setMonth(monthKey(new Date())), []);
+
+  const data = useMemo(() => {
+    if (!month) return null;
+
+    const byMonth = new Map<string, { named: number; anon: number }>();
+    const byCat = new Map<string, { named: number; anon: number }>();
+
+    const add = (iso: string, cat: string, anon: boolean) => {
+      const mk = localDay(new Date(iso)).slice(0, 7);
+      const m = byMonth.get(mk) ?? { named: 0, anon: 0 };
+      m[anon ? "anon" : "named"] += 1;
+      byMonth.set(mk, m);
+      if (mk === month) {
+        const c = byCat.get(cat) ?? { named: 0, anon: 0 };
+        c[anon ? "anon" : "named"] += 1;
+        byCat.set(cat, c);
+      }
+    };
+
+    for (const c of cases) add(c.createdAt, c.categoryLabel, false);
+    for (const a of anonymous) add(a.createdAt, a.categoryLabel, true);
+
+    const cats = [...byCat.entries()]
+      .map(([label, v]) => ({
+        label,
+        ...v,
+        total: v.named + v.anon,
+        anonShare: v.named + v.anon > 0 ? Math.round((v.anon / (v.named + v.anon)) * 100) : 0,
+      }))
+      .sort((a, b) => b.total - a.total);
+
+    const series: { key: string; named: number; anon: number; total: number }[] = [];
+    for (let i = 5; i >= 0; i -= 1) {
+      const key = shiftMonth(month, -i);
+      const v = byMonth.get(key) ?? { named: 0, anon: 0 };
+      series.push({ key, ...v, total: v.named + v.anon });
+    }
+
+    const cur = byMonth.get(month) ?? { named: 0, anon: 0 };
+    const prevKey = shiftMonth(month, -1);
+    const prev = byMonth.get(prevKey) ?? { named: 0, anon: 0 };
+    const curTotal = cur.named + cur.anon;
+    const prevTotal = prev.named + prev.anon;
+
+    const all = [
+      ...cases.map((c) => c.createdAt),
+      ...anonymous.map((a) => a.createdAt),
+    ];
+    const oldest = all.length
+      ? all.reduce(
+          (min, iso) => {
+            const mk = localDay(new Date(iso)).slice(0, 7);
+            return mk < min ? mk : min;
+          },
+          monthKey(new Date()),
+        )
+      : monthKey(new Date());
+
+    // หมวดที่ซ่อนตัวมากที่สุด — ต้องมีอย่างน้อย 2 เรื่องถึงจะพูดถึง ไม่งั้นเรื่องเดียว
+    // ก็ได้ 100% แล้วกลายเป็นข้อสรุปที่ไม่มีน้ำหนัก
+    const hidden = cats
+      .filter((c) => c.total >= 2 && c.anon > 0)
+      .sort((a, b) => b.anonShare - a.anonShare || b.anon - a.anon)[0];
+
+    return {
+      cats,
+      catMax: Math.max(1, ...cats.map((c) => c.total)),
+      cur,
+      curTotal,
+      prevKey,
+      prevTotal,
+      anonShare: curTotal > 0 ? Math.round((cur.anon / curTotal) * 100) : 0,
+      series,
+      seriesMax: Math.max(1, ...series.map((m) => m.total)),
+      hidden,
+      canPrev: month > oldest,
+      canNext: month < monthKey(new Date()),
+    };
+  }, [cases, anonymous, month]);
+
+  return (
+    <>
+      <Card className="p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="min-w-0">
+            <h2 className="text-[0.95rem] font-semibold text-ink">
+              สรุปเรื่องที่แจ้งเข้ามารายเดือน
+            </h2>
+            <p className="mt-0.5 text-[0.76rem] text-ink-soft">
+              นับรวมทั้งเคสที่ระบุตัวตนและเรื่องที่แจ้งแบบไม่ระบุตัวตน
+            </p>
+          </div>
+
+          {month ? (
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setMonth(shiftMonth(month, -1))}
+                disabled={!data?.canPrev}
+                aria-label="เดือนก่อนหน้า"
+                className="rounded-lg p-1.5 text-ink-soft transition-colors hover:text-ink disabled:cursor-not-allowed disabled:opacity-30"
+              >
+                <ChevronLeft className="size-4" aria-hidden="true" />
+              </button>
+              <span className="min-w-[8.5rem] text-center text-[0.86rem] font-semibold text-ink">
+                {monthLabel(month, true)}
+              </span>
+              <button
+                type="button"
+                onClick={() => setMonth(shiftMonth(month, 1))}
+                disabled={!data?.canNext}
+                aria-label="เดือนถัดไป"
+                className="rounded-lg p-1.5 text-ink-soft transition-colors hover:text-ink disabled:cursor-not-allowed disabled:opacity-30"
+              >
+                <ChevronRight className="size-4" aria-hidden="true" />
+              </button>
+            </div>
+          ) : null}
+        </div>
+
+        {!data ? (
+          <p className="py-4 text-[0.84rem] text-ink-mute">กำลังโหลด…</p>
+        ) : (
+          <>
+            <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+              {[
+                {
+                  label: "เรื่องทั้งหมดเดือนนี้",
+                  value: String(data.curTotal),
+                  sub: `เดือนก่อน ${data.prevTotal} เรื่อง`,
+                },
+                {
+                  label: "ระบุตัวตน (ตามต่อได้)",
+                  value: String(data.cur.named),
+                  sub: "มีผู้รับผิดชอบและ SLA",
+                },
+                {
+                  label: "ไม่ระบุตัวตน",
+                  value: String(data.cur.anon),
+                  sub: "รู้ว่ามีปัญหา แต่ตามหาคนไม่ได้",
+                  warn: data.cur.anon > 0,
+                },
+                {
+                  label: "สัดส่วนไม่ระบุตัวตน",
+                  value: `${data.anonShare}%`,
+                  sub: "ยิ่งสูง ยิ่งมีเรื่องที่เข้าไม่ถึง",
+                  warn: data.anonShare >= 50,
+                },
+              ].map((t) => (
+                <div key={t.label} className="rounded-xl bg-neutral-50 p-3">
+                  <p className="text-[0.74rem] text-ink-mute">{t.label}</p>
+                  <p
+                    className={cn(
+                      "mt-1 text-[1.3rem] font-bold tabular-nums",
+                      t.warn ? "text-risk-high" : "text-ink",
+                    )}
+                  >
+                    {t.value}
+                  </p>
+                  <p className="mt-0.5 text-[0.7rem] text-ink-mute">{t.sub}</p>
+                </div>
+              ))}
+            </div>
+
+            {data.hidden && (
+              <div className="mt-4 flex items-start gap-2.5 rounded-xl bg-amber-50 p-3.5 ring-1 ring-amber-200">
+                <EyeOff className="mt-0.5 size-4 shrink-0 text-amber-700" aria-hidden="true" />
+                <p className="text-[0.82rem] leading-relaxed text-ink">
+                  เดือนนี้เรื่อง{" "}
+                  <span className="font-bold">{data.hidden.label}</span> ถูกแจ้งแบบไม่ระบุตัวตน{" "}
+                  <span className="font-bold">{data.hidden.anonShare}%</span> (
+                  {data.hidden.anon} จาก {data.hidden.total} เรื่อง) — เป็นหมวดที่นักเรียน
+                  กลัวจะเอาชื่อตัวเองไปผูกด้วยมากที่สุด และเป็นจุดที่การตามต่อรายคนทำไม่ได้เลย
+                </p>
+              </div>
+            )}
+
+            {data.curTotal === 0 ? (
+              <p className="py-8 text-center text-[0.84rem] text-ink-mute">
+                เดือนนี้ยังไม่มีเรื่องแจ้งเข้ามา
+              </p>
+            ) : (
+              <>
+                <div className="mt-5 border-t border-neutral-100 pt-4">
+                  <h3 className="text-[0.84rem] font-semibold text-ink">
+                    เรื่องอะไรบ้าง
+                  </h3>
+                  <div className="mt-3 flex flex-col gap-3">
+                    {data.cats.map((c) => (
+                      <div key={c.label}>
+                        <div className="flex items-baseline justify-between gap-2">
+                          <span className="text-[0.82rem] text-ink">{c.label}</span>
+                          <span className="shrink-0 text-[0.76rem] text-ink-soft">
+                            <span className="font-semibold text-ink">{c.total}</span> เรื่อง
+                            {c.anon > 0 && (
+                              <span className="text-amber-700">
+                                {" "}
+                                · ไม่ระบุตัวตน {c.anonShare}%
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                        <div
+                          className="mt-1 flex h-4 overflow-hidden rounded bg-neutral-100"
+                          style={{ width: `${(c.total / data.catMax) * 100}%` }}
+                          title={`ระบุตัวตน ${c.named} · ไม่ระบุตัวตน ${c.anon}`}
+                        >
+                          {c.named > 0 && (
+                            <span
+                              className="bg-mint-600"
+                              style={{ width: `${(c.named / c.total) * 100}%` }}
+                            />
+                          )}
+                          {c.anon > 0 && (
+                            <span
+                              className="bg-amber-400"
+                              style={{ width: `${(c.anon / c.total) * 100}%` }}
+                            />
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap items-center gap-4 text-[0.72rem] text-ink-soft">
+                    <span className="flex items-center gap-1.5">
+                      <span className="size-2.5 rounded-sm bg-mint-600" /> ระบุตัวตน
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <span className="size-2.5 rounded-sm bg-amber-400" /> ไม่ระบุตัวตน
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        downloadCsv(`reports-${month}.csv`, [
+                          ["หมวด", "ระบุตัวตน", "ไม่ระบุตัวตน", "รวม", "สัดส่วนไม่ระบุตัวตน (%)"],
+                          ...data.cats.map((c) => [
+                            c.label,
+                            c.named,
+                            c.anon,
+                            c.total,
+                            c.anonShare,
+                          ]),
+                        ])
+                      }
+                      className="ml-auto flex items-center gap-1.5 rounded-lg px-2 py-1 text-ink-mute transition-colors hover:text-ink"
+                    >
+                      <Download className="size-3.5" aria-hidden="true" />
+                      ดาวน์โหลด CSV
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+          </>
+        )}
+      </Card>
+
+      <Card className="p-5">
+        <h2 className="text-[0.95rem] font-semibold text-ink">เทียบย้อนหลัง 6 เดือน</h2>
+        <p className="mt-0.5 text-[0.76rem] text-ink-soft">
+          ส่วนสีเหลืองคือเรื่องที่ไม่ระบุตัวตน — กดที่แท่งเพื่อดูเดือนนั้น
+        </p>
+        {!data ? (
+          <p className="py-4 text-[0.84rem] text-ink-mute">กำลังโหลด…</p>
+        ) : (
+          <div className="mt-5 flex h-44 items-end gap-3">
+            {data.series.map((m) => {
+              const h = (m.total / data.seriesMax) * 100;
+              const anonH = m.total > 0 ? (m.anon / m.total) * 100 : 0;
+              const isCurrent = m.key === month;
+              return (
+                <button
+                  key={m.key}
+                  type="button"
+                  onClick={() => setMonth(m.key)}
+                  title={`${monthLabel(m.key, true)} · ระบุตัวตน ${m.named} · ไม่ระบุตัวตน ${m.anon}`}
+                  className="flex h-full flex-1 flex-col justify-end gap-1.5 rounded-lg p-1 transition-colors hover:bg-neutral-50"
+                >
+                  <span className="text-center text-[0.72rem] font-semibold tabular-nums text-ink-soft">
+                    {m.total > 0 ? m.total : "—"}
+                  </span>
+                  <span
+                    className="relative w-full overflow-hidden rounded-t bg-mint-600"
+                    style={{ height: `${Math.max(h, m.total > 0 ? 4 : 1)}%` }}
+                  >
+                    <span
+                      className="absolute inset-x-0 bottom-0 bg-amber-400"
+                      style={{ height: `${anonH}%` }}
+                    />
+                  </span>
+                  <span
+                    className={cn(
+                      "text-center text-[0.7rem]",
+                      isCurrent ? "font-bold text-ink" : "text-ink-mute",
+                    )}
+                  >
+                    {monthLabel(m.key)}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </Card>
+    </>
+  );
+}
+
 export function AdminCasesBoard() {
   const [mounted, setMounted] = useState(false);
   const [now, setNow] = useState(0);
@@ -407,6 +740,7 @@ export function AdminCasesBoard() {
   }, []);
 
   const cases = useCasesStore((s) => s.cases);
+  const anonymous = useCasesStore((s) => s.anonymous);
   const staff = useStaffSession();
   const myId = staff?.id;
   const assignees = useAssignees();
@@ -531,6 +865,9 @@ export function AdminCasesBoard() {
           ส่งออก CSV
         </button>
       </header>
+
+      {/* สรุปรายเดือน — วางไว้เหนือรายการ เพราะภาพรวมต้องมาก่อนการไล่ทีละเคส */}
+      {mounted && <MonthlyReports cases={cases} anonymous={anonymous} />}
 
       {/* status filter + assignee filter */}
       <div className="flex flex-wrap items-center gap-2">
