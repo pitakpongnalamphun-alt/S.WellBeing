@@ -2,6 +2,11 @@
 
 import { useId } from "react";
 
+import { DecoSprite } from "@/components/gacha/DecoSprite";
+import { DECO_BY_ID, DECO_SLOTS } from "@/data/cozyShop";
+import { FRIEND_ANCHORS } from "@/data/fluffyFriends";
+import type { EquippedSet } from "@/lib/store/useGachaStore";
+
 /**
  * น้องปุย — เวอร์ชันตามอาร์ตบอร์ด (ลูกพีชสีชมพู ต้นอ่อนบนหัว ตาโตเป็นเงา แก้มชมพู
  * อุ้งมือกลม ๆ และหัวใจจาง ๆ ที่พุง) ใช้ในหน้าคุยกับ AI
@@ -280,6 +285,8 @@ export type PuyProps = {
   motion?: "float" | "bounce" | "still";
   /** ปากขยับ — เปิดตอนข้อความกำลังไหลออกมาจริง ๆ เท่านั้น */
   talking?: boolean;
+  /** ของตกแต่งที่นักเรียนแต่งไว้ให้ปุย (หมวก/ใบหน้า/ของถือ) */
+  equipped?: EquippedSet;
   className?: string;
 };
 
@@ -288,6 +295,7 @@ export function Puy({
   size = 120,
   motion = "float",
   talking = false,
+  equipped,
   className,
 }: PuyProps) {
   const uid = useId().replace(/[^a-zA-Z0-9]/g, "");
@@ -304,7 +312,15 @@ export function Puy({
           ? "puy-float"
           : null;
 
-  return (
+  /**
+   * ตอนด่านฉุกเฉินทำงาน ของตกแต่งถูกถอดออกทั้งหมด
+   *
+   * เด็กที่เพิ่งพิมพ์เรื่องที่หนักที่สุดในชีวิตออกมา ไม่ควรเห็นปุยใส่หมวกนักสืบตอบกลับ —
+   * เป็นกฎเดียวกับที่บอกว่า "ยิ่งเรื่องหนัก ความน่ารักยิ่งถอย" แค่ย้ายจากคำพูดมาเป็นภาพ
+   */
+  const wearing = expression === "worry" ? undefined : equipped;
+
+  const sprite = (
     <svg
       viewBox="0 0 200 214"
       width={size}
@@ -408,5 +424,44 @@ export function Puy({
       {f.belly ? <Heart cx={100} cy={177} s={3.4} fill="#fff" opacity={0.5} /> : null}
       {f.heart ? <Heart cx={100} cy={184} s={5} fill="#FF6E9A" /> : null}
     </svg>
+  );
+
+  const anchors = FRIEND_ANCHORS.puy;
+  const worn = wearing
+    ? DECO_SLOTS.map(({ slot }) => {
+        const decoId = wearing[slot];
+        const deco = decoId ? DECO_BY_ID[decoId] : undefined;
+        if (!deco) return null;
+        const a = anchors[slot];
+        const px = (a.scale ?? 0.4) * size;
+        return (
+          <span
+            key={slot}
+            className="pointer-events-none absolute"
+            style={{
+              left: `${a.at[0]}%`,
+              top: `${a.at[1]}%`,
+              width: px,
+              height: px,
+              transform: "translate(-50%, -50%)",
+            }}
+          >
+            <DecoSprite id={deco.id} size={px} fallback={deco.emoji} />
+          </span>
+        );
+      }).filter(Boolean)
+    : [];
+
+  if (worn.length === 0) return sprite;
+
+  return (
+    <span
+      className="relative inline-block"
+      style={{ width: size, height: Math.round(size * 1.07) }}
+      aria-hidden="true"
+    >
+      {sprite}
+      {worn}
+    </span>
   );
 }
