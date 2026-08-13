@@ -232,6 +232,9 @@ export function AdminInsightsBoard() {
         </p>
       </Card>
 
+      {/* ตัวเลขที่ทำให้เป็นระดับนั้น — ต้องอยู่บนหน้าจอ ไม่ใช่ซ่อนใน JSON ด้านล่าง */}
+      <KeyNumbers payload={payload} />
+
       {/* Signal cards */}
       {signals.length === 0 ? (
         <Card className="p-8 text-center">
@@ -354,35 +357,184 @@ export function AdminInsightsBoard() {
   );
 }
 
+/**
+ * ตัวเลขสำคัญของสัปดาห์ พร้อมส่วนต่างเทียบสัปดาห์ก่อน
+ *
+ * ใส่สีเตือนเฉพาะตัวที่ "ขึ้น = แย่ลง" อย่างไม่กำกวมเท่านั้น (อารมณ์ไม่สบายใจ,
+ * เคสค้างเกินกำหนด) ส่วนจำนวนเช็คอินหรือจำนวนเรื่องที่แจ้งเข้ามาไม่ทาสี เพราะ
+ * ที่เพิ่มขึ้นอาจแปลว่านักเรียนกล้าใช้ระบบมากขึ้น ซึ่งเป็นข่าวดี — การทาสีแดง
+ * ให้ตัวเลขที่ตีความสองทางได้ คือการชี้นำครูไปในทางที่อาจผิด
+ */
+function KeyNumbers({ payload }: { payload: AiPayload }) {
+  const negPct = Math.round(payload.mood.negativeRatio7 * 100);
+  const negPrevPct = Math.round(payload.mood.negativeRatioPrev7 * 100);
+  const needCare = payload.assessments7.warning + payload.assessments7.emergency;
+
+  const delta = (now: number, prev: number) =>
+    prev === 0 && now === 0 ? null : now - prev;
+
+  const cells: {
+    label: string;
+    value: string;
+    sub: string;
+    diff?: number | null;
+    unit?: string;
+    warn?: boolean;
+  }[] = [
+    {
+      label: "เช็คอินอารมณ์",
+      value: String(payload.mood.checkins7),
+      sub: "7 วันล่าสุด",
+      diff: delta(payload.mood.checkins7, payload.mood.checkinsPrev7),
+      unit: " ครั้ง",
+    },
+    {
+      label: "อารมณ์ไม่สบายใจ",
+      value: `${negPct}%`,
+      sub: `สัปดาห์ก่อน ${negPrevPct}%`,
+      diff: delta(negPct, negPrevPct),
+      unit: "%",
+      warn: negPct >= 40 || negPct - negPrevPct >= 10,
+    },
+    {
+      label: "เรื่องที่แจ้งเข้ามา",
+      value: String(payload.reports7.total),
+      sub: `นิรนาม ${Math.round(payload.reports7.anonymousShare * 100)}%`,
+      diff: delta(payload.reports7.total, payload.reports7.prevTotal),
+      unit: " เรื่อง",
+    },
+    {
+      label: "ผลประเมินที่ต้องดูแล",
+      value: String(needCare),
+      sub: `จากทั้งหมด ${payload.assessments7.total} ครั้ง`,
+      warn: payload.assessments7.emergency > 0,
+    },
+    {
+      label: "เคสค้างเกินกำหนด",
+      value: String(payload.cases.overdueNow),
+      sub: `เปิดอยู่ ${payload.cases.open} เคส`,
+      warn: payload.cases.overdueNow > 0,
+    },
+    {
+      label: "SOS 14 วัน",
+      value: String(payload.sos14.total),
+      sub:
+        payload.sos14.falseAlarms > 0
+          ? `แจ้งผิด ${payload.sos14.falseAlarms} ครั้ง (ไม่นับรวม)`
+          : "ไม่นับเหตุที่แจ้งผิด",
+    },
+  ];
+
+  return (
+    <Card className="p-5">
+      <h2 className="text-[0.95rem] font-semibold text-ink">ตัวเลขที่ทำให้ได้ระดับนี้</h2>
+      <p className="mt-0.5 text-[0.76rem] text-ink-soft">
+        {payload.window}
+      </p>
+
+      <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-3">
+        {cells.map((c) => (
+          <div key={c.label} className="rounded-xl bg-neutral-50 p-3">
+            <p className="text-[0.74rem] text-ink-mute">{c.label}</p>
+            <p className="mt-1 flex items-baseline gap-2">
+              <span
+                className={cn(
+                  "text-[1.35rem] font-bold tabular-nums",
+                  c.warn ? "text-risk-high" : "text-ink",
+                )}
+              >
+                {c.value}
+              </span>
+              {c.diff !== undefined && c.diff !== null && c.diff !== 0 ? (
+                <span
+                  className={cn(
+                    "text-[0.74rem] font-semibold tabular-nums",
+                    c.warn && c.diff > 0 ? "text-risk-high" : "text-ink-mute",
+                  )}
+                >
+                  {c.diff > 0 ? "▲" : "▼"} {Math.abs(c.diff)}
+                  {c.unit ?? ""}
+                </span>
+              ) : null}
+            </p>
+            <p className="mt-0.5 text-[0.7rem] text-ink-mute">{c.sub}</p>
+          </div>
+        ))}
+      </div>
+
+      {payload.mood.topNegativeFeelings.length > 0 && (
+        <div className="mt-4 border-t border-neutral-100 pt-3">
+          <p className="text-[0.76rem] text-ink-mute">
+            ความรู้สึกไม่สบายใจที่นักเรียนเลือกบ่อยที่สุดสัปดาห์นี้
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {payload.mood.topNegativeFeelings.map((f) => (
+              <span
+                key={f}
+                className="rounded-full bg-rose-50 px-3 py-1 text-[0.8rem] text-rose-700 ring-1 ring-rose-100"
+              >
+                {f}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+    </Card>
+  );
+}
+
 function TrendBars({ trend }: { trend: MoodTrendDay[] }) {
   const max = Math.max(1, ...trend.map((d) => d.total));
   return (
     <>
-      <div className="mt-4 flex h-28 items-end gap-1.5">
-        {trend.map((d) => {
-          const h = (d.total / max) * 100;
-          const negH = d.total > 0 ? (d.neg / d.total) * 100 : 0;
-          return (
+      {/* เส้นอ้างอิงพร้อมตัวเลข — แท่งที่ไม่มีสเกลกำกับ บอกได้แค่ "สูงกว่า/ต่ำกว่า" */}
+      <div className="relative mt-5 h-32">
+        {[0, 0.5, 1].map((f) => (
+          <div
+            key={f}
+            className="absolute inset-x-0 border-t border-dashed border-neutral-200"
+            style={{ bottom: `${f * 100}%` }}
+          >
+            <span className="absolute -top-2 -left-1 bg-white pr-1 text-[0.62rem] tabular-nums text-ink-mute">
+              {Math.round(max * f)}
+            </span>
+          </div>
+        ))}
+        <div className="absolute inset-0 flex items-end gap-1.5 pl-5">
+          {trend.map((d) => (
             <div
               key={d.day}
-              className="flex flex-1 flex-col justify-end"
+              className="relative h-full flex-1"
               title={`${d.day} · ${d.total} ครั้ง (ไม่สบายใจ ${d.neg})`}
             >
+              {/* สีชมพูวัดจากฐานขึ้นบน ให้ตรงกับหน้าวิเคราะห์อารมณ์ ไม่ใช่ห้อยจากยอด */}
               <div
-                className="w-full overflow-hidden rounded-t bg-neutral-100"
-                style={{ height: `${Math.max(h, d.total > 0 ? 6 : 2)}%` }}
+                className="absolute inset-x-0 bottom-0 overflow-hidden rounded-t bg-slate-300"
+                style={{
+                  height: `${(d.total / max) * 100}%`,
+                  minHeight: d.total > 0 ? 3 : 0,
+                }}
               >
-                <div className="h-full w-full bg-slate-300">
-                  <div className="w-full bg-rose-300" style={{ height: `${negH}%` }} />
-                </div>
+                <div
+                  className="absolute inset-x-0 bottom-0 bg-rose-400"
+                  style={{ height: d.total > 0 ? `${(d.neg / d.total) * 100}%` : 0 }}
+                />
               </div>
             </div>
-          );
-        })}
+          ))}
+        </div>
       </div>
-      <div className="mt-1.5 flex justify-between text-[0.68rem] text-ink-mute">
+      <div className="mt-1.5 flex justify-between pl-5 text-[0.68rem] text-ink-mute">
         <span>{trend[0]?.day.slice(5)}</span>
         <span>วันนี้</span>
+      </div>
+      <div className="mt-3 flex flex-wrap items-center gap-4 text-[0.72rem] text-ink-soft">
+        <span className="flex items-center gap-1.5">
+          <span className="size-2.5 rounded-sm bg-rose-400" /> ไม่สบายใจ
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="size-2.5 rounded-sm bg-slate-300" /> อารมณ์อื่น ๆ
+        </span>
       </div>
     </>
   );

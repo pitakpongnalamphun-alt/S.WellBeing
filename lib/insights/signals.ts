@@ -291,7 +291,15 @@ export function buildAiPayload(inp: SignalInputs, signals: Signal[]) {
     .map(([label]) => label);
 
   const assess7 = assessments.filter((a) => inWindow(a.at, w7, now + 1));
-  const byAction: Record<string, number> = { safe: 0, monitor: 0, warning: 0, emergency: 0 };
+  // ระบุคีย์ให้ครบแทน Record<string, number> เพื่อให้ payload ที่ spread ออกไป
+  // ยังมีชนิดของ safe/monitor/warning/emergency ติดไปด้วย — ฝั่งหน้าจอจะได้อ่าน
+  // ตัวเลขรายระดับได้โดยไม่ต้องแคสต์
+  const byAction: Record<AssessRecord["action"], number> = {
+    safe: 0,
+    monitor: 0,
+    warning: 0,
+    emergency: 0,
+  };
   for (const a of assess7) byAction[a.action] += 1;
 
   const reports7 = [
