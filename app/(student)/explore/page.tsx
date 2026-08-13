@@ -7,8 +7,10 @@ import {
   Cloud,
   Compass,
   Gamepad2,
+  HeartPulse,
   MessageCircleHeart,
   Quote,
+  ShieldCheck,
   type LucideIcon,
 } from "lucide-react";
 
@@ -49,6 +51,26 @@ const SECTIONS: Section[] = [
         desc: "จองเวลากับครูแนะแนว / นักจิตวิทยา",
         Icon: CalendarHeart,
         badge: "bg-pink-50 text-pink-600",
+      },
+    ],
+  },
+  {
+    heading: "เจอเรื่องนี้อยู่ ทำยังไงดี",
+    note: "วิธีที่ทำตามได้ทันที บอกด้วยว่าใช้ตอนไหนและไม่ใช้ตอนไหน",
+    items: [
+      {
+        href: "/coping?c=bullying",
+        title: "ถูกกลั่นแกล้งทำอย่างไร",
+        desc: "ตั้งรับตอนเกิดเหตุ · ไซเบอร์บูลลี่ · วิธีบอกผู้ใหญ่",
+        Icon: ShieldCheck,
+        badge: "bg-sky-50 text-sky-700",
+      },
+      {
+        href: "/coping?c=stress",
+        title: "วิธีจัดการความเครียด",
+        desc: "หายใจ ตั้งหลัก และปรับความคิดที่วนไม่หยุด",
+        Icon: HeartPulse,
+        badge: "bg-mint-50 text-mint-700",
       },
     ],
   },
