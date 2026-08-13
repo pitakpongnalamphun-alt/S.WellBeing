@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/Card";
 import { downloadCsv } from "@/lib/csv";
 import { EMOTION_WHEEL } from "@/data/emotionWheel";
 import { useMoodStatsStore } from "@/lib/store/useMoodStatsStore";
-import { localDay } from "@/lib/date";
+import { daysInMonth, localDay, monthKey, monthLabel, shiftMonth } from "@/lib/date";
 import { cn } from "@/lib/utils";
 
 const CORE = Object.fromEntries(EMOTION_WHEEL.map((c) => [c.key, c]));
@@ -15,29 +15,6 @@ const CORE = Object.fromEntries(EMOTION_WHEEL.map((c) => [c.key, c]));
 const NEGATIVE = new Set(["green", "orange", "red", "gray", "blue"]);
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-
-/** คีย์เดือนแบบ YYYY-MM ตามปฏิทินท้องถิ่น (localDay ตัด 7 ตัวแรกก็ได้เดือนพอดี) */
-const monthKey = (d: Date) => localDay(d).slice(0, 7);
-
-/** ชื่อเดือนภาษาไทย — th-TH ให้ปีพุทธศักราชมาเอง ซึ่งเป็นสิ่งที่ครูอ่านแล้วเข้าใจทันที */
-const monthLabel = (key: string, long = false) => {
-  const [y, m] = key.split("-").map(Number);
-  return new Date(y, m - 1, 1).toLocaleDateString("th-TH", {
-    month: long ? "long" : "short",
-    year: long ? "numeric" : "2-digit",
-  });
-};
-
-/** เลื่อนเดือนจากคีย์ (รับค่าลบได้) */
-function shiftMonth(key: string, by: number): string {
-  const [y, m] = key.split("-").map(Number);
-  return monthKey(new Date(y, m - 1 + by, 1));
-}
-
-const daysInMonth = (key: string) => {
-  const [y, m] = key.split("-").map(Number);
-  return new Date(y, m, 0).getDate();
-};
 
 export function AdminMoodStats() {
   const [mounted, setMounted] = useState(false);
