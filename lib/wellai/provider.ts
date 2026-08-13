@@ -28,3 +28,30 @@ export function hasAiKey(): boolean {
 export function gemini() {
   return createGoogleGenerativeAI({ apiKey: aiKey() });
 }
+
+/**
+ * ตัวกรองเนื้อหาของ Gemini
+ *
+ * ค่าตั้งต้นของ Google บล็อก "สิ่งที่แอปนี้มีไว้เพื่อรับฟัง" — วัดจริงแล้วแค่นักเรียน
+ * เขียนว่า "เหมือนผีเปรตรวมตัวกัน 34 คน" ตอนระบายเรื่องเพื่อนร่วมชั้น โมเดลก็คืน
+ * finishReason "other" พร้อมข้อความเปล่า ทั้งตัวหลักและตัวสำรอง ผลคือเด็กที่กล้า
+ * พิมพ์เรื่องจริงออกมาได้รับ "ตอนนี้เชื่อมต่อไม่ได้" กลับไป ซึ่งอ่านเหมือนถูกปิดประตูใส่
+ *
+ * จึงผ่อนเป็น BLOCK_ONLY_HIGH สำหรับหมวดที่ทับกับการระบายตามปกติ (ด่าคน โกรธ
+ * สิ้นหวัง) — ยังบล็อกของที่รุนแรงจริง ๆ อยู่ ไม่ได้ปิดตัวกรองทิ้ง
+ *
+ * ที่ผ่อนตรงนี้ช่วยได้เฉพาะหมวดที่ Google เปิดให้ปรับ — ยังมีตัวกรองอีกชั้นที่ปรับไม่ได้
+ * (ทดสอบแล้วว่าตั้ง OFF ทุกหมวดก็ยังถูกปฏิเสธ) เส้นทางนั้นจัดการที่ฝั่งเราแทน ดู
+ * BLOCKED_MESSAGE ใน app/api/chat/route.ts
+ *
+ * สองอย่างที่ไม่ผ่อน:
+ *   - เนื้อหาทางเพศ ยังคง BLOCK_MEDIUM_AND_ABOVE เพราะผู้ใช้คือเด็กมัธยม
+ *   - ด่านฉุกเฉินของเราเอง (คีย์เวิร์ดใน crisis.ts) ยังทำงานก่อนถึงโมเดลเสมอ
+ *     การผ่อนตรงนี้ไม่ได้ทำให้ข้อความเสี่ยงหลุดไปหาโมเดลเพิ่มขึ้นแม้แต่ข้อความเดียว
+ */
+export const SAFETY_SETTINGS = [
+  { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
+  { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_ONLY_HIGH" },
+  { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_ONLY_HIGH" },
+  { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+] as const;

@@ -2,7 +2,7 @@ import { streamText, type ModelMessage } from "ai";
 import type { NextRequest } from "next/server";
 
 import { CRISIS_MESSAGE, detectCrisis } from "@/lib/wellai/crisis";
-import { gemini, hasAiKey } from "@/lib/wellai/provider";
+import { SAFETY_SETTINGS, gemini, hasAiKey } from "@/lib/wellai/provider";
 import {
   WELLAI_MAX_TOKENS,
   WELLAI_MODELS,
@@ -22,6 +22,19 @@ type ChatMessage = { role: "user" | "assistant"; content: string };
  */
 const FALLBACK_MESSAGE =
   "ตอนนี้น้องปุยเชื่อมต่อกับผู้ช่วย AI ไม่ได้ชั่วคราว ขอโทษจริง ๆ นะ 🙏 ระหว่างนี้ถ้าอยากระบายหรือคุยกับใครสักคน โทร 1323 ได้ตลอด 24 ชั่วโมงเลยนะ";
+
+/**
+ * เมื่อ Gemini ปฏิเสธที่จะตอบข้อความนั้น (ไม่ใช่เชื่อมต่อไม่ได้)
+ *
+ * Google มีตัวกรองอีกชั้นที่ปรับไม่ได้ ทดสอบแล้วว่าตั้ง safetySettings เป็น OFF ทุกหมวด
+ * ก็ยังคืนข้อความเปล่าอยู่ดี — เช่นตอนนักเรียนระบายเรื่องเพื่อนร่วมชั้นด้วยคำหยาบ
+ *
+ * เดิมเคสนี้ไปโผล่เป็น "ตอนนี้เชื่อมต่อไม่ได้" ซึ่งเป็นคำโกหก และแย่กว่านั้นคือมันเกิด
+ * ตรงจังหวะที่เด็กเพิ่งกล้าพิมพ์เรื่องจริงยาว ๆ ออกมา สิ่งที่เขาอ่านได้คือ "พูดแบบนี้แล้ว
+ * ไม่มีใครตอบ" ข้อความนี้จึงต้องบอกความจริง และต้องไม่ทำให้รู้สึกว่าถูกตำหนิที่ใช้คำนั้น
+ */
+const BLOCKED_MESSAGE =
+  "ปุยอ่านที่เธอเล่าแล้วนะ แต่ระบบเบื้องหลังไม่ยอมให้ปุยตอบข้อความนี้ (ติดที่คำบางคำ ไม่ใช่ว่าเรื่องของเธอไม่สำคัญ) ลองเล่าเรื่องเดิมอีกครั้งด้วยคำอื่นได้ไหม ปุยยังอยู่ตรงนี้นะ";
 
 /**
  * Well.AI chat endpoint — a two-layer guardrail in front of the LLM.
@@ -72,13 +85,24 @@ export async function POST(req: NextRequest) {
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
       let emitted = false;
+      // แยกให้ออกว่า "โมเดลปฏิเสธเนื้อหา" (บอกตรง ๆ ได้) กับ "เรียกโมเดลไม่ได้"
+      // (โควตาเต็ม/เน็ตหลุด) เพราะสองอย่างนี้ต้องพูดกับนักเรียนคนละแบบ
+      let refused = false;
 
       for (const { id: model, thinking } of WELLAI_MODELS) {
         const result = streamText({
           model: google(model),
           system: WELLAI_SYSTEM_PROMPT,
           maxOutputTokens: WELLAI_MAX_TOKENS,
-          providerOptions: { google: { thinkingConfig: { ...thinking } } },
+          providerOptions: {
+            google: {
+              thinkingConfig: { ...thinking },
+              safetySettings: SAFETY_SETTINGS.map((s) => ({ ...s })),
+            },
+          },
+          // โควตาฟรีเต็มแล้วลองซ้ำตัวเดิมอีก 3 รอบก็เต็มเหมือนเดิม มีแต่ทำให้เด็ก
+          // รอนานขึ้นก่อนจะได้คำตอบจากตัวสำรอง — ล้มเร็วแล้วเปลี่ยนตัวดีกว่า
+          maxRetries: 1,
           // Lower temperature = the model picks higher-probability (more
           // standard) Thai words, which cuts down the odd, non-idiomatic
           // phrasing that free Western models drift into. Not too low, or the
@@ -94,9 +118,12 @@ export async function POST(req: NextRequest) {
           // คำตอบที่ถูกตัดเพราะชนเพดานไม่ทำให้เกิด error — มันไหลออกไปหานักเรียน
           // แบบขาดกลางประโยคอย่างเงียบ ๆ ถ้าไม่เขียนล็อกไว้ก็จะไม่มีใครรู้
           onFinish: ({ finishReason, usage }) => {
-            if (finishReason === "length") {
+            // "stop" คือจบเองตามปกติ นอกนั้นคืออาการที่ไม่เกิด error ให้เห็น แต่ผู้ใช้
+            // เจอผลลัพธ์พังเงียบ ๆ — ถูกตัดกลางประโยค (length) หรือถูกตัวกรอง
+            // เนื้อหาปฏิเสธจนได้ข้อความเปล่า (other/content-filter)
+            if (finishReason !== "stop") {
               console.warn(
-                `[wellai] คำตอบถูกตัดเพราะชนเพดานโทเคน (${model})`,
+                `[wellai] คำตอบไม่สมบูรณ์ (${model}) finishReason=${finishReason}`,
                 JSON.stringify(usage),
               );
             }
@@ -114,10 +141,19 @@ export async function POST(req: NextRequest) {
         }
 
         if (emitted) break;
+
+        try {
+          const reason = await result.finishReason;
+          if (reason === "content-filter" || reason === "other") refused = true;
+        } catch {
+          // เรียกไม่ผ่านตั้งแต่ต้น (เช่นโควตาเต็ม) — ไม่ใช่การปฏิเสธเนื้อหา
+        }
         console.warn(`[wellai] ${model} returned nothing — trying the next one`);
       }
 
-      if (!emitted) controller.enqueue(encoder.encode(FALLBACK_MESSAGE));
+      if (!emitted) {
+        controller.enqueue(encoder.encode(refused ? BLOCKED_MESSAGE : FALLBACK_MESSAGE));
+      }
       controller.close();
     },
   });
