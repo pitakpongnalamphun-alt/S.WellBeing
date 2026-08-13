@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 
 import { FluffyBuddy, type FluffyExpression } from "@/components/FluffyBuddy";
 import { References } from "@/components/shared/References";
-import type { Reference } from "@/data/copingGuides";
+import { GUIDE_BY_ID, type Reference } from "@/data/copingGuides";
 
 /**
  * BoxBreathing — the full breathing coach.
@@ -47,13 +47,17 @@ type Pattern = {
   phases: Phase[];
   /** ข้อควรระวังของท่านี้ — ขึ้นใต้คำอธิบาย ไม่ใช่ซ่อนไว้ในหน้าอื่น */
   caution?: string;
-  /** แหล่งอ้างอิงของท่านี้ — ขึ้นบรรทัดล่างสุด เปลี่ยนตามท่าที่เลือก */
-  references: Reference[];
+  /**
+   * การ์ดในคลังวิธีรับมือที่เป็นเจ้าของท่านี้ (data/copingGuides.ts)
+   *
+   * ขั้นตอนกับแหล่งอ้างอิงดึงมาจากที่นั่นที่เดียว ไม่พิมพ์ซ้ำ — ถ้าแยกกันเขียน วันหนึ่ง
+   * ห้องนี้กับคลังจะบอกวิธีทำไม่ตรงกัน แล้วไม่มีใครรู้ว่าอันไหนคืออันที่ถูก
+   */
+  guideId?: string;
+  /** ใช้เมื่อท่านั้นไม่มีการ์ดในคลัง (ตอนนี้มีแค่ box) */
+  references?: Reference[];
 };
 
-/* งานวิจัยชิ้นเดียวกันครอบคลุมทั้ง box และ sigh เพราะทดลองทั้งสองท่าในการศึกษาเดียว
-   ส่วน 4-7-8 ไม่ได้อยู่ในงานนั้น จึงอ้างต้นทางของเทคนิคตรง ๆ แทน ไม่ยืมความน่าเชื่อถือ
-   ของงานวิจัยที่ไม่ได้ทดลองท่านี้ */
 const STANFORD_2023: Reference = {
   label:
     "Balban MY และคณะ (2023) — Brief structured respiration practices enhance mood and reduce physiological arousal, Cell Reports Medicine",
@@ -95,13 +99,7 @@ const PATTERNS: Pattern[] = [
     sessionSeconds: 60, // แนะนำ 1 นาที
     caution:
       "ท่านี้ต้องกลั้นหายใจ ถ้าเป็นหอบหืด มีโรคปอด หรือกำลังหายใจไม่ทันอยู่ ให้ใช้ท่าสูดสองครั้งแทน และถ้าเวียนหัวเมื่อไหร่ให้กลับมาหายใจปกติทันที",
-    references: [
-      {
-        label: "Andrew Weil, M.D. — The 4-7-8 Breath (ต้นทางของเทคนิค)",
-        url: "https://www.drweil.com/health-wellness/body-mind-spirit/stress-anxiety/three-breathing-exercises-and-techniques/",
-      },
-      STANFORD_2023,
-    ],
+    guideId: "breathing-478",
     phases: [
       { key: "inhale", label: "หายใจเข้า", seconds: 4, expand: true },
       { key: "hold", label: "กลั้นไว้", seconds: 7, expand: true },
@@ -109,14 +107,12 @@ const PATTERNS: Pattern[] = [
     ],
   },
   {
-    // ท่าฉุกเฉิน — ของจริงนับเป็น "รอบ" ไม่ใช่นาที ตัวเล่นแบบนับรอบอยู่ในการ์ด
-    // ที่ /coping (components/coping/SighPlayer.tsx) ส่วนที่นี่คือเวอร์ชันฝึกยาว
-    // สำหรับคนที่อยากทำเป็นกิจวัตร ไม่ใช่คนที่กำลังใจสั่นอยู่ตอนนี้
+    // ท่าฉุกเฉิน — การ์ด "ใจเต้นเร็ว ตัวสั่น" ในคลังวิธีรับมือส่งคนมาที่นี่
     id: "sigh",
     name: "Physiological Sigh (สูดสองครั้ง)",
     hint: "สูดเข้า 2 ครั้งติดกัน แล้วผ่อนออกทางปากยาว ๆ",
     sessionSeconds: 60, // แนะนำ 1 นาที (รอบละ 13 วิ)
-    references: [STANFORD_2023],
+    guideId: "sigh",
     phases: [
       {
         key: "inhale",
@@ -358,6 +354,11 @@ export function BoxBreathing({
 
   const progressPct = ((sessionTotal - sessionLeft) / sessionTotal) * 100;
 
+  // ขั้นตอนกับแหล่งอ้างอิงมาจากการ์ดในคลังวิธีรับมือ ไม่ได้พิมพ์ซ้ำไว้ที่นี่
+  const guide = pattern.guideId ? GUIDE_BY_ID[pattern.guideId] : undefined;
+  const steps = guide?.steps ?? [];
+  const references = guide?.references ?? pattern.references ?? [];
+
   return (
     <div
       className={[
@@ -414,6 +415,36 @@ export function BoxBreathing({
             <AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-amber-500" aria-hidden="true" />
             {pattern.caution}
           </p>
+        ) : null}
+
+        {/* วิธีทำครบทุกข้อ อยู่ก่อนปุ่มเริ่ม
+            คนที่กดเข้ามาจากการ์ด "ใจเต้นเร็ว ตัวสั่น" มาถึงที่นี่โดยยังไม่รู้ว่าท่านี้ทำยังไง
+            ถ้าห้องนี้มีแต่วงกลมกับปุ่ม เขาจะได้แค่หายใจตามจังหวะโดยไม่รู้ว่าทำไมต้อง
+            สูดสองครั้ง ซึ่งเป็นจุดเดียวที่ทำให้ท่านี้ต่างจากท่าอื่น */}
+        {steps.length ? (
+          <div className="-mt-2 w-full rounded-2xl bg-white/70 px-4 py-3 text-left ring-1 ring-slate-900/5">
+            <p className="text-[0.74rem] font-semibold text-slate-600">วิธีทำ</p>
+            <ol className="mt-1.5 space-y-1.5">
+              {steps.map((s, i) => (
+                <li key={s.title} className="flex gap-2 text-[0.76rem] leading-relaxed">
+                  <span className="mt-px font-bold tabular-nums text-pink-400">{i + 1}</span>
+                  <span className="text-slate-600">
+                    <span className="font-semibold text-slate-700">{s.title}</span>
+                    {" — "}
+                    {s.body}
+                    {/* คำเตือนประจำขั้น (เช่น วิงเวียนให้หยุด) ต้องมาด้วย ไม่ใช่ตกไว้ในคลัง
+                        ห้องนี้คือที่ที่คนทำตามขั้นตอนนั้นจริง */}
+                    {s.caution ? (
+                      <span className="mt-1 flex items-start gap-1.5 text-[0.72rem] text-amber-700">
+                        <AlertTriangle className="mt-0.5 size-3 shrink-0" aria-hidden="true" />
+                        {s.caution}
+                      </span>
+                    ) : null}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          </div>
         ) : null}
 
         {/* Session-length picker */}
@@ -562,7 +593,7 @@ export function BoxBreathing({
         {/* บรรทัดล่างสุดของห้อง เปลี่ยนตามท่าที่เลือกอยู่ — ห้องนี้เป็นที่ที่คนกดหายใจจริง
             แหล่งอ้างอิงจึงควรอยู่ตรงนี้ด้วย ไม่ใช่มีแต่ในคลังวิธีรับมือ */}
         <References
-          items={pattern.references}
+          items={references}
           className="w-full border-t border-slate-900/10 pt-3 text-center"
         />
       </div>
