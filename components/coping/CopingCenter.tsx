@@ -13,6 +13,7 @@ import {
   Phone,
 } from "lucide-react";
 
+import { References } from "@/components/shared/References";
 import {
   CENTRE_META,
   COPING_GUIDES,
@@ -35,40 +36,6 @@ import { SighPlayer } from "./SighPlayer";
  *   ?c=stress        เปิดค้างที่ศูนย์นั้น
  *   ?g=grounding-54321  เปิดวิธีนั้นเลย
  */
-
-/* ------------------------------------------------------------- เชิงอรรถ */
-
-/**
- * แหล่งอ้างอิงท้ายบทเรียน
- *
- * ตัวเล็กกว่าเนื้อหา สีเทาอ่อน ไม่หนา และอยู่บรรทัดล่างสุดเสมอ ตามที่กำหนดไว้
- * ใช้โทเคนสี ink-mute ของโปรเจกต์แทนการฮาร์ดโค้ด #888888 เพื่อให้อ่านออกเท่ากัน
- * ทั้งธีมสว่างและมืด — สีตายตัวจะจมหายไปบนพื้นเข้ม
- */
-function References({ items }: { items: Guide["references"] }) {
-  return (
-    <p className="mt-5 border-t border-line pt-3 text-[0.68rem] font-normal leading-relaxed text-ink-mute">
-      *อ้างอิงข้อมูล:{" "}
-      {items.map((r, i) => (
-        <span key={r.label}>
-          {i > 0 ? " · " : ""}
-          {r.url ? (
-            <a
-              href={r.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline decoration-dotted underline-offset-2"
-            >
-              {r.label}
-            </a>
-          ) : (
-            r.label
-          )}
-        </span>
-      ))}
-    </p>
-  );
-}
 
 /* ------------------------------------------------------ การ์ดในหน้ารวม */
 
@@ -201,7 +168,10 @@ function GuideDetail({ guide, onBack }: { guide: Guide; onBack: () => void }) {
         </p>
       </div>
 
-      <References items={guide.references} />
+      <References
+        items={guide.references}
+        className="mt-5 border-t border-line pt-3"
+      />
     </article>
   );
 }

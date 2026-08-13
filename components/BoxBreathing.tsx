@@ -5,6 +5,8 @@ import { AlertTriangle, ChevronDown, Pause, Play, RotateCcw, Timer } from "lucid
 import { motion } from "framer-motion";
 
 import { FluffyBuddy, type FluffyExpression } from "@/components/FluffyBuddy";
+import { References } from "@/components/shared/References";
+import type { Reference } from "@/data/copingGuides";
 
 /**
  * BoxBreathing — the full breathing coach.
@@ -45,6 +47,17 @@ type Pattern = {
   phases: Phase[];
   /** ข้อควรระวังของท่านี้ — ขึ้นใต้คำอธิบาย ไม่ใช่ซ่อนไว้ในหน้าอื่น */
   caution?: string;
+  /** แหล่งอ้างอิงของท่านี้ — ขึ้นบรรทัดล่างสุด เปลี่ยนตามท่าที่เลือก */
+  references: Reference[];
+};
+
+/* งานวิจัยชิ้นเดียวกันครอบคลุมทั้ง box และ sigh เพราะทดลองทั้งสองท่าในการศึกษาเดียว
+   ส่วน 4-7-8 ไม่ได้อยู่ในงานนั้น จึงอ้างต้นทางของเทคนิคตรง ๆ แทน ไม่ยืมความน่าเชื่อถือ
+   ของงานวิจัยที่ไม่ได้ทดลองท่านี้ */
+const STANFORD_2023: Reference = {
+  label:
+    "Balban MY และคณะ (2023) — Brief structured respiration practices enhance mood and reduce physiological arousal, Cell Reports Medicine",
+  url: "https://pubmed.ncbi.nlm.nih.gov/36630953/",
 };
 
 /** Warm, calming line for each phase. */
@@ -67,6 +80,7 @@ const PATTERNS: Pattern[] = [
     name: "Box Breathing (4-4-4-4)",
     hint: "เข้า · กลั้น · ออก · กลั้น — อย่างละ 4 วินาที",
     sessionSeconds: 120, // แนะนำ 2 นาที
+    references: [STANFORD_2023],
     phases: [
       { key: "inhale", label: "หายใจเข้า", seconds: 4, expand: true },
       { key: "hold", label: "กลั้นไว้", seconds: 4, expand: true },
@@ -81,6 +95,13 @@ const PATTERNS: Pattern[] = [
     sessionSeconds: 60, // แนะนำ 1 นาที
     caution:
       "ท่านี้ต้องกลั้นหายใจ ถ้าเป็นหอบหืด มีโรคปอด หรือกำลังหายใจไม่ทันอยู่ ให้ใช้ท่าสูดสองครั้งแทน และถ้าเวียนหัวเมื่อไหร่ให้กลับมาหายใจปกติทันที",
+    references: [
+      {
+        label: "Andrew Weil, M.D. — The 4-7-8 Breath (ต้นทางของเทคนิค)",
+        url: "https://www.drweil.com/health-wellness/body-mind-spirit/stress-anxiety/three-breathing-exercises-and-techniques/",
+      },
+      STANFORD_2023,
+    ],
     phases: [
       { key: "inhale", label: "หายใจเข้า", seconds: 4, expand: true },
       { key: "hold", label: "กลั้นไว้", seconds: 7, expand: true },
@@ -95,6 +116,7 @@ const PATTERNS: Pattern[] = [
     name: "Physiological Sigh (สูดสองครั้ง)",
     hint: "สูดเข้า 2 ครั้งติดกัน แล้วผ่อนออกทางปากยาว ๆ",
     sessionSeconds: 60, // แนะนำ 1 นาที (รอบละ 13 วิ)
+    references: [STANFORD_2023],
     phases: [
       {
         key: "inhale",
@@ -536,6 +558,13 @@ export function BoxBreathing({
             <RotateCcw className="size-5" aria-hidden="true" />
           </button>
         </div>
+
+        {/* บรรทัดล่างสุดของห้อง เปลี่ยนตามท่าที่เลือกอยู่ — ห้องนี้เป็นที่ที่คนกดหายใจจริง
+            แหล่งอ้างอิงจึงควรอยู่ตรงนี้ด้วย ไม่ใช่มีแต่ในคลังวิธีรับมือ */}
+        <References
+          items={pattern.references}
+          className="w-full border-t border-slate-900/10 pt-3 text-center"
+        />
       </div>
     </div>
   );
