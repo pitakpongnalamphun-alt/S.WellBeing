@@ -3,13 +3,12 @@
 import { useState, type FormEvent } from "react";
 import { ArrowLeft, Mail, MailCheck, ShieldCheck } from "lucide-react";
 
-import { AppleIcon, BrandMark, GoogleIcon } from "@/components/icons";
+import { BrandMark, GoogleIcon } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
 /**
  * Step 1 of two-step auth: establish *who* the person is through a provider
- * that already verifies identity (Google / Apple) or a passwordless email
- * link. School data (phone, ID) is linked afterwards, on ProfileCompletion —
+ * that already verifies identity (Google) or a passwordless email link. School data (phone, ID) is linked afterwards, on ProfileCompletion —
  * so identity never rests on a phone number and an ID a classmate could guess.
  *
  * Passwordless by choice: a magic link beats a password for a teen audience —
@@ -18,7 +17,7 @@ import { cn } from "@/lib/utils";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
-type Provider = "google" | "apple" | "email";
+type Provider = "google" | "email";
 
 function ProviderButton({
   icon,
@@ -133,11 +132,6 @@ export function SSOLoginScreen({
                   icon={<GoogleIcon className="size-[1.15rem]" />}
                   label="เข้าสู่ระบบด้วย Google"
                   onClick={() => onAuthenticated("google")}
-                />
-                <ProviderButton
-                  icon={<AppleIcon className="size-[1.25rem] text-ink" />}
-                  label="เข้าสู่ระบบด้วย Apple"
-                  onClick={() => onAuthenticated("apple")}
                 />
               </div>
 
