@@ -1,7 +1,7 @@
 import { generateText } from "ai";
 import type { NextRequest } from "next/server";
 
-import { gemini, hasAiKey } from "@/lib/wellai/provider";
+import { SAFETY_SETTINGS, gemini, hasAiKey } from "@/lib/wellai/provider";
 import type { WellaiModel } from "@/lib/wellai/systemPrompt";
 
 export const runtime = "nodejs";
@@ -75,7 +75,14 @@ export async function POST(req: NextRequest) {
       const result = await generateText({
         model: google(model),
         system: SYSTEM_PROMPT,
-        providerOptions: { google: { thinkingConfig: { ...thinking } } },
+        providerOptions: {
+          google: {
+            thinkingConfig: { ...thinking },
+            // ข้อมูลสุขภาพจิตระดับโรงเรียนก็ทับกับหมวดเนื้อหาอันตรายได้เหมือนกัน
+            safetySettings: SAFETY_SETTINGS.map((s) => ({ ...s })),
+          },
+        },
+        maxRetries: 1,
         prompt: `ข้อมูลรวมประจำสัปดาห์:\n${body}`,
         // เผื่อโควตาให้โมเดลสายคิดในใจ (reasoning) ที่กินโทเคนก่อนตอบจริง
         // 900 เดิมทำให้ JSON ถูกตัดกลางประโยคจนแปลงค่าไม่ได้

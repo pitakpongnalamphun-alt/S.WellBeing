@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 /* ============================================================================
    ลานละเล่น & ฝึกทักษะชีวิต — the "Map of Growth" (แผนที่เกาะแห่งการเติบโต).
 
-   Five pastel islands, one per life area a teenager actually wrestles with.
+   Six pastel islands, one per life area a teenager actually wrestles with.
    Tapping an island slides in its game list; games that exist launch through
    `onPlay`, the rest are visible-but-locked so the map already shows the whole
    world it will grow into. Finishing a round pays REWARDS.gameRound Star Coins
@@ -27,7 +27,13 @@ type GameEntry = {
   playable?: boolean;
 };
 
-type IslandId = "academics" | "family" | "romance" | "social" | "self";
+type IslandId =
+  | "academics"
+  | "family"
+  | "romance"
+  | "social"
+  | "self"
+  | "sexed";
 
 type Island = {
   id: IslandId;
@@ -273,6 +279,53 @@ const ISLANDS: Island[] = [
         id: "replay-mistake",
         title: "คิดวนเรื่องที่พลาดไปแล้ว",
         blurb: "เล่นเทปซ้ำในหัวรอบที่ยี่สิบตอนห้าทุ่มครึ่ง",
+        playable: true,
+      },
+    ],
+  },
+  {
+    id: "sexed",
+    emoji: "🛡️",
+    title: "เพศศึกษา",
+    tagline: "ความยินยอม ขอบเขต และการดูแลตัวเองให้ปลอดภัย",
+    bg: "bg-teal-50",
+    ring: "ring-teal-200",
+    ink: "text-teal-700",
+    games: [
+      {
+        id: "say-no-clearly",
+        title: "คำว่าไม่ที่ต้องพูดให้ชัด",
+        blurb: "ถูกเร่งให้ไปไกลกว่าที่พร้อม — ฝึกปฏิเสธตอนที่ปฏิเสธยากที่สุด",
+        playable: true,
+      },
+      {
+        id: "no-condom",
+        title: "ครั้งเดียวไม่เป็นไรหรอก",
+        blurb: "ต่อรองเรื่องการป้องกันโดยไม่ต้องรู้สึกผิด",
+        playable: true,
+      },
+      {
+        id: "clip-forwarded",
+        title: "คลิปที่เด้งเข้ามาในกลุ่ม",
+        blurb: "กดส่งต่อครั้งเดียวก็กลายเป็นคนผิดได้ — แล้วจะหยุดมันยังไง",
+        playable: true,
+      },
+      {
+        id: "stranger-online",
+        title: "คนในเน็ตที่เข้าใจเราที่สุด",
+        blurb: "“อย่าบอกใครนะ” คือสัญญาณอันตราย ไม่ใช่ความสนิท",
+        playable: true,
+      },
+      {
+        id: "period-late",
+        title: "ประจำเดือนที่ยังไม่มา",
+        blurb: "กลัวจนไม่กล้าบอกใคร — ก้าวแรกที่เล็กพอจะก้าวได้จริง",
+        playable: true,
+      },
+      {
+        id: "called-names",
+        title: "มุกที่ไม่มีใครหัวเราะด้วยคนเดียว",
+        blurb: "โดนล้อเรื่องเพศหรือตัวตน และบทบาทของคนที่เห็นเหตุการณ์",
         playable: true,
       },
     ],
