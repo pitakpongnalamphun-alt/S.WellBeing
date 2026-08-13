@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Check, HandHeart, MapPin, Siren, Undo2, User, X } from "lucide-react";
+import { Bell, BellOff, Check, HandHeart, MapPin, Siren, Undo2, User, X } from "lucide-react";
 
 import { Card } from "@/components/ui/Card";
+import { setSosSoundEnabled, sosSoundEnabled } from "@/components/data/SosSiren";
 import {
   isFalseAlarm,
   SOS_OUTCOME_META,
@@ -43,6 +44,9 @@ export function AdminSosBoard() {
   const staffName = useStaffSession()?.name ?? "เจ้าหน้าที่";
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  // อ่านค่าหลัง mount เท่านั้น — ค่าอยู่ใน localStorage ซึ่งฝั่งเซิร์ฟเวอร์ไม่มี
+  const [soundOn, setSoundOn] = useState(true);
+  useEffect(() => setSoundOn(sosSoundEnabled()), []);
   const [zoneFilter, setZoneFilter] = useState<string>("all");
   // The alert whose "ปิดเหตุ" was clicked — its row shows the outcome picker.
   const [closingId, setClosingId] = useState<string | null>(null);
@@ -106,14 +110,51 @@ export function AdminSosBoard() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
-      <header>
-        <h1 className="font-display th:leading-snug text-[1.6rem] font-bold text-ink">
-          แจ้งเหตุฉุกเฉิน · SOS
-        </h1>
-        <p className="mt-1 text-[0.88rem] text-ink-soft">
-          เหตุที่นักเรียนกดขอความช่วยเหลือด่วน — ประวัติ ดูตามโซน และปิดเหตุ
-        </p>
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="font-display th:leading-snug text-[1.6rem] font-bold text-ink">
+            แจ้งเหตุฉุกเฉิน · SOS
+          </h1>
+          <p className="mt-1 text-[0.88rem] text-ink-soft">
+            เหตุที่นักเรียนกดขอความช่วยเหลือด่วน — ประวัติ ดูตามโซน และปิดเหตุ
+          </p>
+        </div>
+
+        {/*
+          ปิดเสียงได้ เพราะห้องพักครูมีทั้งประชุมและคาบสอน แต่ค่าตั้งต้นคือเปิด —
+          เหตุฉุกเฉินควรดังก่อน แล้วค่อยให้คนปิดเมื่อจำเป็น ไม่ใช่กลับกัน
+        */}
+        <button
+          type="button"
+          onClick={() => {
+            const next = !soundOn;
+            setSoundOn(next);
+            setSosSoundEnabled(next);
+          }}
+          aria-pressed={soundOn}
+          className={cn(
+            "flex shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-[0.82rem] font-medium ring-1 transition-colors",
+            soundOn
+              ? "bg-rose-50 text-rose-700 ring-rose-200 hover:bg-rose-100"
+              : "bg-neutral-50 text-ink-mute ring-neutral-200 hover:text-ink",
+          )}
+        >
+          {soundOn ? (
+            <Bell className="size-4" aria-hidden="true" />
+          ) : (
+            <BellOff className="size-4" aria-hidden="true" />
+          )}
+          {soundOn ? "เสียงแจ้งเตือน: เปิด" : "เสียงแจ้งเตือน: ปิด"}
+        </button>
       </header>
+
+      {/*
+        พูดข้อจำกัดออกมาตรง ๆ ดีกว่าปล่อยให้ครูเชื่อว่าจะดังเสมอแล้วพลาดเหตุจริง
+      */}
+      <p className="-mt-3 text-[0.76rem] leading-relaxed text-ink-mute">
+        เสียงจะดังเมื่อมีเหตุใหม่เข้ามาขณะเปิดหน้านี้ค้างไว้ (ช้าได้ถึง 15 วินาทีตามรอบดึงข้อมูล)
+        — เบราว์เซอร์จะยอมให้เล่นเสียงหลังจากคลิกบนหน้านี้ครั้งแรกแล้ว และจะไม่มีเสียงถ้าปิดแท็บทิ้ง
+      </p>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {tiles.map(({ label, value, cls, sub }) => (

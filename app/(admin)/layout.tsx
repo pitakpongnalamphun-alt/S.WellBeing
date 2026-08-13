@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { AppointmentsSync } from "@/components/data/AppointmentsSync";
 import { CasesSync } from "@/components/data/CasesSync";
+import { SosSiren } from "@/components/data/SosSiren";
 import { SosSync } from "@/components/data/SosSync";
 import { StatsSync } from "@/components/data/StatsSync";
 import { ConsentGuard } from "@/components/consent/ConsentGuard";
@@ -23,6 +24,8 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         <ConsentGuard role="admin">
           <CasesSync />
           <SosSync />
+          {/* ต่อจาก SosSync: ดึงข้อมูลมาแล้วต้องมีอะไรเรียกให้ครูหันมามองด้วย */}
+          <SosSiren />
           <AppointmentsSync />
           <StatsSync />
           <div className="flex min-h-dvh bg-neutral-50">
