@@ -19,6 +19,7 @@ type CaseRow = {
   updated_at: string;
   category_id: string;
   category_label: string;
+  sub_categories: string[] | null;
   expectation: "urgent" | "prepare";
   sensitive: boolean;
   contact_name: string;
@@ -42,6 +43,7 @@ function rowToCase(r: CaseRow): SafeCase {
     updatedAt: r.updated_at,
     categoryId: r.category_id,
     categoryLabel: r.category_label,
+    subCategories: r.sub_categories ?? undefined,
     expectation: r.expectation,
     sensitive: r.sensitive,
     contact: { name: r.contact_name, room: r.contact_room, phone: r.contact_phone },
@@ -64,6 +66,7 @@ function caseToRow(c: SafeCase, reporter: string | null) {
     updated_at: c.updatedAt,
     category_id: c.categoryId,
     category_label: c.categoryLabel,
+    sub_categories: c.subCategories ?? null,
     expectation: c.expectation,
     sensitive: c.sensitive,
     contact_name: c.contact.name,
@@ -122,12 +125,13 @@ export async function fetchAnonReports(): Promise<AnonReport[] | null> {
     console.warn("[anon] fetch failed:", error.message);
     return null;
   }
-  return (data as { id: string; created_at: string; category_id: string; category_label: string; sensitive: boolean }[]).map(
+  return (data as { id: string; created_at: string; category_id: string; category_label: string; sub_categories: string[] | null; sensitive: boolean }[]).map(
     (r) => ({
       id: r.id,
       createdAt: r.created_at,
       categoryId: r.category_id,
       categoryLabel: r.category_label,
+      subCategories: r.sub_categories ?? undefined,
       sensitive: r.sensitive,
     }),
   );
@@ -152,6 +156,7 @@ export async function insertAnonReport(r: AnonReport): Promise<boolean> {
   const { error } = await db.from("anon_reports").insert({
     category_id: r.categoryId,
     category_label: r.categoryLabel,
+    sub_categories: r.subCategories ?? null,
     sensitive: r.sensitive,
   });
   if (error) {

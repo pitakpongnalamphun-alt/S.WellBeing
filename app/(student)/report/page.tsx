@@ -57,6 +57,11 @@ import { cn } from "@/lib/utils";
    Big, full-width cards with a soft emoji badge — the point is to lower the
    pressure of reaching out, not raise it. Five choices, each its own hue so
    they read as distinct doors. */
+import {
+  BULLY_SUBTOPICS,
+  subtopicSensitive,
+} from "@/data/reportTopics";
+
 type Category = {
   id: "bully" | "academic" | "family" | "unsafe" | "harassment" | "other";
   emoji: string;
@@ -167,6 +172,8 @@ const STEPS = [
 /* -- Form state ------------------------------------------------------------ */
 type FormState = {
   category: Category["id"] | null;
+  /** หัวข้อย่อยของหมวดกลั่นแกล้ง — เลือกได้หลายข้อ ไม่บังคับ */
+  subCategories: string[];
   expectation: Expectation | null;
   name: string;
   room: string;
@@ -179,6 +186,7 @@ type FormState = {
 
 const EMPTY: FormState = {
   category: null,
+  subCategories: [],
   expectation: null,
   name: "",
   room: "",
@@ -293,7 +301,11 @@ function StepCategory({
             <button
               key={id}
               type="button"
-              onClick={() => set({ category: id })}
+              onClick={() =>
+                // เปลี่ยนไปหมวดอื่นแล้วต้องล้างหัวข้อย่อยทิ้ง ไม่งั้นเคส "เครียดเรื่องเรียน"
+                // จะติดป้าย "ถูกทำร้ายร่างกาย" ไปด้วยและถูกดันขึ้นคิวผิด
+                set({ category: id, subCategories: id === "bully" ? form.subCategories : [] })
+              }
               aria-pressed={selected}
               className={cn(
                 "flex w-full items-center gap-3.5 rounded-2xl border-2 bg-white p-4 text-left transition-all duration-200 active:scale-[0.99]",
@@ -330,6 +342,67 @@ function StepCategory({
           );
         })}
       </div>
+
+      {/*
+        หัวข้อย่อยของการกลั่นแกล้ง — โผล่ต่อจากการ์ดเมื่อเลือกหมวดนี้แล้วเท่านั้น
+        เพื่อไม่ให้หน้าแรกยาวจนน่ากลัวสำหรับคนที่มาแจ้งเรื่องอื่น
+
+        เลือกได้หลายข้อเพราะของจริงมักมาพร้อมกัน และข้ามได้ — เด็กที่กำลังกลัวไม่ควร
+        ถูกขวางด้วยแบบฟอร์ม ปุ่ม "ถัดไป" ยังกดได้แม้ไม่เลือกอะไรเลย
+      */}
+      {form.category === "bully" ? (
+        <div className="rounded-2xl bg-lavender-50 p-4 ring-1 ring-lavender-200">
+          <p className="text-[0.86rem] font-semibold text-ink">
+            เป็นแบบไหนบ้าง (เลือกได้หลายข้อ)
+          </p>
+          <p className="mt-0.5 text-[0.74rem] leading-snug text-ink-mute">
+            ช่วยให้ครูรู้ว่าต้องรับมือยังไง — ไม่อยากเลือกก็กดถัดไปได้เลย
+          </p>
+          <div className="mt-3 space-y-2">
+            {BULLY_SUBTOPICS.map((t) => {
+              const on = form.subCategories.includes(t.id);
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() =>
+                    set({
+                      subCategories: on
+                        ? form.subCategories.filter((x) => x !== t.id)
+                        : [...form.subCategories, t.id],
+                    })
+                  }
+                  aria-pressed={on}
+                  className={cn(
+                    "flex w-full items-start gap-3 rounded-xl border-2 bg-white p-3 text-left transition active:scale-[0.99]",
+                    on ? "border-lavender-400" : "border-transparent",
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-md border-2 transition",
+                      on
+                        ? "border-lavender-600 bg-lavender-600"
+                        : "border-neutral-300 bg-white",
+                    )}
+                    aria-hidden="true"
+                  >
+                    {on ? <Check className="size-3.5 text-white" /> : null}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[0.88rem] font-medium leading-snug text-ink">
+                      {t.label}
+                    </span>
+                    <span className="mt-0.5 block text-[0.74rem] leading-snug text-ink-mute">
+                      {t.hint}
+                    </span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -1029,15 +1102,26 @@ export default function ReportPage() {
     await new Promise((r) => setTimeout(r, 900));
     const cat = CATEGORIES.find((c) => c.id === form.category);
     const categoryLabel = cat?.label ?? "อื่น ๆ";
-    const sensitive = form.category === "unsafe" || form.category === "harassment";
+    // หัวข้อย่อยที่แตะความปลอดภัยของร่างกายก็นับเป็นเรื่องอ่อนไหวเหมือนกัน
+    const sensitive =
+      form.category === "unsafe" ||
+      form.category === "harassment" ||
+      subtopicSensitive(form.subCategories);
 
     if (anonymous) {
-      addAnonymous(form.category ?? "other", categoryLabel, sensitive);
+      addAnonymous(
+        form.category ?? "other",
+        categoryLabel,
+        sensitive,
+        form.subCategories.length > 0 ? form.subCategories : undefined,
+      );
       setTicket(null);
     } else {
       const code = openCase({
         categoryId: form.category ?? "other",
         categoryLabel,
+        subCategories:
+          form.subCategories.length > 0 ? form.subCategories : undefined,
         expectation: form.expectation as CaseExpectation, // never "anonymous" here
         sensitive,
         contact: { name: form.name, room: form.room, phone: form.phone },
@@ -1076,7 +1160,9 @@ export default function ReportPage() {
   if (submitted) {
     // Sexual harassment and feeling unsafe both put the 1323 line front-and-centre.
     const sensitive =
-      form.category === "unsafe" || form.category === "harassment";
+      form.category === "unsafe" ||
+      form.category === "harassment" ||
+      subtopicSensitive(form.subCategories);
     return (
       <div className="pt-2">
         {anonymous || !ticket ? (
