@@ -15,11 +15,13 @@ import {
   Trash2,
 } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 
 import { Puy, type PuyExpression } from "@/components/Puy";
 import { CRISIS_MESSAGE, detectCrisis } from "@/lib/wellai/crisis";
 import { useChatStore } from "@/lib/store/useChatStore";
 import { useGachaStore } from "@/lib/store/useGachaStore";
+import { CHAT_STARTERS, isAllowedStarter } from "@/data/chatStarters";
 import { cn } from "@/lib/utils";
 
 import { MessageBubble, type Message } from "./MessageBubble";
@@ -27,25 +29,6 @@ import { MessageBubble, type Message } from "./MessageBubble";
 let counter = 0;
 const nextId = () => `m${counter++}`;
 
-/**
- * ปุ่มเริ่มบทสนทนา — ไม่ได้มีไว้ให้สะดวก แต่มีไว้บอกว่า "เรื่องแค่นี้ก็เล่าได้"
- *
- * เด็กที่กดเข้ามาแล้วเจอกล่องเปล่ามักปิดทิ้ง เพราะไม่รู้ว่าเรื่องของตัวเอง "ใหญ่พอ"
- * หรือเปล่า ปุ่มพวกนี้ตอบคำถามนั้นให้ก่อนที่เขาจะต้องถาม
- *
- * "ไม่รู้จะเริ่มยังไง" คือปุ่มที่จำเป็นที่สุดในห้าปุ่ม — มันอนุญาตให้เด็กที่ยังไม่มีคำพูด
- * ได้เริ่มโดยไม่ต้องมีคำพูด ห้ามตัดออกเวลาปรับรายการนี้
- *
- * กดแล้วส่งเป็นข้อความของนักเรียนเอง ไม่ใช่เมนูที่กดแล้วได้คำตอบสำเร็จรูป —
- * บทสนทนาต้องยังเป็นของเขา
- */
-const STARTERS = [
-  "วันนี้เหนื่อยมาก",
-  "อยากระบายเฉย ๆ",
-  "ทะเลาะกับเพื่อน",
-  "ที่บ้านกดดัน",
-  "ไม่รู้จะเริ่มยังไง",
-];
 
 /** จำนวนข้อความล่าสุดที่ส่งเป็นบริบทให้โมเดล — บทสนทนายาวไม่ได้แปลว่าต้องส่งทั้งหมด */
 const HISTORY_TURNS = 20;
@@ -135,7 +118,7 @@ export function ChatScreen() {
 
     setInput("");
     sentThisSession.current = true;
-    append({ id: nextId(), role: "user", kind: "reply", content: text });
+    append({ id: nextId(), role: "user", kind: "reply", content: text, at: new Date().toISOString() });
 
     // Safety-critical path runs on the client too: an instant, network-free
     // response so a student in crisis never waits on a round trip.
@@ -145,6 +128,7 @@ export function ChatScreen() {
         role: "assistant",
         kind: "crisis",
         content: CRISIS_MESSAGE,
+        at: new Date().toISOString(),
       });
       return;
     }
@@ -194,11 +178,27 @@ export function ChatScreen() {
       kind = "reply";
     } finally {
       // เขียนลงเครื่องครั้งเดียวตอนจบ ไม่ใช่ทุกตัวอักษร
-      append({ id: botId, role: "assistant", kind, content: acc });
+      append({ id: botId, role: "assistant", kind, content: acc, at: new Date().toISOString() });
       setPending(null);
       setSending(false);
     }
   }
+
+  /**
+   * ?q= จากการ์ดชวนคุยบนหน้าแรก — ส่งประโยคที่เด็กกดเลือกไว้ให้ทันทีที่เข้าห้อง
+   *
+   * รอ ready ก่อน ไม่งั้นข้อความใหม่จะถูกเขียนก่อนที่บทสนทนาเก่าจะโหลดขึ้นมา
+   * และ isAllowedStarter กันไม่ให้ลิงก์จากที่อื่นพิมพ์อะไรก็ได้ในนามของเด็ก
+   */
+  const autoSent = useRef(false);
+  const startParam = useSearchParams().get("q");
+  useEffect(() => {
+    if (autoSent.current || !ready || !isAllowedStarter(startParam)) return;
+    autoSent.current = true;
+    void send(startParam);
+    // send อ่านค่าล่าสุดจากสโตร์เองอยู่แล้ว ไม่ต้องใส่เป็น dependency
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, startParam]);
 
   function reset() {
     clearChat();
@@ -301,7 +301,7 @@ export function ChatScreen() {
                 ไม่ต้องเรียบเรียงก็ได้ พิมพ์มามั่ว ๆ ปุยอ่านออก
               </p>
               <div className="mt-1 flex flex-wrap justify-center gap-2">
-                {STARTERS.map((s) => (
+                {CHAT_STARTERS.map((s) => (
                   <button
                     key={s}
                     type="button"
