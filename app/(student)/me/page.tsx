@@ -12,6 +12,8 @@ import {
 
 import { FluffyMascot } from "@/components/FluffyMascot";
 import { StarBar } from "@/components/gacha/StarBar";
+import { AccountActions } from "@/components/student/AccountActions";
+import { MyProfileCard } from "@/components/student/MyProfileCard";
 
 export const metadata: Metadata = { title: "ของฉัน — S.Well-Being" };
 
@@ -80,6 +82,8 @@ export default function MePage() {
         <StarBar />
       </header>
 
+      <MyProfileCard />
+
       <ul className="space-y-2.5">
         {ITEMS.map(({ href, title, desc, Icon, badge }) => (
           <li key={href}>
@@ -108,6 +112,10 @@ export default function MePage() {
           </li>
         ))}
       </ul>
+
+      {/* ท้ายสุดของหน้า ไม่ใช่ในรายการด้านบน — ปุ่มลบข้อมูลไม่ควรอยู่ปะปนกับปุ่ม
+          "แก๊งเพื่อนปุย" ให้กดพลาดได้ */}
+      <AccountActions />
     </div>
   );
 }
