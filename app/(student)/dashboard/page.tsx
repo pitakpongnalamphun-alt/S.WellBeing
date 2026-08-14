@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ChevronRight, Gamepad2, MessageCircleHeart, SmilePlus, Wind } from "lucide-react";
+import { ChevronRight, Gamepad2, SmilePlus, Wind } from "lucide-react";
 
 import { CoinBalance } from "@/components/student/CoinBalance";
 import { FluffyMascot } from "@/components/FluffyMascot";
 import { GachaButton } from "@/components/student/GachaButton";
 import { MyAssessProgress } from "@/components/student/MyAssessProgress";
+import { PuyInvite } from "@/components/student/PuyInvite";
 import { SosLauncher } from "@/components/student/SosLauncher";
 import { HomeGarden } from "@/components/gacha/HomeGarden";
 import { WisdomStrip } from "@/components/WisdomStrip";
@@ -79,6 +80,10 @@ export default function StudentDashboardPage() {
         </div>
       </Link>
 
+      {/* พระรอง — ประตูของ "วันธรรมดา" ที่ยังไม่ถึงขั้นต้องแจ้งครู
+          อยู่ใต้ hero ทันที เพราะลำดับการเลื่อนคือลำดับความสำคัญ */}
+      <PuyInvite />
+
       {/* Daily self-care — the rewarded ritual, kept present but secondary. */}
       <section>
         <h2 className="mb-3 text-[0.95rem] font-bold text-ink">
@@ -150,34 +155,6 @@ export default function StudentDashboardPage() {
       {/* พัฒนาการใจของฉัน — กราฟก่อน-หลังจากประวัติประเมินส่วนตัว (อยู่แค่เครื่องนี้) */}
       <MyAssessProgress />
 
-      {/* A warm, standing invitation to น้องปุย — a gentle middle rung for a
-          student who's feeling off but isn't in crisis. Kept softer than the
-          แจ้งเหตุ hero: talking it out shouldn't feel like filing a report. */}
-      <Link
-        href="/chatbot"
-        className="block rounded-2xl bg-lavender-50 p-4 ring-1 ring-lavender-200/70 transition hover:-translate-y-0.5 hover:shadow-md active:translate-y-0"
-      >
-        <div className="flex items-center gap-3.5">
-          <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-white">
-            <MessageCircleHeart
-              className="size-6 text-lavender-500"
-              aria-hidden="true"
-            />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-[0.95rem] font-bold text-ink">
-              ไม่สบายใจอยู่หรือเปล่า?
-            </span>
-            <span className="mt-0.5 block text-[0.76rem] leading-snug text-ink-soft">
-              มาคุยกับน้องปุยนะ ผู้ช่วย AI ที่พร้อมรับฟังเสมอ
-            </span>
-          </span>
-          <ChevronRight
-            className="size-5 shrink-0 text-lavender-400"
-            aria-hidden="true"
-          />
-        </div>
-      </Link>
 
       <HomeGarden />
 

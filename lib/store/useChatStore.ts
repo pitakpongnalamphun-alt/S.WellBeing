@@ -19,7 +19,14 @@ import type { Message } from "@/components/student/chatbot/MessageBubble";
  */
 
 /** เก็บเฉพาะเนื้อความที่จบแล้ว — ฟองที่กำลังสตรีมอยู่ใน state ของหน้าจอ ไม่เขียนลงเครื่องทีละตัวอักษร */
-export type StoredMessage = Pick<Message, "id" | "role" | "content" | "kind">;
+export type StoredMessage = Pick<Message, "id" | "role" | "content" | "kind"> & {
+  /**
+   * เวลาที่พูด (ISO) — ใส่ทีหลัง จึงเป็น optional เพราะบทสนทนาที่เก็บไว้ก่อนหน้านี้
+   * ในเครื่องของคนที่ใช้อยู่แล้วไม่มีค่านี้ การ์ดบนหน้าแรกต้องรับมือกับการไม่มีเวลาได้
+   * โดยไม่โชว์ "เมื่อ NaN วันก่อน"
+   */
+  at?: string;
+};
 
 /**
  * เพดานจำนวนข้อความที่เก็บ ตัดจากท้ายสุดขึ้นมา บทสนทนาที่ยาวมาก ๆ ไม่ได้มีค่ามากขึ้น
