@@ -50,9 +50,9 @@ export type FluffyFriend = {
  */
 export const PUY_FRIEND: FluffyFriend = {
   id: "puy",
-  name: "น้องปุย",
+  name: "น้องอุ่น",
   emoji: "🩷",
-  desc: "เพื่อนที่คุยด้วยในห้องแชท — แต่งตัวให้ได้เลย ไม่ต้องสุ่ม",
+  desc: "น้องอุ่น เพื่อนที่คุยด้วยในห้องแชท — แต่งตัวให้ได้เลย ไม่ต้องสุ่ม",
   rarity: "common",
 };
 

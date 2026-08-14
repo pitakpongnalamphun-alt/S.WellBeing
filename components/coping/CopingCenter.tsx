@@ -251,7 +251,7 @@ export function CopingCenter() {
             href="/chatbot"
             className="inline-flex min-h-11 items-center rounded-full bg-white px-4 text-[0.84rem] font-semibold text-rose-700 ring-1 ring-rose-200 transition-colors hover:bg-rose-50"
           >
-            คุยกับน้องปุยก่อน
+            คุยกับน้องอุ่นก่อน
           </Link>
         </div>
       </section>

@@ -16,13 +16,13 @@ export type Message = {
   streaming?: boolean;
 };
 
-/** Three-dot typing indicator — shown while น้องปุย is composing a reply. */
+/** Three-dot typing indicator — shown while น้องอุ่น is composing a reply. */
 export function TypingDots() {
   return (
     <span
       className="flex items-center gap-1 px-1 py-1"
       role="status"
-      aria-label="น้องปุยกำลังพิมพ์"
+      aria-label="น้องอุ่นกำลังพิมพ์"
     >
       {[0, 160, 320].map((delay) => (
         <span

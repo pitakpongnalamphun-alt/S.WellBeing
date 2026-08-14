@@ -33,7 +33,7 @@ const nextId = () => `m${counter++}`;
 /** จำนวนข้อความล่าสุดที่ส่งเป็นบริบทให้โมเดล — บทสนทนายาวไม่ได้แปลว่าต้องส่งทั้งหมด */
 const HISTORY_TURNS = 20;
 
-/** คุยกันกี่ตาแล้วปุยถึงจะชวนไปหาคนจริง */
+/** คุยกันกี่ตาแล้วอุ่นถึงจะชวนไปหาคนจริง */
 const NUDGE_AFTER = 6;
 
 export function ChatScreen() {
@@ -41,7 +41,7 @@ export function ChatScreen() {
   const messages = useChatStore((s) => s.messages);
   const append = useChatStore((s) => s.append);
   const clearChat = useChatStore((s) => s.clear);
-  // ของที่นักเรียนแต่งให้ปุยไว้ในคลังเพื่อน — ตัวเดียวกัน ใส่ชุดเดียวกันทั้งแอป
+  // ของที่นักเรียนแต่งให้อุ่นไว้ในคลังเพื่อน — ตัวเดียวกัน ใส่ชุดเดียวกันทั้งแอป
   const puyOutfit = useGachaStore((s) => s.equipped.puy);
 
   const [input, setInput] = useState("");
@@ -96,8 +96,8 @@ export function ChatScreen() {
   }, [started]);
 
   /**
-   * สีหน้าของปุยผูกกับ "สถานะที่รู้จริง" เท่านั้น ไม่ใช่การเดาอารมณ์ของนักเรียน —
-   * ถ้าเดาผิด เด็กที่เพิ่งเล่าเรื่องหนักแล้วเจอปุยยิ้มแป้น จะรู้สึกแย่กว่าไม่มีหน้าเลย
+   * สีหน้าของอุ่นผูกกับ "สถานะที่รู้จริง" เท่านั้น ไม่ใช่การเดาอารมณ์ของนักเรียน —
+   * ถ้าเดาผิด เด็กที่เพิ่งเล่าเรื่องหนักแล้วเจออุ่นยิ้มแป้น จะรู้สึกแย่กว่าไม่มีหน้าเลย
    */
   // ปากขยับได้เฉพาะตอนตัวอักษรไหลออกมาจริง ๆ ไม่ใช่ตลอดช่วงที่รอเซิร์ฟเวอร์ —
   // ปากขยับทั้งที่ยังไม่มีอะไรมาคือการแสดงว่ากำลังพูดอยู่ทั้งที่ยังไม่ได้พูด
@@ -107,7 +107,7 @@ export function ChatScreen() {
     : talking
       ? "listen" // เงยหน้าขึ้นตอนกำลังตอบ
       : sending || input.trim()
-        ? "think" // มองลง — ตั้งใจฟังตอนนักเรียนพิมพ์ และตอนปุยกำลังเรียบเรียงคำตอบ
+        ? "think" // มองลง — ตั้งใจฟังตอนนักเรียนพิมพ์ และตอนอุ่นกำลังเรียบเรียงคำตอบ
         : started
           ? "listen"
           : "greet";
@@ -174,7 +174,7 @@ export function ChatScreen() {
         setPending((p) => (p ? { ...p, content: acc, kind } : p));
       }
     } catch {
-      acc = "ขอโทษนะ ตอนนี้ปุยเชื่อมต่อไม่ได้ ลองอีกครั้งได้ไหม";
+      acc = "ขอโทษนะ ตอนนี้อุ่นเชื่อมต่อไม่ได้ ลองอีกครั้งได้ไหม";
       kind = "reply";
     } finally {
       // เขียนลงเครื่องครั้งเดียวตอนจบ ไม่ใช่ทุกตัวอักษร
@@ -223,7 +223,7 @@ export function ChatScreen() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col bg-linear-to-b from-mint-50/40 to-lavender-50/50">
-      {/* Header — ปุยตัวเล็กจะปรากฏตรงนี้หลังฉากเปิดย่อตัวลงไปแล้ว */}
+      {/* Header — อุ่นตัวเล็กจะปรากฏตรงนี้หลังฉากเปิดย่อตัวลงไปแล้ว */}
       <header className="flex items-center gap-3 border-b border-neutral-200/80 pb-3 pt-1">
         <Link
           href="/dashboard"
@@ -243,13 +243,13 @@ export function ChatScreen() {
         </span>
         <span className="min-w-0 flex-1">
           <span className="block text-[0.95rem] font-bold leading-tight text-ink">
-            น้องปุย
+            น้องอุ่น
           </span>
           <span className="block text-[0.72rem] text-ink-mute">
             {emergency
               ? "หยุดคุยไว้ก่อนเพื่อความปลอดภัย"
               : sending
-                ? "ปุยกำลังคิดอยู่…"
+                ? "อุ่นกำลังคิดอยู่…"
                 : "กำลังฟังอยู่"}
           </span>
         </span>
@@ -277,10 +277,10 @@ export function ChatScreen() {
       <div
         className="flex-1 space-y-3 overflow-y-auto py-4"
         aria-live="polite"
-        aria-label="บทสนทนากับน้องปุย"
+        aria-label="บทสนทนากับน้องอุ่น"
       >
         <p className="mx-auto max-w-[90%] rounded-xl bg-white/70 px-3 py-2 text-center text-[0.72rem] leading-relaxed text-ink-mute ring-1 ring-neutral-200">
-          น้องปุยเป็น AI ไม่ใช่นักจิตวิทยา หากต้องการความช่วยเหลือด่วน โทร 1323
+          น้องอุ่นเป็น AI ไม่ใช่นักจิตวิทยา หากต้องการความช่วยเหลือด่วน โทร 1323
         </p>
 
         {!stageGone ? (
@@ -295,10 +295,10 @@ export function ChatScreen() {
             <div className="flex flex-col items-center gap-3 px-2 pb-2 pt-6 text-center">
               <Puy expression={expression} size={116} equipped={puyOutfit} />
               <h1 className="font-display th:leading-snug mt-1 text-[1.05rem] font-bold text-ink">
-                วันนี้อยากเล่าอะไรให้ปุยฟังไหม
+                วันนี้อยากเล่าอะไรให้อุ่นฟังไหม
               </h1>
               <p className="max-w-[22rem] text-[0.82rem] leading-relaxed text-ink-mute">
-                ไม่ต้องเรียบเรียงก็ได้ พิมพ์มามั่ว ๆ ปุยอ่านออก
+                ไม่ต้องเรียบเรียงก็ได้ พิมพ์มามั่ว ๆ อุ่นอ่านออก
               </p>
               <div className="mt-1 flex flex-wrap justify-center gap-2">
                 {CHAT_STARTERS.map((s) => (
@@ -322,7 +322,7 @@ export function ChatScreen() {
           : null}
         {pending ? <MessageBubble message={pending} /> : null}
 
-        {/* ปุยไม่เคยแข่งกับคนจริง — คุยกันมาหลายตาแล้วก็ชวนไปหาคนที่ช่วยได้จริง */}
+        {/* อุ่นไม่เคยแข่งกับคนจริง — คุยกันมาหลายตาแล้วก็ชวนไปหาคนที่ช่วยได้จริง */}
         {showNudge ? (
           <div className="mx-auto flex max-w-[92%] items-start gap-3 rounded-2xl bg-lavender-50 p-3.5 ring-1 ring-lavender-200">
             <span className="mt-0.5 shrink-0" aria-hidden="true">
@@ -330,7 +330,7 @@ export function ChatScreen() {
             </span>
             <div className="min-w-0 flex-1">
               <p className="text-[0.84rem] leading-relaxed text-ink">
-                ปุยฟังต่อได้เรื่อย ๆ นะ แต่ถ้าเรื่องนี้หนักจริง ๆ
+                อุ่นฟังต่อได้เรื่อย ๆ นะ แต่ถ้าเรื่องนี้หนักจริง ๆ
                 คนที่ช่วยได้จริงคือคนที่อยู่ตรงหน้า
               </p>
               <div className="mt-2.5 flex flex-wrap items-center gap-2">
@@ -383,7 +383,7 @@ export function ChatScreen() {
               onKeyDown={onKeyDown}
               rows={1}
               placeholder="พิมพ์สิ่งที่อยากเล่า…"
-              aria-label="พิมพ์ข้อความถึงน้องปุย"
+              aria-label="พิมพ์ข้อความถึงน้องอุ่น"
               className="max-h-32 min-h-[2.75rem] flex-1 resize-none rounded-2xl border border-neutral-300 bg-white px-3.5 py-2.5 text-[0.9rem] text-ink placeholder:text-ink-mute focus:border-mint-400 focus:outline-none focus:ring-4 focus:ring-mint-100"
             />
             <button
@@ -402,7 +402,7 @@ export function ChatScreen() {
           </div>
           {/* พูดความจริงเรื่องความจำไว้ตรงนี้ ไม่ปล่อยให้เดาเอาเองจากความอบอุ่นของตัวละคร */}
           <p className="pt-2 text-center text-[0.68rem] leading-relaxed text-ink-mute">
-            ปุยจำบทสนทนานี้ได้เฉพาะในเครื่องนี้ ไม่ถูกส่งให้ครูหรือใครทั้งนั้น
+            อุ่นจำบทสนทนานี้ได้เฉพาะในเครื่องนี้ ไม่ถูกส่งให้ครูหรือใครทั้งนั้น
           </p>
         </form>
       )}

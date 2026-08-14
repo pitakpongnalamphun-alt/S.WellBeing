@@ -40,7 +40,7 @@ const SECTIONS: Section[] = [
     items: [
       {
         href: "/chatbot",
-        title: "คุยกับน้องปุย",
+        title: "คุยกับน้องอุ่น",
         desc: "ผู้ช่วยพูดคุย AI ส่วนตัว ทักได้ทุกเมื่อ",
         Icon: MessageCircleHeart,
         badge: "bg-purple-50 text-purple-700",
