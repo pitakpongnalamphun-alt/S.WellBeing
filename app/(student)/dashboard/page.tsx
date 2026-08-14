@@ -2,9 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ChevronRight, Gamepad2, SmilePlus, Wind } from "lucide-react";
 
-import { CoinBalance } from "@/components/student/CoinBalance";
 import { FluffyMascot } from "@/components/FluffyMascot";
-import { GachaButton } from "@/components/student/GachaButton";
+import { HomeHeader } from "@/components/student/HomeHeader";
 import { MyAssessProgress } from "@/components/student/MyAssessProgress";
 import { PuyInvite } from "@/components/student/PuyInvite";
 import { SosLauncher } from "@/components/student/SosLauncher";
@@ -18,18 +17,7 @@ export default function StudentDashboardPage() {
     // pb clears the small SOS pill + raised แจ้งเหตุ button + tab bar so the
     // last card isn't hidden behind them at the bottom of the scroll.
     <div className="space-y-6 pb-32 pt-2">
-      <header className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-[0.78rem] text-ink-mute">ยินดีต้อนรับ 👋</p>
-          <h1 className="font-display th:leading-snug text-[1.45rem] font-bold text-ink">
-            วันนี้เป็นยังไงบ้าง
-          </h1>
-        </div>
-        <span className="flex shrink-0 items-center gap-2">
-          <GachaButton />
-          <CoinBalance />
-        </span>
-      </header>
+      <HomeHeader />
 
       {/* Hero — แจ้งเหตุ. The thing this app is really for, fronted warmly by
           น้องปุย so reaching out feels safe, not alarming. Never rewarded: the
