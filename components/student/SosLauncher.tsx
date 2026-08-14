@@ -4,16 +4,28 @@ import Link from "next/link";
 import { ShieldAlert } from "lucide-react";
 
 /**
- * A small, always-visible SOS on the home screen — a compact red pill tucked
- * above the tab bar on the right, clear of the centred แจ้งเหตุ button.
+ * A small, always-visible SOS on the home screen — tucked above the tab bar on
+ * the right, clear of the centred แจ้งเหตุ button.
  *
  * It links to /sos rather than firing an alert: a one-tap emergency send gets
  * pressed by accident, and a student whose first experience of the button is a
  * false alarm won't touch it again — which is exactly when it matters. The zone
  * picker and "who gets told" copy live on /sos.
  *
- * Colour is the `risk-high` token (a deep red), not a bright red-500: white text
- * on red-500 fails 4.5:1, and an SOS label that's hard to read defeats the point.
+ * ทำไมตอนพักถึงเป็นเส้นขอบ ไม่ใช่แดงทึบ
+ *
+ * เดิมเป็นเม็ดยาแดงทึบที่กะพริบตลอดเวลาบนหน้าแรก ซึ่งอ่านออกมาว่า "ที่นี่มีเรื่องน่ากลัว
+ * รออยู่" ทั้งที่คนส่วนใหญ่ที่เปิดแอปในวันธรรมดาไม่ได้อยู่ในภาวะฉุกเฉิน สีแดงที่ดังตลอด
+ * เวลาไม่ได้ทำให้ปุ่มถูกกดตอนจำเป็นมากขึ้น แต่ทำให้ทั้งแอปดูเป็นเรื่องหนักตั้งแต่หน้าแรก
+ *
+ * สิ่งที่ *ไม่* ลดลงเลย เพราะเป็นเรื่องความปลอดภัย
+ *   - ตำแหน่งและขนาดเท่าเดิมเป๊ะ ความจำของนิ้วต้องใช้ได้เหมือนเดิม
+ *   - ตัวอักษรยังเป็นสีแดงเข้มบนพื้นขาวทึบ (ไม่ใช่โปร่งใส) และยังหนาเหมือนเดิม
+ *   - คำว่า SOS ยังอยู่ ไม่เปลี่ยนเป็นไอคอนเปล่า
+ *   - เข้าไปในหน้า /sos แล้วทุกอย่างกลับมาเป็นแดงเต็มตามเดิม
+ *
+ * ที่เอาออกคือการกะพริบ (animate-pulse) — ของที่ขยับตลอดเวลาดึงสายตาไปตลอดเวลา
+ * และเป็นตัวที่ทำให้รู้สึกว่ามีอะไรผิดปกติมากที่สุด
  */
 export function SosLauncher() {
   return (
@@ -22,9 +34,9 @@ export function SosLauncher() {
         <Link
           href="/sos"
           aria-label="ขอความช่วยเหลือด่วน SOS"
-          className="pointer-events-auto flex items-center gap-1.5 rounded-full bg-risk-high px-3.5 py-2 text-[0.82rem] font-bold text-white shadow-[0_8px_20px_-6px_rgba(180,50,31,0.55)] ring-1 ring-white/40 transition-all duration-200 hover:brightness-110 active:scale-95"
+          className="pointer-events-auto flex items-center gap-1.5 rounded-full bg-white px-3.5 py-2 text-[0.82rem] font-bold text-risk-high shadow-[0_6px_16px_-8px_rgba(15,32,25,0.4)] ring-2 ring-risk-high/55 transition-all duration-200 hover:bg-risk-high hover:text-white hover:ring-risk-high active:scale-95"
         >
-          <ShieldAlert className="size-4 animate-pulse" aria-hidden="true" />
+          <ShieldAlert className="size-4" aria-hidden="true" />
           SOS
         </Link>
       </div>
