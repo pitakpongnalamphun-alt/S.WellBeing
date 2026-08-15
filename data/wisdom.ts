@@ -145,6 +145,7 @@ const BLONDE = "#caa86a";
 const SILVER = "#cdd2d6";
 const SALT = "#9d968a";
 const SANDY = "#a98b62";
+const BRUNETTE = "#54392b";
 const AUBURN = "#7a4a34";
 const SKIN = "#f1c9a5";
 
@@ -219,7 +220,7 @@ export const WISDOMS: Wisdom[] = [
     quote: "ความเปราะบางไม่ใช่ความอ่อนแอ แต่คือจุดเริ่มต้นของความกล้าหาญ",
     application: "ลองกล้าบอกความรู้สึกจริง ๆ กับคนที่เราไว้ใจสัก 1 คน",
     category: "courage",
-    avatar: { skin: SKIN, hair: BLONDE, hairStyle: "wavy", age: "adult", collar: "plain", features: "soft", face: "heart", outfit: "#9d8ab5" },
+    avatar: { skin: SKIN, hair: BLONDE, hairStyle: "bob", age: "adult", collar: "plain", features: "soft", face: "heart", outfit: "#9d8ab5" },
   },
   {
     kind: "quote",
@@ -400,7 +401,7 @@ export const WISDOMS: Wisdom[] = [
     quote: "การใจดีกับตัวเองไม่ได้ทำให้เราอ่อนแอลง แต่ทำให้เราลุกได้เร็วขึ้น",
     application: "ตอนทำพลาด ลองพูดกับตัวเองแบบที่จะพูดกับเพื่อนที่ทำพลาดเรื่องเดียวกัน",
     category: "acceptance",
-    avatar: { skin: SKIN, hair: SANDY, hairStyle: "long", age: "adult", collar: "plain", features: "soft", face: "long", outfit: "#7fa38c" },
+    avatar: { skin: SKIN, hair: BRUNETTE, hairStyle: "wavy", age: "adult", collar: "plain", features: "soft", face: "long", outfit: "#26282c" },
   },
   {
     kind: "quote",
