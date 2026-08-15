@@ -31,19 +31,25 @@ const FACE: Record<NonNullable<AvatarSpec["face"]>, string> = {
   round: "M29 45 Q29 25 50 25 Q71 25 71 45 Q71 59 66 66 Q59 74 50 74 Q41 74 34 66 Q29 59 29 45 Z",
   long: "M33 43 Q33 25 50 25 Q67 25 67 43 Q67 61 63 68 Q58 76 50 76 Q42 76 37 68 Q33 61 33 43 Z",
   square: "M31 43 Q31 25 50 25 Q69 25 69 43 Q69 61 67 67 Q63 72 50 72 Q37 72 33 67 Q31 61 31 43 Z",
+  heart: "M30 42 Q30 24 50 24 Q70 24 70 42 Q70 56 64 63 Q57 72 50 72 Q43 72 36 63 Q30 56 30 42 Z",
 };
 
 export function PsychAvatar({ spec, size = 88 }: { spec: AvatarSpec; size?: number }) {
   const {
     skin, hair, hairStyle, beard, glasses,
     age = "senior", collar = "suit", face = "oval", bowtie = false,
-    outfit = "#4a5560", hat,
+    outfit = "#4a5560", hat, features = "strong",
   } = spec;
   const eyeY = 48;
   const senior = age === "senior";
+  /**
+   * ชุดลักษณะที่ทำให้ใบหน้าอ่อนลง — คิ้วบางกว่า มีขนตา ริมฝีปากเป็นรูปปาก
+   * คอแคบกว่า ของเดิมมีใบหน้าแบบเดียวทั้งไฟล์ ผู้หญิงจึงได้หน้าผู้ชายที่เปลี่ยนทรงผม
+   */
+  const soft = features === "soft";
 
   // id ต้องไม่ชนกันเมื่อมีหลายภาพในหน้าเดียว — ผูกกับลักษณะเฉพาะของสเปก
-  const uid = `${face}-${hairStyle}-${beard ?? "n"}-${glasses ?? "n"}-${collar}-${bowtie ? "b" : "x"}-${hat ?? "n"}-${hair.slice(1)}-${outfit.slice(1)}`;
+  const uid = `${features}-${face}-${hairStyle}-${beard ?? "n"}-${glasses ?? "n"}-${collar}-${bowtie ? "b" : "x"}-${hat ?? "n"}-${hair.slice(1)}-${outfit.slice(1)}`;
 
   return (
     <svg
@@ -68,7 +74,10 @@ export function PsychAvatar({ spec, size = 88 }: { spec: AvatarSpec; size?: numb
 
       <g clipPath={`url(#c-${uid})`}>
         {/* ---------------------------------------------------- คอและไหล่ */}
-        <path d="M42 68 L42 79 Q50 84 58 79 L58 68 Z" fill={skin} />
+        <path
+          d={soft ? "M44 68 L44 79 Q50 83 56 79 L56 68 Z" : "M42 68 L42 79 Q50 84 58 79 L58 68 Z"}
+          fill={skin}
+        />
         {/* เงาใต้คาง — ตัวที่ทำให้หัวมีปริมาตร ไม่ใช่แผ่นแบน */}
         <path d="M42 68 L42 74 Q50 80 58 74 L58 68 Z" fill={DEEP} opacity="0.55" />
 
@@ -165,6 +174,25 @@ export function PsychAvatar({ spec, size = 88 }: { spec: AvatarSpec; size?: numb
             <path d="M35 33 Q43 25 50 25 Q44 30 39 40 Z" fill="#fff" opacity="0.22" />
           </>
         )}
+        {hairStyle === "updo" && (
+          <>
+            <circle cx="50" cy="20" r="8.5" fill={hair} />
+            <path d="M29 45 Q28 24 50 22 Q72 24 71 45 Q69 30 50 30 Q31 30 29 45 Z" fill={hair} />
+            <path d="M45 15 Q50 12 55 15 Q50 14 45 15 Z" fill="#fff" opacity="0.2" />
+          </>
+        )}
+        {hairStyle === "wavy" && (
+          <>
+            <path d="M27 46 Q27 21 50 21 Q73 21 73 46 Q76 62 70 70 Q73 52 66 40 Q71 54 63 60 Q68 44 57 33 Q53 30 50 30 Q47 30 43 33 Q32 44 37 60 Q29 54 34 40 Q27 52 30 70 Q24 62 27 46 Z" fill={hair} />
+            <path d="M36 32 Q44 25 51 25 Q44 29 39 39 Z" fill="#fff" opacity="0.22" />
+          </>
+        )}
+        {hairStyle === "pixie" && (
+          <>
+            <path d="M29 46 Q28 23 50 22 Q72 23 71 46 Q70 36 63 32 Q56 36 46 33 Q36 31 33 42 Q31 44 29 46 Z" fill={hair} />
+            <path d="M35 36 Q42 28 52 28 Q44 31 38 40 Z" fill="#fff" opacity="0.22" />
+          </>
+        )}
         {hairStyle === "bob" && (
           <>
             <path d="M28 46 Q28 21 50 21 Q72 21 72 46 Q73 68 65 74 Q69 46 59 33 Q54 29 50 29 Q46 29 41 33 Q31 46 35 74 Q27 68 28 46 Z" fill={hair} />
@@ -174,12 +202,12 @@ export function PsychAvatar({ spec, size = 88 }: { spec: AvatarSpec; size?: numb
 
         {/* ------------------------------------------------------- คิ้ว */}
         <path
-          d={`M37.5 ${eyeY - 6} Q42 ${eyeY - 8.4} 46.5 ${eyeY - 6.2}`}
-          fill="none" stroke={hair} strokeWidth="2.2" strokeLinecap="round"
+          d={`M38 ${eyeY - (soft ? 6.8 : 6)} Q42 ${eyeY - (soft ? 9.2 : 8.4)} 46.5 ${eyeY - (soft ? 7 : 6.2)}`}
+          fill="none" stroke={hair} strokeWidth={soft ? 1.5 : 2.2} strokeLinecap="round"
         />
         <path
-          d={`M53.5 ${eyeY - 6.2} Q58 ${eyeY - 8.4} 62.5 ${eyeY - 6}`}
-          fill="none" stroke={hair} strokeWidth="2.2" strokeLinecap="round"
+          d={`M53.5 ${eyeY - (soft ? 7 : 6.2)} Q58 ${eyeY - (soft ? 9.2 : 8.4)} 62 ${eyeY - (soft ? 6.8 : 6)}`}
+          fill="none" stroke={hair} strokeWidth={soft ? 1.5 : 2.2} strokeLinecap="round"
         />
 
         {/* -------------------------------------------------------- ตา
@@ -197,6 +225,12 @@ export function PsychAvatar({ spec, size = 88 }: { spec: AvatarSpec; size?: numb
           {/* เปลือกตาบน — เส้นหนากว่าขอบอื่นเสมอ ทำให้ตาดูมีน้ำหนัก */}
           <path d={`M37 ${eyeY - 1.6} Q42 ${eyeY - 4.6} 47 ${eyeY - 1.6}`} fill="none" stroke="#4a3527" strokeWidth="1.6" strokeLinecap="round" />
           <path d={`M53 ${eyeY - 1.6} Q58 ${eyeY - 4.6} 63 ${eyeY - 1.6}`} fill="none" stroke="#4a3527" strokeWidth="1.6" strokeLinecap="round" />
+          {soft && (
+            <>
+              <path d={`M36.6 ${eyeY - 2.4} L35 ${eyeY - 4}`} stroke="#3d2b20" strokeWidth="1.2" strokeLinecap="round" />
+              <path d={`M63.4 ${eyeY - 2.4} L65 ${eyeY - 4}`} stroke="#3d2b20" strokeWidth="1.2" strokeLinecap="round" />
+            </>
+          )}
         </g>
 
         {/* ------------------------------------------------------- จมูก
@@ -222,14 +256,21 @@ export function PsychAvatar({ spec, size = 88 }: { spec: AvatarSpec; size?: numb
         )}
 
         {/* -------------------------------------------------------- ปาก */}
-        <path
-          d="M44.5 65.4 Q50 68.6 55.5 65.4"
-          fill="none"
-          stroke={beard === "full" ? "#7d4c3b" : "#a8604c"}
-          strokeWidth="1.8"
-          strokeLinecap="round"
-        />
-        {beard !== "full" && (
+        {soft ? (
+          <>
+            <path d="M44.6 65 Q47.3 63.4 50 64.6 Q52.7 63.4 55.4 65 Q52.8 68.8 50 68.8 Q47.2 68.8 44.6 65 Z" fill="#c0715f" />
+            <path d="M46 65.4 Q50 66.6 54 65.4" fill="none" stroke="#8f4a3c" strokeWidth="0.9" strokeLinecap="round" />
+          </>
+        ) : (
+          <path
+            d="M44.5 65.4 Q50 68.6 55.5 65.4"
+            fill="none"
+            stroke={beard === "full" ? "#7d4c3b" : "#a8604c"}
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+        )}
+        {beard !== "full" && !soft && (
           <path d="M46 66.4 Q50 68 54 66.4" fill="none" stroke="#c98a72" strokeWidth="1" strokeLinecap="round" opacity="0.7" />
         )}
 
