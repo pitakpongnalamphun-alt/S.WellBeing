@@ -37,12 +37,13 @@ export function PsychAvatar({ spec, size = 88 }: { spec: AvatarSpec; size?: numb
   const {
     skin, hair, hairStyle, beard, glasses,
     age = "senior", collar = "suit", face = "oval", bowtie = false,
+    outfit = "#4a5560", hat,
   } = spec;
   const eyeY = 48;
   const senior = age === "senior";
 
   // id ต้องไม่ชนกันเมื่อมีหลายภาพในหน้าเดียว — ผูกกับลักษณะเฉพาะของสเปก
-  const uid = `${face}-${hairStyle}-${beard ?? "n"}-${glasses ?? "n"}-${collar}-${bowtie ? "b" : "x"}-${hair.slice(1)}`;
+  const uid = `${face}-${hairStyle}-${beard ?? "n"}-${glasses ?? "n"}-${collar}-${bowtie ? "b" : "x"}-${hat ?? "n"}-${hair.slice(1)}-${outfit.slice(1)}`;
 
   return (
     <svg
@@ -74,11 +75,11 @@ export function PsychAvatar({ spec, size = 88 }: { spec: AvatarSpec; size?: numb
         {/* เสื้อ — สองทรงตามยุคของแต่ละคน */}
         {collar === "suit" ? (
           <>
-            <path d="M20 100 Q22 84 38 78 L50 88 L62 78 Q78 84 80 100 Z" fill="#4a5560" />
+            <path d="M20 100 Q22 84 38 78 L50 88 L62 78 Q78 84 80 100 Z" fill={outfit} />
             <path d="M38 78 L50 88 L45 100 L33 100 Z" fill="#f2efe8" />
             <path d="M62 78 L50 88 L55 100 L67 100 Z" fill="#f2efe8" />
-            <path d="M38 78 L50 88 L41 92 Z" fill="#3c4650" />
-            <path d="M62 78 L50 88 L59 92 Z" fill="#3c4650" />
+            <path d="M38 78 L50 88 L41 92 Z" fill="#000" fillOpacity="0.2" />
+            <path d="M62 78 L50 88 L59 92 Z" fill="#000" fillOpacity="0.2" />
             {/* หูกระต่าย — เครื่องหมายประจำตัวที่คนจำได้ก่อนจำหน้า */}
             {bowtie && (
               <>
@@ -90,8 +91,8 @@ export function PsychAvatar({ spec, size = 88 }: { spec: AvatarSpec; size?: numb
           </>
         ) : (
           <>
-            <path d="M21 100 Q24 84 39 78 Q44 86 50 86 Q56 86 61 78 Q76 84 79 100 Z" fill="#9d8ab5" />
-            <path d="M39 78 Q44 86 50 86 Q56 86 61 78 Q56 89 50 89 Q44 89 39 78 Z" fill="#8b789f" />
+            <path d="M21 100 Q24 84 39 78 Q44 86 50 86 Q56 86 61 78 Q76 84 79 100 Z" fill={outfit} />
+            <path d="M39 78 Q44 86 50 86 Q56 86 61 78 Q56 89 50 89 Q44 89 39 78 Z" fill="#000" fillOpacity="0.16" />
           </>
         )}
 
@@ -230,6 +231,14 @@ export function PsychAvatar({ spec, size = 88 }: { spec: AvatarSpec; size?: numb
         />
         {beard !== "full" && (
           <path d="M46 66.4 Q50 68 54 66.4" fill="none" stroke="#c98a72" strokeWidth="1" strokeLinecap="round" opacity="0.7" />
+        )}
+
+        {hat === "beret" && (
+          <>
+            <path d="M27 38 Q28 20 50 19 Q72 20 73 36 Q73 42 66 41 Q56 39 34 42 Q27 43 27 38 Z" fill="#3f5148" />
+            <path d="M34 27 Q42 22 52 22 Q42 25 36 33 Z" fill="#fff" opacity="0.16" />
+            <circle cx="50" cy="18.5" r="2.6" fill="#2e3b34" />
+          </>
         )}
 
         {/* ----------------------------------------------------- แว่นตา
