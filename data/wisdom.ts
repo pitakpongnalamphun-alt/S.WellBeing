@@ -149,6 +149,24 @@ const BRUNETTE = "#54392b";
 const AUBURN = "#7a4a34";
 const SKIN = "#f1c9a5";
 
+/**
+ * ที่มาของหน้าตาในการ์ดแต่ละใบ
+ *
+ * อิงภาพถ่าย/ภาพวาดอ้างอิงที่เปิดดูแล้ว (14 คน)
+ *   แฟรงเคิล · โรเจอร์ส · ยุง · มาสโลว์ · เจมส์ · ฟรอยด์ · แอดเลอร์ · วีก็อตสกี
+ *   บราวน์ · ดเว็ค · เนฟฟ์ · เซลิกแมน · แบนดูรา · สกินเนอร์
+ *
+ * ยังเป็นการเดา เพราะหาภาพที่ใช้ได้ไม่เจอ (8 คน)
+ *   อีริกสัน · วินนิคอตต์ · ปิอาเช่ · เบ็ค · โบลบี · ชิกเซนต์มิฮายี · ลิเนฮาน · คาบัต-ซินน์
+ *
+ * สองภาพที่ดึงมาแล้วต้องคัดทิ้ง เพราะจะทำให้ผิดมากกว่าเดิม
+ *   อีริกสัน — ภาพที่ค้นเจอเป็นบัตรทะเบียนของ "Erik Wilhelm Erikson" ช่างเครื่อง
+ *              เกิดสตอกโฮล์ม 1887 ซึ่งเป็นคนละคนกับ Erik Homburger Erikson นักจิตวิทยา
+ *   เบ็ค    — ภาพที่เจอเป็นรูปหนังสือรุ่นปี 1942 ตอนเขาอายุราว 21 ปี ไม่ใช่ภาพจำ
+ *              ของคนที่โลกรู้จักในวัยชรา
+ *
+ * ใครแก้ไฟล์นี้ต่อ อย่าเดาหน้าคนในกลุ่มที่สองเพิ่มเอง หาภาพอ้างอิงก่อนเสมอ
+ */
 export const WISDOMS: Wisdom[] = [
   {
     kind: "quote",
@@ -160,7 +178,7 @@ export const WISDOMS: Wisdom[] = [
     quote: "เมื่อเราเปลี่ยนสถานการณ์ไม่ได้ เราก็ถูกท้าทายให้เปลี่ยนตัวเราเอง",
     application: "วันที่อะไรไม่เป็นใจ ลองถามตัวเองว่า “เราเลือกรับมือกับมันยังไงได้บ้าง”",
     category: "meaning",
-    avatar: { skin: SKIN, hair: SALT, hairStyle: "sides", glasses: "square", face: "long", outfit: "#3f4a5c" },
+    avatar: { skin: SKIN, hair: GRAY, hairStyle: "swept", glasses: "square", face: "long", outfit: "#3f4a5c" },
   },
   {
     kind: "quote",
@@ -172,7 +190,7 @@ export const WISDOMS: Wisdom[] = [
     quote: "เรื่องแปลกก็คือ พอเรายอมรับตัวเองอย่างที่เป็น เราจึงเปลี่ยนแปลงได้",
     application: "ลองพูดกับตัวเองดี ๆ เหมือนที่พูดกับเพื่อนสนิทสักคน",
     category: "acceptance",
-    avatar: { skin: SKIN, hair: WHITE, hairStyle: "full", glasses: "round", face: "oval", outfit: "#5a4638" },
+    avatar: { skin: SKIN, hair: WHITE, hairStyle: "sides", glasses: "square", face: "oval", outfit: "#5a4638" },
   },
   {
     kind: "quote",
@@ -184,7 +202,7 @@ export const WISDOMS: Wisdom[] = [
     quote: "คนที่มองออกไปข้างนอกคือฝัน ส่วนคนที่มองเข้าไปข้างในคือตื่น",
     application: "วันนี้ลองสังเกตความรู้สึกข้างในสัก 1 อย่าง โดยไม่ตัดสินมัน",
     category: "self",
-    avatar: { skin: SKIN, hair: GRAY, hairStyle: "receding", glasses: "round", beard: "mustache", face: "square", outfit: "#40403f" },
+    avatar: { skin: SKIN, hair: WHITE, hairStyle: "receding", glasses: "round", beard: "mustache", face: "square", outfit: "#40403f" },
   },
   {
     kind: "quote",
@@ -196,7 +214,7 @@ export const WISDOMS: Wisdom[] = [
     quote: "สิ่งที่คนเราเป็นได้ เขาก็ควรจะได้เป็น",
     application: "ลงมือทำสิ่งเล็ก ๆ ที่ทำให้รู้สึกเป็นตัวเองสัก 1 อย่างวันนี้",
     category: "growth",
-    avatar: { skin: SKIN, hair: DARK, hairStyle: "full", beard: "mustache", age: "adult", face: "oval", outfit: "#4f5340" },
+    avatar: { skin: SKIN, hair: DARK, hairStyle: "swept", beard: "mustache", age: "adult", face: "oval", outfit: "#4f5340" },
   },
   {
     kind: "quote",
@@ -220,7 +238,7 @@ export const WISDOMS: Wisdom[] = [
     quote: "ความเปราะบางไม่ใช่ความอ่อนแอ แต่คือจุดเริ่มต้นของความกล้าหาญ",
     application: "ลองกล้าบอกความรู้สึกจริง ๆ กับคนที่เราไว้ใจสัก 1 คน",
     category: "courage",
-    avatar: { skin: SKIN, hair: BLONDE, hairStyle: "bob", age: "adult", collar: "plain", features: "soft", face: "heart", outfit: "#9d8ab5" },
+    avatar: { skin: SKIN, hair: BLONDE, hairStyle: "wavy", age: "adult", collar: "plain", features: "soft", face: "heart", outfit: "#3a3f4a" },
   },
   {
     kind: "quote",
@@ -258,7 +276,7 @@ export const WISDOMS: Wisdom[] = [
     quote: "สิ่งที่เราไม่รู้ตัวว่าคิด ก็ยังออกแรงกับชีวิตเราอยู่ดี",
     application: "เวลาหงุดหงิดโดยไม่รู้สาเหตุ ลองย้อนดูว่าก่อนหน้านั้นเกิดอะไรขึ้นบ้าง",
     category: "self",
-    avatar: { skin: SKIN, hair: WHITE, hairStyle: "receding", beard: "full", glasses: "round", face: "long", outfit: "#333a45" },
+    avatar: { skin: SKIN, hair: WHITE, hairStyle: "receding", beard: "full", face: "long", outfit: "#333a45" },
   },
   {
     kind: "quote",
@@ -271,7 +289,7 @@ export const WISDOMS: Wisdom[] = [
     quote: "ความรู้สึกว่าตัวเองด้อยกว่าคนอื่น ไม่ใช่จุดจบ แต่เป็นแรงที่ผลักให้เราโตขึ้นได้",
     application: "แทนที่จะเทียบกับคนอื่น ลองเทียบกับตัวเองเมื่อเดือนที่แล้ว",
     category: "courage",
-    avatar: { skin: SKIN, hair: GRAY, hairStyle: "receding", glasses: "halfmoon", face: "round", outfit: "#6b5a45" },
+    avatar: { skin: SKIN, hair: GRAY, hairStyle: "receding", glasses: "round", face: "round", outfit: "#6b5a45" },
   },
   {
     kind: "quote",
@@ -284,7 +302,7 @@ export const WISDOMS: Wisdom[] = [
     quote: "เด็กไม่ได้คิดผิด แต่คิดด้วยเครื่องมือที่ยังไม่ครบ แล้วค่อย ๆ สร้างมันขึ้นเอง",
     application: "เรื่องที่เมื่อก่อนงงมาก วันนี้อาจเข้าใจแล้ว ลองย้อนไปอ่านใหม่ดู",
     category: "growth",
-    avatar: { skin: SKIN, hair: WHITE, hairStyle: "wild", glasses: "round", face: "square", hat: "beret", outfit: "#4a5560" },
+    avatar: { skin: SKIN, hair: SALT, hairStyle: "wild", glasses: "round", face: "square", hat: "beret", outfit: "#4a5560" },
   },
   {
     kind: "quote",
@@ -310,7 +328,7 @@ export const WISDOMS: Wisdom[] = [
     quote: "ความเชื่อว่าเราทำได้ เปลี่ยนผลลัพธ์จริง เพราะมันเปลี่ยนว่าเราจะลองนานแค่ไหน",
     application: "นึกถึงเรื่องหนึ่งที่เคยคิดว่าทำไม่ได้ แล้วสุดท้ายก็ทำได้ เก็บไว้เตือนตัวเอง",
     category: "courage",
-    avatar: { skin: SKIN, hair: SILVER, hairStyle: "swept", glasses: "halfmoon", face: "square", outfit: "#2f5b6b" },
+    avatar: { skin: SKIN, hair: SILVER, hairStyle: "sides", glasses: "round", face: "square", outfit: "#2f5b6b" },
   },
   {
     kind: "quote",
@@ -323,7 +341,7 @@ export const WISDOMS: Wisdom[] = [
     quote: "พฤติกรรมที่ได้ผลตอบกลับที่ดี มักถูกทำซ้ำ นิสัยจึงสร้างได้ด้วยการออกแบบ",
     application: "อยากติดนิสัยใหม่ ให้ทำต่อจากสิ่งที่ทำอยู่แล้วทุกวัน เช่น อ่านหลังแปรงฟัน",
     category: "growth",
-    avatar: { skin: SKIN, hair: SILVER, hairStyle: "sides", glasses: "square", face: "oval", outfit: "#6d6250" },
+    avatar: { skin: SKIN, hair: SILVER, hairStyle: "swept", glasses: "square", face: "oval", outfit: "#6d6250" },
   },
   {
     kind: "quote",
@@ -362,7 +380,7 @@ export const WISDOMS: Wisdom[] = [
     quote: "ความสิ้นหวังเป็นสิ่งที่เรียนรู้มาได้ และการมองโลกอีกแบบก็เรียนรู้ได้เหมือนกัน",
     application: "เจอเรื่องแย่ ลองถามว่ามันจริงกับทุกเรื่องในชีวิตเราไหม หรือแค่เรื่องนี้",
     category: "hope",
-    avatar: { skin: SKIN, hair: GRAY, hairStyle: "receding", glasses: "square", face: "square", outfit: "#8a5a2b" },
+    avatar: { skin: SKIN, hair: WHITE, hairStyle: "receding", face: "square", outfit: "#8a5a2b" },
   },
   {
     kind: "quote",
@@ -388,7 +406,7 @@ export const WISDOMS: Wisdom[] = [
     quote: "คำว่า ยังทำไม่ได้ ต่างจาก ทำไม่ได้ แค่คำเดียว แต่เปลี่ยนทั้งเส้นทาง",
     application: "เวลาจะพูดว่าเราทำไม่ได้ ให้เติมคำว่า ยัง ลงไปข้างหน้า",
     category: "growth",
-    avatar: { skin: SKIN, hair: SALT, hairStyle: "updo", collar: "plain", features: "soft", face: "oval", outfit: "#b56b7a" },
+    avatar: { skin: SKIN, hair: DARK, hairStyle: "bob", collar: "plain", features: "soft", face: "oval", outfit: "#2f3136" },
   },
   {
     kind: "quote",
@@ -427,7 +445,7 @@ export const WISDOMS: Wisdom[] = [
     quote: "การมีสติคือการตั้งใจอยู่กับปัจจุบัน โดยไม่รีบตัดสินว่ามันดีหรือไม่ดี",
     application: "หายใจเข้าออกสามรอบ แล้วสังเกตว่าตอนนี้ร่างกายรู้สึกยังไง โดยไม่ต้องรีบแก้",
     category: "stress",
-    avatar: { skin: SKIN, hair: WHITE, hairStyle: "sides", glasses: "round", face: "long", outfit: "#6f7f43" },
+    avatar: { skin: SKIN, hair: GRAY, hairStyle: "sides", glasses: "round", face: "long", outfit: "#6f7f43" },
   },
 
   // ---------------------------------------------------------------- วิธีที่ลองทำได้จริง
