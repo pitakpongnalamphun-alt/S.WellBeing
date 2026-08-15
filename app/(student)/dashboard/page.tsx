@@ -150,7 +150,10 @@ export default function StudentDashboardPage() {
       </section>
 
 
-      <HomeGarden />
+      {/* กดเข้าไปดูสวนเต็ม ๆ ได้ — เดิมเป็นการ์ดโชว์เฉย ๆ กดไม่ได้เลย */}
+      <Link href="/garden" className="block transition active:scale-[0.99]" aria-label="เปิดดูสวนของฉัน">
+        <HomeGarden />
+      </Link>
 
       <WisdomStrip />
 
