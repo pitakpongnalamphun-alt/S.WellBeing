@@ -312,7 +312,7 @@ export const WISDOMS: Wisdom[] = [
     quote: "พฤติกรรมที่ได้ผลตอบกลับที่ดี มักถูกทำซ้ำ นิสัยจึงสร้างได้ด้วยการออกแบบ",
     application: "อยากติดนิสัยใหม่ ให้ทำต่อจากสิ่งที่ทำอยู่แล้วทุกวัน เช่น อ่านหลังแปรงฟัน",
     category: "growth",
-    avatar: { skin: SKIN, hair: WHITE, hairStyle: "sides", glasses: "square", face: "oval", outfit: "#6d6250" },
+    avatar: { skin: SKIN, hair: SILVER, hairStyle: "sides", glasses: "square", face: "oval", outfit: "#6d6250" },
   },
   {
     kind: "quote",
@@ -377,7 +377,7 @@ export const WISDOMS: Wisdom[] = [
     quote: "คำว่า ยังทำไม่ได้ ต่างจาก ทำไม่ได้ แค่คำเดียว แต่เปลี่ยนทั้งเส้นทาง",
     application: "เวลาจะพูดว่าเราทำไม่ได้ ให้เติมคำว่า ยัง ลงไปข้างหน้า",
     category: "growth",
-    avatar: { skin: SKIN, hair: DARK, hairStyle: "bob", collar: "plain", face: "oval", outfit: "#b56b7a" },
+    avatar: { skin: SKIN, hair: SALT, hairStyle: "bob", collar: "plain", face: "oval", outfit: "#b56b7a" },
   },
   {
     kind: "quote",
@@ -416,7 +416,7 @@ export const WISDOMS: Wisdom[] = [
     quote: "การมีสติคือการตั้งใจอยู่กับปัจจุบัน โดยไม่รีบตัดสินว่ามันดีหรือไม่ดี",
     application: "หายใจเข้าออกสามรอบ แล้วสังเกตว่าตอนนี้ร่างกายรู้สึกยังไง โดยไม่ต้องรีบแก้",
     category: "stress",
-    avatar: { skin: SKIN, hair: AUBURN, hairStyle: "sides", beard: "goatee", glasses: "round", face: "long", outfit: "#6f7f43" },
+    avatar: { skin: SKIN, hair: WHITE, hairStyle: "sides", glasses: "round", face: "long", outfit: "#6f7f43" },
   },
 
   // ---------------------------------------------------------------- วิธีที่ลองทำได้จริง
