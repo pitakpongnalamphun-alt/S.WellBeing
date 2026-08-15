@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 
 import { Card } from "@/components/ui/Card";
+import { BullyingProtocol } from "@/components/admin/BullyingProtocol";
 import { STAFF_ROLE_META } from "@/data/staff";
 import { SLA_HOURS } from "@/lib/store/useCasesStore";
 
@@ -426,6 +427,9 @@ export function AdminGuideBoard() {
           ))}
         </div>
       </Card>
+
+      {/* ── ③ แนวทางดูแลการกลั่นแกล้งสองฝั่ง ───────────────────────────── */}
+      <BullyingProtocol />
 
       {/* ── ③ เกณฑ์ความเร่งด่วน + ส่งต่อภายนอก ────────────────────────── */}
       <Card className="p-5">
