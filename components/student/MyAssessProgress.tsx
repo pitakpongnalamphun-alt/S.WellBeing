@@ -196,27 +196,11 @@ export function MyAssessProgress() {
 
   if (!mounted) return null;
 
-  if (groups.length === 0) {
-    return (
-      <Link
-        href="/assessment"
-        className="flex items-center gap-3.5 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-neutral-200/80 transition hover:-translate-y-0.5 hover:shadow-md active:translate-y-0"
-      >
-        <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-mint-50 text-mint-600">
-          <ClipboardCheck className="size-6" strokeWidth={2} aria-hidden="true" />
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block text-[0.92rem] font-bold text-ink">เช็คสุขภาพใจครั้งแรก</span>
-          <span className="mt-0.5 block text-[0.72rem] leading-snug text-ink-soft">
-            ทำแบบประเมินสั้น ๆ แล้วกลับมาดูพัฒนาการของใจตัวเองที่นี่
-          </span>
-        </span>
-      </Link>
-    );
-  }
+  // ยังไม่เคยประเมิน = ไม่ต้องขึ้นอะไร ไทล์ "เช็คสุขภาพใจ" ในกริดด้านบนชวนไปแล้ว
+  if (groups.length === 0) return null;
 
   return (
-    <section className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-neutral-200/80">
+    <section className="mt-3.5 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-neutral-200/80">
       <div className="flex items-baseline justify-between gap-2">
         <h2 className="text-[0.95rem] font-bold text-ink">พัฒนาการใจของฉัน</h2>
         <Link href="/assessment" className="text-[0.72rem] font-medium text-mint-700 hover:underline">
