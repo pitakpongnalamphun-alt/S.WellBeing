@@ -23,12 +23,12 @@ const DEEP = "#d09a71";
 const LINE = "#9a6a4c";
 
 export function PsychAvatar({ spec, size = 88 }: { spec: AvatarSpec; size?: number }) {
-  const { skin, hair, hairStyle, beard, glasses, age = "senior" } = spec;
+  const { skin, hair, hairStyle, beard, glasses, age = "senior", collar = "suit" } = spec;
   const eyeY = 48;
   const senior = age === "senior";
 
   // id ต้องไม่ชนกันเมื่อมีหลายภาพในหน้าเดียว — ผูกกับลักษณะเฉพาะของสเปก
-  const uid = `${hairStyle}-${beard ?? "n"}-${glasses ?? "n"}-${hair.slice(1)}`;
+  const uid = `${hairStyle}-${beard ?? "n"}-${glasses ?? "n"}-${collar}-${hair.slice(1)}`;
 
   return (
     <svg
@@ -57,12 +57,21 @@ export function PsychAvatar({ spec, size = 88 }: { spec: AvatarSpec; size?: numb
         {/* เงาใต้คาง — ตัวที่ทำให้หัวมีปริมาตร ไม่ใช่แผ่นแบน */}
         <path d="M42 68 L42 74 Q50 80 58 74 L58 68 Z" fill={DEEP} opacity="0.55" />
 
-        {/* เสื้อสูท + ปกเชิ้ต */}
-        <path d="M20 100 Q22 84 38 78 L50 88 L62 78 Q78 84 80 100 Z" fill="#4a5560" />
-        <path d="M38 78 L50 88 L45 100 L33 100 Z" fill="#f2efe8" />
-        <path d="M62 78 L50 88 L55 100 L67 100 Z" fill="#f2efe8" />
-        <path d="M38 78 L50 88 L41 92 Z" fill="#3c4650" />
-        <path d="M62 78 L50 88 L59 92 Z" fill="#3c4650" />
+        {/* เสื้อ — สองทรงตามยุคของแต่ละคน */}
+        {collar === "suit" ? (
+          <>
+            <path d="M20 100 Q22 84 38 78 L50 88 L62 78 Q78 84 80 100 Z" fill="#4a5560" />
+            <path d="M38 78 L50 88 L45 100 L33 100 Z" fill="#f2efe8" />
+            <path d="M62 78 L50 88 L55 100 L67 100 Z" fill="#f2efe8" />
+            <path d="M38 78 L50 88 L41 92 Z" fill="#3c4650" />
+            <path d="M62 78 L50 88 L59 92 Z" fill="#3c4650" />
+          </>
+        ) : (
+          <>
+            <path d="M21 100 Q24 84 39 78 Q44 86 50 86 Q56 86 61 78 Q76 84 79 100 Z" fill="#9d8ab5" />
+            <path d="M39 78 Q44 86 50 86 Q56 86 61 78 Q56 89 50 89 Q44 89 39 78 Z" fill="#8b789f" />
+          </>
+        )}
 
         {/* -------------------------------------------------------- ใบหู */}
         <ellipse cx="29.5" cy="50" rx="4" ry="5.5" fill={skin} />
@@ -83,8 +92,12 @@ export function PsychAvatar({ spec, size = 88 }: { spec: AvatarSpec; size?: numb
         {/* -------------------------------------------------------- เครา */}
         {beard === "full" && (
           <>
-            <path d="M33 50 Q33 70 41 77 Q50 82 59 77 Q67 70 67 50 Q64 62 50 63 Q36 62 33 50 Z" fill={hair} />
-            <path d="M38 56 Q40 68 50 72 Q60 68 62 56 Q56 64 50 64 Q44 64 38 56 Z" fill="#000" opacity="0.08" />
+            <path d="M33 50 Q33 70 41 77 Q50 82 59 77 Q67 70 67 50 Q64 63 50 64.5 Q36 63 33 50 Z" fill={hair} />
+            <path d="M38 57 Q40 69 50 73 Q60 69 62 57 Q56 65 50 65 Q44 65 38 57 Z" fill="#000" opacity="0.08" />
+            {/* ช่องริมฝีปาก — เคราที่ปิดปากสนิททำให้ทั้งหน้าเหลือแต่ก้อนขน
+                และคนดูจะบอกไม่ได้ว่าคนในรูปกำลังยิ้มอยู่หรือเปล่า */}
+            <ellipse cx="50" cy="66" rx="6.4" ry="3.4" fill={skin} />
+            <ellipse cx="50" cy="67.4" rx="5.2" ry="2" fill={SHADOW} opacity="0.45" />
           </>
         )}
 

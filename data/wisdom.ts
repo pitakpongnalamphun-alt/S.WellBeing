@@ -62,6 +62,11 @@ export type AvatarSpec = {
    * เป็นภาพจำจากช่วงบั้นปลายของชีวิต ส่วน adult ใช้กับคนที่ยังไม่ถึงวัยนั้น
    */
   age?: "adult" | "senior";
+  /**
+   * ทรงคอเสื้อ ค่าเริ่มต้นคือ suit (สูทปกแหลม) ซึ่งตรงกับภาพจำของคนยุค 1900–1970
+   * ส่วน plain ใช้กับคนร่วมสมัย เพราะใส่สูทปกแหลมทรงยุค 1950 แล้วดูผิดยุคทันที
+   */
+  collar?: "suit" | "plain";
 };
 
 /**
@@ -176,7 +181,7 @@ export const WISDOMS: Wisdom[] = [
     quote: "ความเปราะบางไม่ใช่ความอ่อนแอ แต่คือจุดเริ่มต้นของความกล้าหาญ",
     application: "ลองกล้าบอกความรู้สึกจริง ๆ กับคนที่เราไว้ใจสัก 1 คน",
     category: "courage",
-    avatar: { skin: SKIN, hair: BLONDE, hairStyle: "bob", age: "adult" },
+    avatar: { skin: SKIN, hair: BLONDE, hairStyle: "bob", age: "adult", collar: "plain" },
   },
   {
     kind: "quote",
