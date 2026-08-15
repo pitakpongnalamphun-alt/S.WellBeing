@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, Bookmark, ChevronLeft, ChevronRight, Heart, Quote, Sparkles } from "lucide-react";
+import { ArrowRight, Bookmark, ChevronLeft, ChevronRight, Heart, Lightbulb, Quote, Sparkles } from "lucide-react";
 import Link from "next/link";
 
 import {
@@ -63,11 +63,14 @@ function WisdomCard({
           <span className="mb-2 text-[2rem] leading-none" aria-hidden="true">
             {w.emoji}
           </span>
+        ) : w.verbatim === false ? (
+          // ใบสรุปแนวคิดไม่ควรมีสัญลักษณ์คำพูด มันบอกตรงข้ามกับป้ายใต้ชื่อ
+          <Lightbulb className="mb-2 size-6" style={{ color: theme.ink, opacity: 0.5 }} aria-hidden="true" />
         ) : (
           <Quote className="mb-2 size-6" style={{ color: theme.ink, opacity: 0.5 }} aria-hidden="true" />
         )}
         <p className="font-display text-[1.32rem] font-medium leading-relaxed text-slate-700">
-          {w.kind === "practice" ? w.quote : `“${w.quote}”`}
+          {w.kind === "practice" || w.verbatim === false ? w.quote : `“${w.quote}”`}
         </p>
       </div>
 
@@ -79,6 +82,13 @@ function WisdomCard({
             <p className="text-[0.72rem] text-slate-500">
               {w.field} · {w.era}
             </p>
+            {/* บอกตรง ๆ ว่าใบนี้ไม่ใช่คำพูดของเขา — คำคมของนักจิตวิทยาถูกใส่ชื่อผิดคน
+                บนอินเทอร์เน็ตบ่อยมาก การไม่แยกให้ชัดคือการรับรองสิ่งที่รับรองไม่ได้ */}
+            {w.verbatim === false ? (
+              <p className="mt-0.5 text-[0.68rem] text-slate-400">
+                สรุปแนวคิด ไม่ใช่คำพูดโดยตรง
+              </p>
+            ) : null}
           </div>
         </div>
       ) : (
@@ -419,7 +429,7 @@ function SavedList({
               )}
               <div className="min-w-0 flex-1">
                 <p className="font-display text-[0.95rem] font-medium leading-snug text-slate-700">
-                  {w.kind === "practice" ? w.quote : `“${w.quote}”`}
+                  {w.kind === "practice" || w.verbatim === false ? w.quote : `“${w.quote}”`}
                 </p>
                 <p className="mt-1.5 text-[0.74rem] text-slate-500">
                   {w.kind === "practice" ? w.title : `${w.name} · ${w.field}`}

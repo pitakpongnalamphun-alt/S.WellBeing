@@ -121,7 +121,7 @@ export function WisdomStrip() {
                     {cat.label}
                   </span>
                   <p className="relative mt-2 line-clamp-2 font-display text-[0.9rem] font-semibold leading-relaxed text-slate-700">
-                    {w.kind === "practice" ? w.quote : `“${w.quote}”`}
+                    {w.kind === "practice" || w.verbatim === false ? w.quote : `“${w.quote}”`}
                   </p>
                   <div className="relative mt-auto flex items-center gap-1.5 pt-3">
                     {w.kind === "quote" && w.avatar ? (
