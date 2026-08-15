@@ -54,14 +54,16 @@ export type AvatarSpec = {
   skin: string;
   hair: string;
   /** Silhouette that most helps tell each figure apart. */
-  hairStyle: "full" | "sides" | "receding" | "bob" | "swept" | "wild" | "long";
+  hairStyle:
+    | "full" | "sides" | "receding" | "bob" | "swept" | "wild" | "long"
+    | "updo" | "wavy" | "pixie";
   beard?: "full" | "mustache" | "goatee";
   glasses?: "round" | "square" | "halfmoon";
   /**
    * โครงหน้า — ตัวแยกที่แรงที่สุด เพราะสายตาจับรูปหน้าก่อนจับทรงผม
    * ต้องมีเพราะมี 22 คนแต่ชุดตัวเลือกเดิมสร้างหน้าที่ต่างกันได้ไม่พอ
    */
-  face?: "oval" | "round" | "long" | "square";
+  face?: "oval" | "round" | "long" | "square" | "heart";
   /** หูกระต่าย — เครื่องหมายประจำตัวของแอรอน เบ็ค */
   bowtie?: boolean;
   /**
@@ -71,6 +73,14 @@ export type AvatarSpec = {
   outfit?: string;
   /** หมวก — ใช้เฉพาะคนที่มีของประจำตัวที่คนจำได้จริง */
   hat?: "beret";
+  /**
+   * ชุดลักษณะใบหน้า — soft ให้คิ้วบางลง มีขนตา ริมฝีปากเป็นรูปปาก และคอแคบลง
+   *
+   * ต้องมีเพราะตัววาดเดิมมีใบหน้าแบบเดียวทั้งไฟล์ ตัวแยกที่มีอยู่ (เครา แว่น หมวก
+   * หูกระต่าย) เป็นของผู้ชายเกือบทั้งหมด ผู้หญิงสี่คนจึงเหลือ "สีผม" เป็นตัวแยก
+   * อย่างเดียว และหน้าที่ได้ก็เป็นหน้าเดียวกับผู้ชายที่เปลี่ยนทรงผม
+   */
+  features?: "soft" | "strong";
   /**
    * คุมร่องแก้มและร่องรอยของวัยในภาพวาด ค่าเริ่มต้นคือ senior เพราะเจ็ดในแปดคน
    * เป็นภาพจำจากช่วงบั้นปลายของชีวิต ส่วน adult ใช้กับคนที่ยังไม่ถึงวัยนั้น
@@ -209,7 +219,7 @@ export const WISDOMS: Wisdom[] = [
     quote: "ความเปราะบางไม่ใช่ความอ่อนแอ แต่คือจุดเริ่มต้นของความกล้าหาญ",
     application: "ลองกล้าบอกความรู้สึกจริง ๆ กับคนที่เราไว้ใจสัก 1 คน",
     category: "courage",
-    avatar: { skin: SKIN, hair: BLONDE, hairStyle: "bob", age: "adult", collar: "plain", face: "round", outfit: "#9d8ab5" },
+    avatar: { skin: SKIN, hair: BLONDE, hairStyle: "wavy", age: "adult", collar: "plain", features: "soft", face: "heart", outfit: "#9d8ab5" },
   },
   {
     kind: "quote",
@@ -377,7 +387,7 @@ export const WISDOMS: Wisdom[] = [
     quote: "คำว่า ยังทำไม่ได้ ต่างจาก ทำไม่ได้ แค่คำเดียว แต่เปลี่ยนทั้งเส้นทาง",
     application: "เวลาจะพูดว่าเราทำไม่ได้ ให้เติมคำว่า ยัง ลงไปข้างหน้า",
     category: "growth",
-    avatar: { skin: SKIN, hair: SALT, hairStyle: "bob", collar: "plain", face: "oval", outfit: "#b56b7a" },
+    avatar: { skin: SKIN, hair: SALT, hairStyle: "updo", collar: "plain", features: "soft", face: "oval", outfit: "#b56b7a" },
   },
   {
     kind: "quote",
@@ -390,7 +400,7 @@ export const WISDOMS: Wisdom[] = [
     quote: "การใจดีกับตัวเองไม่ได้ทำให้เราอ่อนแอลง แต่ทำให้เราลุกได้เร็วขึ้น",
     application: "ตอนทำพลาด ลองพูดกับตัวเองแบบที่จะพูดกับเพื่อนที่ทำพลาดเรื่องเดียวกัน",
     category: "acceptance",
-    avatar: { skin: SKIN, hair: SANDY, hairStyle: "long", age: "adult", collar: "plain", face: "long", outfit: "#7fa38c" },
+    avatar: { skin: SKIN, hair: SANDY, hairStyle: "long", age: "adult", collar: "plain", features: "soft", face: "long", outfit: "#7fa38c" },
   },
   {
     kind: "quote",
@@ -403,7 +413,7 @@ export const WISDOMS: Wisdom[] = [
     quote: "ยอมรับตัวเองอย่างที่เป็น กับพยายามเปลี่ยนแปลง เป็นสองอย่างที่ทำพร้อมกันได้",
     application: "ไม่ต้องเลือกระหว่าง ฉันโอเคแล้ว กับ ฉันอยากดีขึ้น จริงได้ทั้งคู่",
     category: "acceptance",
-    avatar: { skin: SKIN, hair: SILVER, hairStyle: "bob", glasses: "square", collar: "plain", face: "square", outfit: "#8aa3bd" },
+    avatar: { skin: SKIN, hair: SILVER, hairStyle: "pixie", glasses: "square", collar: "plain", features: "soft", face: "square", outfit: "#8aa3bd" },
   },
   {
     kind: "quote",
