@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import {
   ArrowDown,
   CheckCircle2,
@@ -11,9 +13,14 @@ import {
   ShieldAlert,
   UserCheck,
   XCircle,
+  MessagesSquare,
+  Siren,
+  GraduationCap,
+  BookOpen,
 } from "lucide-react";
 
 import { Card } from "@/components/ui/Card";
+import { cn } from "@/lib/utils";
 import { BullyingProtocol } from "@/components/admin/BullyingProtocol";
 import { STAFF_ROLE_META } from "@/data/staff";
 import { SLA_HOURS } from "@/lib/store/useCasesStore";
@@ -266,7 +273,21 @@ const ONBOARD_CHECKLIST = [
   "ฝึกประโยคเปิดบทสนทนา ควรทำ/ไม่ควรทำ กับเพื่อนครูก่อนคุยเคสจริงครั้งแรก",
 ];
 
+const TOC = [
+  { id: "flow", label: "เส้นทางของเคส", Icon: ClipboardCheck },
+  { id: "roles", label: "ใครรับผิดชอบอะไร", Icon: UserCheck },
+  { id: "talk", label: "วิธีคุยกับนักเรียน", Icon: HeartHandshake },
+  { id: "category", label: "คุยตามหมวดปัญหา", Icon: MessagesSquare },
+  { id: "bullying", label: "การกลั่นแกล้ง", Icon: BookOpen },
+  { id: "severity", label: "ความเร่งด่วน · ส่งต่อ", Icon: Siren },
+  { id: "onboard", label: "เตรียมครูใหม่", Icon: GraduationCap },
+] as const;
+
+type TabId = (typeof TOC)[number]["id"];
+
 export function AdminGuideBoard() {
+  const [tab, setTab] = useState<TabId>("flow");
+
   return (
     <div className="mx-auto max-w-5xl space-y-6">
       <header className="flex flex-wrap items-end justify-between gap-3">
@@ -297,196 +318,242 @@ export function AdminGuideBoard() {
         </p>
       </Card>
 
-      {/* ── ④ ผังการไหลของเคส ─────────────────────────────────────────── */}
-      <Card className="p-5">
-        <h2 className="flex items-center gap-2 text-[0.95rem] font-semibold text-ink">
-          <ClipboardCheck className="size-4 text-mint-600" aria-hidden="true" />
-          เส้นทางของหนึ่งเคส — ตั้งแต่รับแจ้งจนปิดเรื่อง
-        </h2>
-        <ol className="mt-4 space-y-1">
-          {FLOW_STEPS.map((s, i) => (
-            <li key={s.title}>
-              <div className="flex gap-3">
-                <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-mint-100 text-[0.78rem] font-bold text-mint-700">
-                  {i + 1}
-                </span>
-                <div className="min-w-0 pb-1">
-                  <p className="text-[0.88rem] font-semibold text-ink">{s.title}</p>
-                  <p className="mt-0.5 text-[0.8rem] leading-relaxed text-ink-soft">{s.detail}</p>
-                </div>
-              </div>
-              {i < FLOW_STEPS.length - 1 && (
-                <ArrowDown className="ml-1.5 my-1 size-3.5 text-neutral-300" aria-hidden="true" />
-              )}
-            </li>
-          ))}
-        </ol>
-      </Card>
-
-      {/* ── ④ ใครรับผิดชอบอะไร ────────────────────────────────────────── */}
-      <Card className="p-5">
-        <h2 className="flex items-center gap-2 text-[0.95rem] font-semibold text-ink">
-          <UserCheck className="size-4 text-sky-600" aria-hidden="true" />
-          ใครรับผิดชอบอะไร
-        </h2>
-        <p className="mt-0.5 text-[0.76rem] text-ink-soft">
-          ตรงกับสิทธิ์การเข้าถึงจริงของระบบ — แต่ละบทบาทเห็นเท่าที่งานของตัวเองจำเป็น
-        </p>
-        <div className="mt-3 grid gap-3 md:grid-cols-3">
-          {ROLE_DUTIES.map(({ role, duties, handles }) => {
-            const meta = STAFF_ROLE_META[role];
-            return (
-              <div key={role} className="rounded-2xl bg-neutral-50 p-4 ring-1 ring-neutral-200">
-                <span className={`rounded-full px-2.5 py-1 text-[0.72rem] font-semibold ${meta.tint}`}>
-                  {meta.label}
-                </span>
-                <p className="mt-2.5 text-[0.8rem] leading-relaxed text-ink">{duties}</p>
-                <p className="mt-2 text-[0.7rem] text-ink-mute">เมนูที่ใช้: {handles}</p>
-              </div>
-            );
-          })}
-        </div>
-        <p className="mt-3 text-[0.76rem] leading-relaxed text-ink-mute">
-          เคสส่งต่อกันได้เสมอผ่านช่อง “มอบหมาย” ในหน้าจัดการเคส — เรื่องความปลอดภัย
-          (กลั่นแกล้ง คุกคาม เหตุ SOS) ประสานครูฝ่ายปกครองตามระเบียบโรงเรียนควบคู่กับการดูแลใจเสมอ
-        </p>
-      </Card>
-
-      {/* ── ③ แนวทางการคุยกับนักเรียน ─────────────────────────────────── */}
-      <Card className="p-5">
-        <h2 className="flex items-center gap-2 text-[0.95rem] font-semibold text-ink">
-          <MessageCircleHeart className="size-4 text-rose-500" aria-hidden="true" />
-          คุยกับนักเรียนอย่างไรให้เขากล้าเล่าต่อ
-        </h2>
-        <div className="mt-3 grid gap-3 md:grid-cols-2">
-          <div className="rounded-2xl bg-emerald-50/60 p-4 ring-1 ring-emerald-200">
-            <p className="flex items-center gap-1.5 text-[0.84rem] font-bold text-emerald-800">
-              <CheckCircle2 className="size-4" aria-hidden="true" /> ควรทำ
-            </p>
-            <ul className="mt-2.5 space-y-2">
-              {TALK_DO.map((t) => (
-                <li key={t} className="flex gap-2 text-[0.8rem] leading-relaxed text-ink">
-                  <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-emerald-400" />
-                  {t}
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div className="rounded-2xl bg-rose-50/60 p-4 ring-1 ring-rose-200">
-            <p className="flex items-center gap-1.5 text-[0.84rem] font-bold text-rose-800">
-              <XCircle className="size-4" aria-hidden="true" /> ไม่ควรทำ
-            </p>
-            <ul className="mt-2.5 space-y-2">
-              {TALK_DONT.map((t) => (
-                <li key={t} className="flex gap-2 text-[0.8rem] leading-relaxed text-ink">
-                  <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-rose-400" />
-                  {t}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </Card>
-
-      {/* ── ③ วิธีคุยแยกตามหมวดปัญหา ──────────────────────────────────── */}
-      <Card className="p-5">
-        <h2 className="flex items-center gap-2 text-[0.95rem] font-semibold text-ink">
-          <MessageCircleHeart className="size-4 text-lavender-500" aria-hidden="true" />
-          คุยแต่ละเรื่องอย่างไร — แยกตามหมวดปัญหา
-        </h2>
-        <p className="mt-0.5 text-[0.76rem] text-ink-soft">
-          หมวดตรงกับหน้าแจ้งเหตุของนักเรียน — แต่ละเรื่องมีประโยคเปิด จุดที่ต้องจับ และกับดักที่ต่างกัน
-        </p>
-        <div className="mt-3 grid gap-3 lg:grid-cols-2">
-          {CATEGORY_TALKS.map((c) => (
-            <div key={c.label} className="rounded-2xl bg-neutral-50 p-4 ring-1 ring-neutral-200">
-              <p className="text-[0.86rem] font-bold text-ink">
-                <span aria-hidden="true">{c.emoji}</span> {c.label}
-              </p>
-              <p className="mt-2 rounded-xl bg-white p-2.5 text-[0.78rem] italic leading-relaxed text-ink-soft ring-1 ring-neutral-200">
-                เปิดบทสนทนา: {c.open}
-              </p>
-              <ul className="mt-2.5 space-y-1.5">
-                {c.keys.map((k) => (
-                  <li key={k} className="flex gap-2 text-[0.78rem] leading-relaxed text-ink">
-                    <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-mint-400" />
-                    {k}
-                  </li>
-                ))}
-                {c.avoid.map((a) => (
-                  <li key={a} className="flex gap-2 text-[0.78rem] leading-relaxed text-rose-800">
-                    <XCircle className="mt-0.5 size-3.5 shrink-0 text-rose-400" aria-hidden="true" />
-                    {a}
-                  </li>
-                ))}
-              </ul>
-              <p className="mt-2.5 border-t border-neutral-200 pt-2 text-[0.74rem] leading-relaxed text-ink-mute">
-                <span className="font-semibold text-ink-soft">ส่งต่อ:</span> {c.refer}
-              </p>
-            </div>
-          ))}
-        </div>
-      </Card>
-
-      {/* ── ③ แนวทางดูแลการกลั่นแกล้งสองฝั่ง ───────────────────────────── */}
-      <BullyingProtocol />
-
-      {/* ── ③ เกณฑ์ความเร่งด่วน + ส่งต่อภายนอก ────────────────────────── */}
-      <Card className="p-5">
-        <h2 className="flex items-center gap-2 text-[0.95rem] font-semibold text-ink">
-          <ShieldAlert className="size-4 text-rose-600" aria-hidden="true" />
-          เร่งด่วนแค่ไหน ทำอะไรก่อน
-        </h2>
-        <div className="mt-3 space-y-3">
-          {SEVERITY_TIERS.map((tier) => (
-            <div key={tier.title} className={`rounded-2xl border-l-4 ${tier.tone} bg-neutral-50 p-4 ring-1 ring-neutral-200`}>
-              <span className={`rounded-full px-2.5 py-1 text-[0.72rem] font-semibold ring-1 ${tier.chip}`}>
-                {tier.title}
-              </span>
-              <p className="mt-2 text-[0.76rem] leading-relaxed text-ink-mute">
-                <span className="font-semibold text-ink-soft">เมื่อไหร่:</span> {tier.when}
-              </p>
-              <ul className="mt-1.5 space-y-1">
-                {tier.actions.map((a) => (
-                  <li key={a} className="flex gap-2 text-[0.8rem] leading-relaxed text-ink">
-                    <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-neutral-400" />
-                    {a}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-4 rounded-2xl bg-rose-50 p-4 ring-1 ring-rose-200">
-          <p className="flex items-center gap-1.5 text-[0.82rem] font-bold text-rose-800">
-            <Phone className="size-4" aria-hidden="true" /> สายด่วนที่ต้องมีติดโต๊ะ
-          </p>
-          <div className="mt-2 grid gap-2 sm:grid-cols-2">
-            {HOTLINES.map((h) => (
-              <p key={h.number} className="text-[0.8rem] text-ink">
-                <span className="font-mono font-bold text-rose-700">{h.number}</span>{" "}
-                {h.label} <span className="text-ink-mute">— {h.note}</span>
-              </p>
-            ))}
-          </div>
-        </div>
-      </Card>
-
-      {/* ── ③ เตรียมครูใหม่ ───────────────────────────────────────────── */}
-      <Card className="p-5">
-        <h2 className="text-[0.95rem] font-semibold text-ink">เช็คลิสต์เตรียมครูใหม่ก่อนรับเคสจริง</h2>
-        <ul className="mt-3 space-y-2">
-          {ONBOARD_CHECKLIST.map((c, i) => (
-            <li key={c} className="flex gap-2.5 text-[0.82rem] leading-relaxed text-ink">
-              <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-md bg-neutral-100 text-[0.7rem] font-bold text-ink-soft ring-1 ring-neutral-200">
-                {i + 1}
-              </span>
-              {c}
+      {/* สารบัญ — ครูที่เปิดมาเพราะมีคำถามเดียว ต้องเห็นตั้งแต่แรกว่าคู่มือมีอะไรบ้าง
+          และกดไปที่หมวดนั้นได้เลย ไม่ใช่เลื่อนหาเอง */}
+      <nav className="sticky top-2 z-10 -mx-1 overflow-x-auto rounded-2xl bg-white/95 p-1.5 shadow-sm ring-1 ring-neutral-200 backdrop-blur print:hidden">
+        <ul className="flex gap-1">
+          {TOC.map(({ id, label, Icon }) => (
+            <li key={id}>
+              <button
+                type="button"
+                onClick={() => setTab(id)}
+                aria-current={tab === id ? "page" : undefined}
+                className={cn(
+                  "inline-flex min-h-10 items-center gap-1.5 whitespace-nowrap rounded-xl px-3 text-[0.82rem] font-semibold transition",
+                  tab === id
+                    ? "bg-mint-600 text-white shadow-sm"
+                    : "text-ink-soft hover:bg-neutral-100 hover:text-ink",
+                )}
+              >
+                <Icon className="size-4" aria-hidden="true" />
+                {label}
+              </button>
             </li>
           ))}
         </ul>
-      </Card>
+      </nav>
+
+      {/* หมวด: flow */}
+      <div className={cn(tab === "flow" ? "block" : "hidden", "print:block")}>
+        {/* ── ④ ผังการไหลของเคส ─────────────────────────────────────────── */}
+        <Card className="p-5">
+          <h2 className="flex items-center gap-2 text-[0.95rem] font-semibold text-ink">
+            <ClipboardCheck className="size-4 text-mint-600" aria-hidden="true" />
+            เส้นทางของหนึ่งเคส — ตั้งแต่รับแจ้งจนปิดเรื่อง
+          </h2>
+          <ol className="mt-4 space-y-1">
+            {FLOW_STEPS.map((s, i) => (
+              <li key={s.title}>
+                <div className="flex gap-3">
+                  <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-mint-100 text-[0.78rem] font-bold text-mint-700">
+                    {i + 1}
+                  </span>
+                  <div className="min-w-0 pb-1">
+                    <p className="text-[0.88rem] font-semibold text-ink">{s.title}</p>
+                    <p className="mt-0.5 text-[0.8rem] leading-relaxed text-ink-soft">{s.detail}</p>
+                  </div>
+                </div>
+                {i < FLOW_STEPS.length - 1 && (
+                  <ArrowDown className="ml-1.5 my-1 size-3.5 text-neutral-300" aria-hidden="true" />
+                )}
+              </li>
+            ))}
+          </ol>
+        </Card>
+      </div>
+
+      {/* หมวด: roles */}
+      <div className={cn(tab === "roles" ? "block" : "hidden", "print:block")}>
+        {/* ── ④ ใครรับผิดชอบอะไร ────────────────────────────────────────── */}
+        <Card className="p-5">
+          <h2 className="flex items-center gap-2 text-[0.95rem] font-semibold text-ink">
+            <UserCheck className="size-4 text-sky-600" aria-hidden="true" />
+            ใครรับผิดชอบอะไร
+          </h2>
+          <p className="mt-0.5 text-[0.76rem] text-ink-soft">
+            ตรงกับสิทธิ์การเข้าถึงจริงของระบบ — แต่ละบทบาทเห็นเท่าที่งานของตัวเองจำเป็น
+          </p>
+          <div className="mt-3 grid gap-3 md:grid-cols-3">
+            {ROLE_DUTIES.map(({ role, duties, handles }) => {
+              const meta = STAFF_ROLE_META[role];
+              return (
+                <div key={role} className="rounded-2xl bg-neutral-50 p-4 ring-1 ring-neutral-200">
+                  <span className={`rounded-full px-2.5 py-1 text-[0.72rem] font-semibold ${meta.tint}`}>
+                    {meta.label}
+                  </span>
+                  <p className="mt-2.5 text-[0.8rem] leading-relaxed text-ink">{duties}</p>
+                  <p className="mt-2 text-[0.7rem] text-ink-mute">เมนูที่ใช้: {handles}</p>
+                </div>
+              );
+            })}
+          </div>
+          <p className="mt-3 text-[0.76rem] leading-relaxed text-ink-mute">
+            เคสส่งต่อกันได้เสมอผ่านช่อง “มอบหมาย” ในหน้าจัดการเคส — เรื่องความปลอดภัย
+            (กลั่นแกล้ง คุกคาม เหตุ SOS) ประสานครูฝ่ายปกครองตามระเบียบโรงเรียนควบคู่กับการดูแลใจเสมอ
+          </p>
+        </Card>
+      </div>
+
+      {/* หมวด: talk */}
+      <div className={cn(tab === "talk" ? "block" : "hidden", "print:block")}>
+        {/* ── ③ แนวทางการคุยกับนักเรียน ─────────────────────────────────── */}
+        <Card className="p-5">
+          <h2 className="flex items-center gap-2 text-[0.95rem] font-semibold text-ink">
+            <MessageCircleHeart className="size-4 text-rose-500" aria-hidden="true" />
+            คุยกับนักเรียนอย่างไรให้เขากล้าเล่าต่อ
+          </h2>
+          <div className="mt-3 grid gap-3 md:grid-cols-2">
+            <div className="rounded-2xl bg-emerald-50/60 p-4 ring-1 ring-emerald-200">
+              <p className="flex items-center gap-1.5 text-[0.84rem] font-bold text-emerald-800">
+                <CheckCircle2 className="size-4" aria-hidden="true" /> ควรทำ
+              </p>
+              <ul className="mt-2.5 space-y-2">
+                {TALK_DO.map((t) => (
+                  <li key={t} className="flex gap-2 text-[0.8rem] leading-relaxed text-ink">
+                    <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-emerald-400" />
+                    {t}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="rounded-2xl bg-rose-50/60 p-4 ring-1 ring-rose-200">
+              <p className="flex items-center gap-1.5 text-[0.84rem] font-bold text-rose-800">
+                <XCircle className="size-4" aria-hidden="true" /> ไม่ควรทำ
+              </p>
+              <ul className="mt-2.5 space-y-2">
+                {TALK_DONT.map((t) => (
+                  <li key={t} className="flex gap-2 text-[0.8rem] leading-relaxed text-ink">
+                    <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-rose-400" />
+                    {t}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      {/* หมวด: category */}
+      <div className={cn(tab === "category" ? "block" : "hidden", "print:block")}>
+        {/* ── ③ วิธีคุยแยกตามหมวดปัญหา ──────────────────────────────────── */}
+        <Card className="p-5">
+          <h2 className="flex items-center gap-2 text-[0.95rem] font-semibold text-ink">
+            <MessageCircleHeart className="size-4 text-lavender-500" aria-hidden="true" />
+            คุยแต่ละเรื่องอย่างไร — แยกตามหมวดปัญหา
+          </h2>
+          <p className="mt-0.5 text-[0.76rem] text-ink-soft">
+            หมวดตรงกับหน้าแจ้งเหตุของนักเรียน — แต่ละเรื่องมีประโยคเปิด จุดที่ต้องจับ และกับดักที่ต่างกัน
+          </p>
+          <div className="mt-3 grid gap-3 lg:grid-cols-2">
+            {CATEGORY_TALKS.map((c) => (
+              <div key={c.label} className="rounded-2xl bg-neutral-50 p-4 ring-1 ring-neutral-200">
+                <p className="text-[0.86rem] font-bold text-ink">
+                  <span aria-hidden="true">{c.emoji}</span> {c.label}
+                </p>
+                <p className="mt-2 rounded-xl bg-white p-2.5 text-[0.78rem] italic leading-relaxed text-ink-soft ring-1 ring-neutral-200">
+                  เปิดบทสนทนา: {c.open}
+                </p>
+                <ul className="mt-2.5 space-y-1.5">
+                  {c.keys.map((k) => (
+                    <li key={k} className="flex gap-2 text-[0.78rem] leading-relaxed text-ink">
+                      <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-mint-400" />
+                      {k}
+                    </li>
+                  ))}
+                  {c.avoid.map((a) => (
+                    <li key={a} className="flex gap-2 text-[0.78rem] leading-relaxed text-rose-800">
+                      <XCircle className="mt-0.5 size-3.5 shrink-0 text-rose-400" aria-hidden="true" />
+                      {a}
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-2.5 border-t border-neutral-200 pt-2 text-[0.74rem] leading-relaxed text-ink-mute">
+                  <span className="font-semibold text-ink-soft">ส่งต่อ:</span> {c.refer}
+                </p>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
+
+      {/* หมวด: bullying */}
+      <div className={cn(tab === "bullying" ? "block" : "hidden", "print:block")}>
+        {/* ── ③ แนวทางดูแลการกลั่นแกล้งสองฝั่ง ───────────────────────────── */}
+        <BullyingProtocol />
+      </div>
+
+      {/* หมวด: severity */}
+      <div className={cn(tab === "severity" ? "block" : "hidden", "print:block")}>
+        {/* ── ③ เกณฑ์ความเร่งด่วน + ส่งต่อภายนอก ────────────────────────── */}
+        <Card className="p-5">
+          <h2 className="flex items-center gap-2 text-[0.95rem] font-semibold text-ink">
+            <ShieldAlert className="size-4 text-rose-600" aria-hidden="true" />
+            เร่งด่วนแค่ไหน ทำอะไรก่อน
+          </h2>
+          <div className="mt-3 space-y-3">
+            {SEVERITY_TIERS.map((tier) => (
+              <div key={tier.title} className={`rounded-2xl border-l-4 ${tier.tone} bg-neutral-50 p-4 ring-1 ring-neutral-200`}>
+                <span className={`rounded-full px-2.5 py-1 text-[0.72rem] font-semibold ring-1 ${tier.chip}`}>
+                  {tier.title}
+                </span>
+                <p className="mt-2 text-[0.76rem] leading-relaxed text-ink-mute">
+                  <span className="font-semibold text-ink-soft">เมื่อไหร่:</span> {tier.when}
+                </p>
+                <ul className="mt-1.5 space-y-1">
+                  {tier.actions.map((a) => (
+                    <li key={a} className="flex gap-2 text-[0.8rem] leading-relaxed text-ink">
+                      <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-neutral-400" />
+                      {a}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+  
+          <div className="mt-4 rounded-2xl bg-rose-50 p-4 ring-1 ring-rose-200">
+            <p className="flex items-center gap-1.5 text-[0.82rem] font-bold text-rose-800">
+              <Phone className="size-4" aria-hidden="true" /> สายด่วนที่ต้องมีติดโต๊ะ
+            </p>
+            <div className="mt-2 grid gap-2 sm:grid-cols-2">
+              {HOTLINES.map((h) => (
+                <p key={h.number} className="text-[0.8rem] text-ink">
+                  <span className="font-mono font-bold text-rose-700">{h.number}</span>{" "}
+                  {h.label} <span className="text-ink-mute">— {h.note}</span>
+                </p>
+              ))}
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      {/* หมวด: onboard */}
+      <div className={cn(tab === "onboard" ? "block" : "hidden", "print:block")}>
+        {/* ── ③ เตรียมครูใหม่ ───────────────────────────────────────────── */}
+        <Card className="p-5">
+          <h2 className="text-[0.95rem] font-semibold text-ink">เช็คลิสต์เตรียมครูใหม่ก่อนรับเคสจริง</h2>
+          <ul className="mt-3 space-y-2">
+            {ONBOARD_CHECKLIST.map((c, i) => (
+              <li key={c} className="flex gap-2.5 text-[0.82rem] leading-relaxed text-ink">
+                <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-md bg-neutral-100 text-[0.7rem] font-bold text-ink-soft ring-1 ring-neutral-200">
+                  {i + 1}
+                </span>
+                {c}
+              </li>
+            ))}
+          </ul>
+        </Card>
+      </div>
 
       <p className="text-[0.72rem] leading-relaxed text-ink-mute">
         แนวทางนี้เรียบเรียงตามกรอบระบบดูแลช่วยเหลือนักเรียน (สพฐ.) และแนวทางการดูแลสุขภาพจิตวัยรุ่นของกรมสุขภาพจิต
