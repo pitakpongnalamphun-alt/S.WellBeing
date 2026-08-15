@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ChevronRight, Gamepad2, SmilePlus, Wind } from "lucide-react";
+import { ChevronRight, ClipboardCheck, Gamepad2, SmilePlus, Wind } from "lucide-react";
 
 import { FluffyMascot } from "@/components/FluffyMascot";
 import { HomeHeader } from "@/components/student/HomeHeader";
@@ -112,36 +112,42 @@ export default function StudentDashboardPage() {
             </span>
           </Link>
 
-          {/*
-            ฝึกทักษะ — กินเต็มแถวที่สอง ไม่ใช่ครึ่งเดียว
-
-            ที่ไม่เติมไทล์ที่สี่ให้ครบ 2×2 เพราะสองอย่างที่พอจะใส่ได้ต่างก็มีปุ่มของตัวเอง
-            อยู่ห่างจากตรงนี้ไม่ถึงหนึ่งหน้าจอแล้ว — "คุยกับน้องอุ่น" มีการ์ดสีม่วงของ
-            ตัวเองอยู่ใต้ลงไป และ "ประเมินใจ" ถูกลิงก์จากการ์ดพัฒนาการใจสองที่
-            การวางปุ่มซ้ำห่างกันร้อยพิกเซล ทำให้คนสงสัยว่าสองปุ่มนี้ต่างกันตรงไหน
-          */}
           <Link
             href="/games"
-            className="col-span-2 flex items-center gap-3.5 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-neutral-200/80 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0"
+            className="flex h-full flex-col items-start gap-3 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-neutral-200/80 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0"
           >
-            <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+            <span className="flex size-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
               <Gamepad2 className="size-6" strokeWidth={2} aria-hidden="true" />
             </span>
-            <span className="min-w-0 flex-1 text-left">
-              <span className="block text-[0.92rem] font-bold text-ink">
-                ฝึกทักษะ
-              </span>
+            <span className="mt-auto text-left">
+              <span className="block text-[0.92rem] font-bold text-ink">ฝึกทักษะ</span>
               <span className="mt-0.5 block text-[0.72rem] leading-snug text-ink-soft">
-                เกมจำลองสถานการณ์ 36 ด่าน · เล่นจบได้เหรียญ
+                36 ด่าน · เล่นจบได้เหรียญ
               </span>
             </span>
-            <ChevronRight className="size-5 shrink-0 text-ink-mute" aria-hidden="true" />
+          </Link>
+
+          <Link
+            href="/assessment"
+            className="flex h-full flex-col items-start gap-3 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-neutral-200/80 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0"
+          >
+            <span className="flex size-12 items-center justify-center rounded-xl bg-mint-50 text-mint-600">
+              <ClipboardCheck className="size-6" strokeWidth={2} aria-hidden="true" />
+            </span>
+            <span className="mt-auto text-left">
+              <span className="block text-[0.92rem] font-bold text-ink">เช็คสุขภาพใจ</span>
+              <span className="mt-0.5 block text-[0.72rem] leading-snug text-ink-soft">
+                แบบประเมินสั้น ๆ · ดูพัฒนาการได้
+              </span>
+            </span>
           </Link>
         </div>
-      </section>
 
-      {/* พัฒนาการใจของฉัน — กราฟก่อน-หลังจากประวัติประเมินส่วนตัว (อยู่แค่เครื่องนี้) */}
-      <MyAssessProgress />
+        {/* กราฟก่อน-หลังจากประวัติประเมินส่วนตัว (อยู่แค่เครื่องนี้)
+            อยู่ใต้กริด ไม่ใช่ในกริด — ถ้าเอาไปไว้ในกริด แถวที่สองจะเหลือช่องว่าง
+            ข้าง "ฝึกทักษะ" เฉพาะคนที่เคยประเมินแล้ว ซึ่งอ่านเหมือนหน้ายังทำไม่เสร็จ */}
+        <MyAssessProgress />
+      </section>
 
 
       <HomeGarden />
