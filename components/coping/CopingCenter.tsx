@@ -15,6 +15,7 @@ import {
 
 import { References } from "@/components/shared/References";
 import {
+  BULLY_TRIAGE,
   CENTRE_META,
   COPING_GUIDES,
   EVIDENCE_LABEL,
@@ -63,6 +64,118 @@ function GuideCard({ guide, onOpen }: { guide: Guide; onOpen: (id: string) => vo
   );
 }
 
+/* --------------------------------------------------------- ตัวอ่านขั้นตอน */
+
+/**
+ * อ่านทีละขั้น แทนการเทขั้นตอนทั้งหมดลงหน้าเดียว
+ *
+ * ขั้นตอนสี่ถึงห้าข้อที่ขึ้นพร้อมกันเป็นกำแพงตัวหนังสือ คนที่เพิ่งโดนมาสิบนาทีที่แล้ว
+ * เห็นแล้วปิดทิ้งก่อนได้อ่านบรรทัดแรกด้วยซ้ำ ทีละขั้นทำให้แต่ละหน้าจอมีของอ่านชิ้นเดียว
+ * และเห็นว่าเหลืออีกไม่กี่ขั้นก็จบ
+ *
+ * ยังมีปุ่มดูรวดเดียวไว้ให้ เพราะบางคนอยากกวาดตาดูทั้งหมดก่อนตัดสินใจอ่าน และครูที่
+ * เปิดดูเพื่อเตรียมสอนก็ต้องการมุมมองนั้น
+ */
+function StepReader({ steps }: { steps: Guide["steps"] }) {
+  const [i, setI] = useState(0);
+  const [all, setAll] = useState(false);
+  const step = steps[Math.min(i, steps.length - 1)];
+
+  const Body = ({ s, n }: { s: Guide["steps"][number]; n: number }) => (
+    <>
+      <div className="flex items-start gap-3">
+        <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-mint-100 text-[0.82rem] font-bold text-mint-800">
+          {s.badge ?? n}
+        </span>
+        <p className="mt-0.5 text-[1.02rem] font-bold leading-snug text-ink">{s.title}</p>
+      </div>
+      {/* ตัวหนังสือใหญ่ขึ้นและบรรทัดห่างขึ้นกว่าเดิม ภาษาไทยมีสระบนล่าง
+          ระยะบรรทัดที่พอดีกับภาษาอังกฤษจะแน่นเกินไปสำหรับไทยเสมอ */}
+      <p className="mt-2.5 text-[0.94rem] leading-[2] text-ink-soft">{s.body}</p>
+      {s.caution ? (
+        <p className="mt-3 flex items-start gap-2 rounded-xl bg-amber-50 p-3 text-[0.86rem] leading-[1.9] text-amber-900">
+          <AlertTriangle className="mt-1 size-4 shrink-0 text-amber-500" aria-hidden="true" />
+          {s.caution}
+        </p>
+      ) : null}
+    </>
+  );
+
+  if (all) {
+    return (
+      <div className="mt-5">
+        <ol className="space-y-3">
+          {steps.map((s, n) => (
+            <li key={s.title} className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-neutral-200/80">
+              <Body s={s} n={n + 1} />
+            </li>
+          ))}
+        </ol>
+        <button
+          type="button"
+          onClick={() => setAll(false)}
+          className="mt-3 block w-full rounded-xl py-2 text-[0.82rem] text-ink-mute transition-colors hover:text-ink"
+        >
+          กลับไปอ่านทีละขั้น
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-5">
+      <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-neutral-200/80">
+        <Body s={step} n={i + 1} />
+      </div>
+
+      <div className="mt-3 flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => setI((v) => Math.max(0, v - 1))}
+          disabled={i === 0}
+          className="min-h-11 rounded-full px-3 text-[0.84rem] text-ink-soft transition-colors hover:text-ink disabled:opacity-30"
+        >
+          ก่อนหน้า
+        </button>
+
+        <span className="flex flex-1 items-center justify-center gap-1.5" aria-hidden="true">
+          {steps.map((s, n) => (
+            <span
+              key={s.title}
+              className={`h-1.5 rounded-full transition-all ${
+                n === i ? "w-5 bg-mint-600" : "w-1.5 bg-neutral-300"
+              }`}
+            />
+          ))}
+        </span>
+
+        {i < steps.length - 1 ? (
+          <button
+            type="button"
+            onClick={() => setI((v) => v + 1)}
+            className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-mint-700 px-4 text-[0.84rem] font-semibold text-white transition-colors hover:bg-mint-600"
+          >
+            ถัดไป
+            <ArrowRight className="size-4" aria-hidden="true" />
+          </button>
+        ) : (
+          <span className="min-h-11 px-3 text-[0.84rem] font-medium text-mint-700">
+            อ่านครบแล้ว
+          </span>
+        )}
+      </div>
+
+      <button
+        type="button"
+        onClick={() => setAll(true)}
+        className="mt-1 block w-full rounded-xl py-2 text-[0.8rem] text-ink-mute transition-colors hover:text-ink"
+      >
+        ดูทั้ง {steps.length} ขั้นรวดเดียว
+      </button>
+    </div>
+  );
+}
+
 /* ------------------------------------------------------- หน้ารายละเอียด */
 
 function GuideDetail({ guide, onBack }: { guide: Guide; onBack: () => void }) {
@@ -92,14 +205,14 @@ function GuideDetail({ guide, onBack }: { guide: Guide; onBack: () => void }) {
       {/* ใช้ตอนไหน / ไม่ใช้ตอนไหน — ขึ้นก่อนขั้นตอน เพราะคนที่หยิบวิธีผิดมาใช้
           จะเสียหายกว่าคนที่ยังไม่ได้เริ่ม */}
       <div className="mt-4 space-y-2">
-        <p className="flex items-start gap-2 rounded-xl bg-panel/50 p-3 text-[0.82rem] leading-relaxed text-ink-soft">
+        <p className="flex items-start gap-2 rounded-xl bg-panel/50 p-3.5 text-[0.88rem] leading-[1.9] text-ink-soft">
           <Clock3 className="mt-0.5 size-4 shrink-0 text-ink-mute" aria-hidden="true" />
           <span>
             <span className="font-semibold text-ink">ใช้ตอน</span> {guide.when}
           </span>
         </p>
         {guide.notFor ? (
-          <p className="flex items-start gap-2 rounded-xl bg-rose-50 p-3 text-[0.82rem] leading-relaxed text-rose-900 ring-1 ring-rose-200/70">
+          <p className="flex items-start gap-2 rounded-xl bg-rose-50 p-3.5 text-[0.88rem] leading-[1.9] text-rose-900 ring-1 ring-rose-200/70">
             <CircleSlash className="mt-0.5 size-4 shrink-0 text-rose-500" aria-hidden="true" />
             <span>
               <span className="font-semibold">ไม่ใช้ตอน</span> {guide.notFor}
@@ -117,34 +230,7 @@ function GuideDetail({ guide, onBack }: { guide: Guide; onBack: () => void }) {
         </div>
       ) : null}
 
-      <ol className="mt-5 space-y-3">
-        {guide.steps.map((step, i) => (
-          <li
-            key={step.title}
-            className="rounded-2xl bg-white p-3.5 shadow-sm ring-1 ring-neutral-200/80"
-          >
-            <div className="flex items-start gap-3">
-              <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-mint-100 text-[0.78rem] font-bold text-mint-800">
-                {step.badge ?? i + 1}
-              </span>
-              <div className="min-w-0">
-                <p className="text-[0.9rem] font-bold leading-snug text-ink">
-                  {step.title}
-                </p>
-                <p className="mt-1 text-[0.84rem] leading-relaxed text-ink-soft">
-                  {step.body}
-                </p>
-              </div>
-            </div>
-            {step.caution ? (
-              <p className="mt-2.5 flex items-start gap-2 rounded-xl bg-amber-50 p-2.5 text-[0.78rem] leading-relaxed text-amber-900">
-                <AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-amber-500" aria-hidden="true" />
-                {step.caution}
-              </p>
-            ) : null}
-          </li>
-        ))}
-      </ol>
+      <StepReader steps={guide.steps} />
 
       {guide.action ? (
         <Link
@@ -222,6 +308,37 @@ export function CopingCenter() {
               {meta.label}
             </h2>
             <p className="mt-0.5 text-[0.76rem] text-ink-soft">{meta.blurb}</p>
+
+            {/* ประตูของหมวดกลั่นแกล้งไม่ใช่สารบัญ แต่เป็นคำถามข้อเดียว
+                คนที่เพิ่งโดนมาไม่อยู่ในสภาพที่จะอ่านหัวข้อหกอันแล้วเดาว่าอันไหนคือของตัวเอง */}
+            {c === "bullying" ? (
+              <div className="mt-3 rounded-2xl bg-sky-50/70 p-3.5 ring-1 ring-sky-200/60">
+                <p className="text-[0.9rem] font-bold text-ink">ตอนนี้เธออยู่ตรงไหน</p>
+                <p className="mt-0.5 text-[0.76rem] text-ink-soft">แตะข้อที่ใกล้ที่สุด</p>
+                <ul className="mt-2.5 space-y-1.5">
+                  {BULLY_TRIAGE.map((t) => (
+                    <li key={t.guideId}>
+                      <button
+                        type="button"
+                        onClick={() => setOpenId(t.guideId)}
+                        className="flex w-full items-center gap-2.5 rounded-xl bg-white px-3 py-2.5 text-left ring-1 ring-sky-100 transition active:scale-[0.99]"
+                      >
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-[0.88rem] font-semibold leading-snug text-ink">
+                            {t.label}
+                          </span>
+                          <span className="mt-0.5 block text-[0.74rem] leading-snug text-ink-mute">
+                            {t.hint}
+                          </span>
+                        </span>
+                        <ChevronRight className="size-4 shrink-0 text-sky-400" aria-hidden="true" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+
             <ul className="mt-3 space-y-2.5">
               {guidesOf(c).map((g) => (
                 <GuideCard key={g.id} guide={g} onOpen={setOpenId} />
