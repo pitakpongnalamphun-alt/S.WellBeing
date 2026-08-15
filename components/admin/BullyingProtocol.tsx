@@ -74,7 +74,7 @@ const SOURCES: Source[] = [
 ];
 
 /** เลขอ้างอิงติดหัวข้อ กดแล้วเลื่อนไปที่รายการท้ายหน้า */
-function Cite({ ns }: { ns?: number[] }) {
+export function Cite({ ns }: { ns?: number[] }) {
   if (!ns?.length) return null;
   return (
     <span className="ml-1.5 inline-flex gap-1 align-middle">

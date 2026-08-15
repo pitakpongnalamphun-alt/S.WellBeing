@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 
 import { Card } from "@/components/ui/Card";
+import { TalkGuide } from "@/components/admin/TalkGuide";
 import { cn } from "@/lib/utils";
 import { BullyingProtocol } from "@/components/admin/BullyingProtocol";
 import { STAFF_ROLE_META } from "@/data/staff";
@@ -92,23 +93,6 @@ const ROLE_DUTIES: {
   },
 ];
 
-const TALK_DO = [
-  "ฟังให้จบก่อน — ให้เด็กเล่าด้วยจังหวะของเขา ไม่ขัด ไม่รีบสรุป",
-  "ขอบคุณที่กล้าบอก — “ขอบคุณนะที่ไว้ใจครู เรื่องนี้ไม่ง่ายเลยที่จะพูด”",
-  "ถามความต้องการ — “อยากให้ครูช่วยยังไงดี” ให้เด็กมีส่วนเลือกทางแก้",
-  "บอกขอบเขตความลับตรง ๆ — เก็บเป็นความลับได้ ยกเว้นเมื่อมีอันตรายต่อชีวิต ซึ่งครูจะบอกก่อนว่าจะเล่าให้ใครฟัง เพื่ออะไร",
-  "ถามเรื่องการทำร้ายตัวเองได้ตรง ๆ — “มีช่วงไหนที่คิดอยากทำร้ายตัวเองไหม” แนวทางสากลยืนยันว่าการถามไม่ได้กระตุ้น แต่เปิดประตูให้ช่วยได้ทัน",
-  "นัดติดตามเสมอ — จบการคุยด้วยวันเวลาที่จะเจอกันครั้งถัดไป ไม่ปล่อยให้เรื่องหายเงียบ",
-];
-
-const TALK_DONT = [
-  "ไม่โทษเด็ก — ห้ามพูด “ทำไมไม่บอกตั้งแต่แรก” “เธอก็มีส่วนนะ” ไม่ว่ากรณีใด",
-  "ไม่สอบสวนเหมือนคดี — การไล่ถามหาหลักฐานทำให้เด็กปิดปากถาวร",
-  "ไม่สัญญาว่าจะลับ 100% — สัญญาที่รักษาไม่ได้ทำลายความไว้ใจมากกว่าบอกความจริงแต่แรก",
-  "ไม่เล่าต่อในวงที่ไม่เกี่ยวข้อง — แชร์เฉพาะผู้ที่มีหน้าที่ช่วยเหลือโดยตรงเท่านั้น",
-  "ไม่ด่วนสั่งสอนหรือเทียบ “สมัยครู...” — เด็กต้องการคนฟัง ไม่ใช่บทเรียนซ้ำ",
-  "ไม่ปล่อยเด็กที่มีความคิดทำร้ายตัวเองอยู่คนเดียว — แม้เด็กจะบอกว่า “ไม่เป็นไรแล้ว”",
-];
 
 /**
  * คู่มือรายหมวด — id/label/อีโมจิ ตรงกับหมวดจริงในหน้าแจ้งเหตุ + เคสยินยอมส่งผลประเมิน
@@ -406,41 +390,10 @@ export function AdminGuideBoard() {
 
       {/* หมวด: talk */}
       <div className={cn(tab === "talk" ? "block" : "hidden", "print:block")}>
-        {/* ── ③ แนวทางการคุยกับนักเรียน ─────────────────────────────────── */}
-        <Card className="p-5">
-          <h2 className="flex items-center gap-2 text-[0.95rem] font-semibold text-ink">
-            <MessageCircleHeart className="size-4 text-rose-500" aria-hidden="true" />
-            คุยกับนักเรียนอย่างไรให้เขากล้าเล่าต่อ
-          </h2>
-          <div className="mt-3 grid gap-3 md:grid-cols-2">
-            <div className="rounded-2xl bg-emerald-50/60 p-4 ring-1 ring-emerald-200">
-              <p className="flex items-center gap-1.5 text-[0.84rem] font-bold text-emerald-800">
-                <CheckCircle2 className="size-4" aria-hidden="true" /> ควรทำ
-              </p>
-              <ul className="mt-2.5 space-y-2">
-                {TALK_DO.map((t) => (
-                  <li key={t} className="flex gap-2 text-[0.8rem] leading-relaxed text-ink">
-                    <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-emerald-400" />
-                    {t}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="rounded-2xl bg-rose-50/60 p-4 ring-1 ring-rose-200">
-              <p className="flex items-center gap-1.5 text-[0.84rem] font-bold text-rose-800">
-                <XCircle className="size-4" aria-hidden="true" /> ไม่ควรทำ
-              </p>
-              <ul className="mt-2.5 space-y-2">
-                {TALK_DONT.map((t) => (
-                  <li key={t} className="flex gap-2 text-[0.8rem] leading-relaxed text-ink">
-                    <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-rose-400" />
-                    {t}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </Card>
+        {/* ── ③ แนวทางการคุยกับนักเรียน — สามสถานการณ์ ─────────────── */}
+          <Card className="p-5">
+            <TalkGuide />
+          </Card>
       </div>
 
       {/* หมวด: category */}
