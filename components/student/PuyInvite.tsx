@@ -15,7 +15,15 @@ import { useGachaStore } from "@/lib/store/useGachaStore";
  * เดิมเป็นแถวลิงก์ธรรมดาที่ใช้ไอคอน MessageCircleHeart ของ lucide ทั้งที่ทั้งฟีเจอร์
  * คือ *ตัวละคร* ตอนนี้ใช้รูปอุ่นตัวเดียวกับในห้องแชท พร้อมของตกแต่งที่เด็กแต่งไว้เอง
  *
- * ยังเป็นพระรอง ไม่แย่งที่แจ้งเหตุ: จัดลำดับด้วยอุณหภูมิสีกับความเร่งด่วน ไม่ใช่ขนาด
+ * ขนาดเป็นบันไดสามขั้น อย่าให้ขั้นที่ 1 กับ 2 เท่ากัน
+ *   แจ้งเหตุ    หัวข้อ 1.2rem   มาสคอต 66px
+ *   คุยกับอุ่น   หัวข้อ 1.06rem  มาสคอต 56px   ← การ์ดนี้
+ *   ไทล์ดูแลใจ  หัวข้อ 0.92rem  ไอคอน 24px
+ *
+ * เคยเป็นปัญหามาแล้ว: ตอนแรกสองการ์ดบนขนาดเกือบเท่ากัน (1.05 กับ 1.02rem) และ
+ * มาสคอตของอุ่นใหญ่กว่าของแจ้งเหตุด้วยซ้ำ สายตาจึงอ่านว่าสองอันนี้สำคัญเท่ากัน
+ *
+ * ยังเป็นพระรอง ไม่แย่งที่แจ้งเหตุ: นอกจากขนาดแล้วยังต่างกันที่อุณหภูมิสีและความเร่งด่วน
  * แจ้งเหตุเป็นส้มอิฐเข้มพร้อมชิป "ด่วน" ส่วนการ์ดนี้เป็นลาเวนเดอร์อ่อนและชวนคุยเฉย ๆ
  * อุ่นจึงใหญ่ได้โดยไม่กลบพระเอก
  *
@@ -63,11 +71,11 @@ export function PuyInvite() {
         href="/chatbot"
         className="flex items-center gap-3.5 rounded-2xl transition active:scale-[0.99]"
       >
-        <span className="grid size-[4.5rem] shrink-0 place-items-center rounded-full bg-white/70">
-          <Puy expression="greet" size={62} equipped={outfit} />
+        <span className="grid size-[4.1rem] shrink-0 place-items-center rounded-full bg-white/70">
+          <Puy expression="greet" size={56} equipped={outfit} />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block text-[1.02rem] font-bold leading-snug text-ink">
+          <span className="block text-[1.06rem] font-bold leading-snug text-ink">
             {continuing ? "กลับมาคุยกับอุ่นต่อไหม" : "วันนี้อยากเล่าอะไรให้อุ่นฟังไหม"}
           </span>
           <span className="mt-0.5 block text-[0.78rem] leading-snug text-ink-soft">
