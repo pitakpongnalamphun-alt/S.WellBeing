@@ -57,6 +57,11 @@ export type AvatarSpec = {
   hairStyle: "full" | "sides" | "receding" | "bob";
   beard?: "full" | "mustache";
   glasses?: "round" | "square";
+  /**
+   * คุมร่องแก้มและร่องรอยของวัยในภาพวาด ค่าเริ่มต้นคือ senior เพราะเจ็ดในแปดคน
+   * เป็นภาพจำจากช่วงบั้นปลายของชีวิต ส่วน adult ใช้กับคนที่ยังไม่ถึงวัยนั้น
+   */
+  age?: "adult" | "senior";
 };
 
 /**
@@ -147,7 +152,7 @@ export const WISDOMS: Wisdom[] = [
     quote: "สิ่งที่คนเราเป็นได้ เขาก็ควรจะได้เป็น",
     application: "ลงมือทำสิ่งเล็ก ๆ ที่ทำให้รู้สึกเป็นตัวเองสัก 1 อย่างวันนี้",
     category: "growth",
-    avatar: { skin: SKIN, hair: DARK, hairStyle: "full", beard: "mustache" },
+    avatar: { skin: SKIN, hair: DARK, hairStyle: "full", beard: "mustache", age: "adult" },
   },
   {
     kind: "quote",
@@ -171,7 +176,7 @@ export const WISDOMS: Wisdom[] = [
     quote: "ความเปราะบางไม่ใช่ความอ่อนแอ แต่คือจุดเริ่มต้นของความกล้าหาญ",
     application: "ลองกล้าบอกความรู้สึกจริง ๆ กับคนที่เราไว้ใจสัก 1 คน",
     category: "courage",
-    avatar: { skin: SKIN, hair: BLONDE, hairStyle: "bob" },
+    avatar: { skin: SKIN, hair: BLONDE, hairStyle: "bob", age: "adult" },
   },
   {
     kind: "quote",
