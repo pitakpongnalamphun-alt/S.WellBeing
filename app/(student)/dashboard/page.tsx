@@ -24,22 +24,22 @@ export default function StudentDashboardPage() {
           coin economy stays with self-care, not with reporting distress. */}
       <Link
         href="/report"
-        className="block rounded-[1.6rem] p-4 shadow-[0_16px_36px_-22px_rgba(200,74,31,0.5)] ring-1 ring-[#f0997b] transition hover:-translate-y-0.5 active:translate-y-0"
+        className="block rounded-[1.75rem] p-5 shadow-[0_18px_40px_-22px_rgba(200,74,31,0.55)] ring-1 ring-[#f0997b] transition hover:-translate-y-0.5 active:translate-y-0"
         style={{ background: "#fbe6dd" }}
       >
         <div className="flex items-center gap-3.5">
-          <span className="flex size-16 shrink-0 items-center justify-center rounded-full bg-white">
-            <FluffyMascot size={54} floating={false} />
+          <span className="flex size-[4.75rem] shrink-0 items-center justify-center rounded-full bg-white">
+            <FluffyMascot size={66} floating={false} />
           </span>
           <span className="min-w-0 flex-1">
             <span
-              className="block text-[1.05rem] font-bold leading-snug"
+              className="block text-[1.2rem] font-bold leading-snug"
               style={{ color: "#7a2c12" }}
             >
               วันนี้มีเรื่องไม่สบายใจไหม?
             </span>
             <span
-              className="mt-0.5 block text-[0.78rem] leading-snug"
+              className="mt-1 block text-[0.82rem] leading-snug"
               style={{ color: "#93381b" }}
             >
               บอกน้องปุยได้เลย ปลอดภัย · ไม่ต้องบอกชื่อก็ได้
