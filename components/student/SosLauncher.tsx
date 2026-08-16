@@ -18,7 +18,9 @@ import { ShieldAlert } from "lucide-react";
 export function SosLauncher() {
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-20 px-4">
-      <div className="mx-auto flex max-w-md justify-end">
+      {/* ต้องกว้างเท่าเปลือกของหน้า ไม่งั้นบนแท็บเล็ตปุ่มจะไปลอยอยู่กลางจอ
+          แทนที่จะเกาะขอบขวาของแผ่นเนื้อหา */}
+      <div className="mx-auto flex max-w-md justify-end ipad:max-w-4xl ipad:px-2">
         <Link
           href="/sos"
           aria-label="ขอความช่วยเหลือด่วน SOS"

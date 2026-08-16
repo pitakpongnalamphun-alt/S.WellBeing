@@ -19,7 +19,8 @@ export default function BreathingPage() {
   }, [earn]);
 
   return (
-    <div className="flex flex-1 flex-col justify-center py-2">
+    // ทั้งหน้ามีหน้าที่เดียวคือให้มองวงกลมที่ขยายหด ของข้าง ๆ ทำลายมันโดยตรง
+    <div className="flex flex-1 flex-col justify-center py-2 ipad:mx-auto ipad:w-full ipad:max-w-xl">
       <BoxBreathing onSessionComplete={handleSessionComplete} />
     </div>
   );

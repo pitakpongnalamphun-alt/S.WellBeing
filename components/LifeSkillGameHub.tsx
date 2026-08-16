@@ -384,7 +384,7 @@ export function LifeSkillGameHub({ onPlay, className }: LifeSkillGameHubProps) {
       <AnimatePresence initial={false}>
         {openIsland === null ? (
           /* ------------------------------------------------ the island map */
-          <motion.div key="map" {...(reduce ? {} : slide)} className="space-y-3 pb-2">
+          <motion.div key="map" {...(reduce ? {} : slide)} className="space-y-3 pb-2 ipad:grid ipad:grid-cols-2 ipad:items-start ipad:gap-3 ipad:space-y-0">
             {ISLANDS.map((island) => (
               <motion.button
                 key={island.id}

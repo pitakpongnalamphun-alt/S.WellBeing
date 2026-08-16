@@ -99,8 +99,9 @@ const SECTIONS: Section[] = [
 
 export default function ExplorePage() {
   return (
-    <div className="space-y-6 pb-24 pt-2">
-      <header className="flex items-center gap-2">
+    // แต่ละหมวดเป็นรายการที่แยกจากกัน วางข้างกันได้โดยไม่เสียลำดับการอ่าน
+    <div className="space-y-6 pb-24 pt-2 ipad:grid ipad:grid-cols-2 ipad:items-start ipad:gap-x-6 ipad:gap-y-5 ipad:space-y-0">
+      <header className="flex items-center gap-2 ipad:col-span-2">
         <Compass className="size-6 text-mint-600" aria-hidden="true" />
         <h1 className="font-display th:leading-snug text-[1.45rem] font-bold text-ink">
           สำรวจ

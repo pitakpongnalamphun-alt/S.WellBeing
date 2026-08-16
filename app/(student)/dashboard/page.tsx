@@ -16,8 +16,11 @@ export default function StudentDashboardPage() {
   return (
     // pb clears the small SOS pill + raised แจ้งเหตุ button + tab bar so the
     // last card isn't hidden behind them at the bottom of the scroll.
-    <div className="space-y-6 pb-32 pt-2">
-      <header className="flex items-start justify-between gap-3">
+    // บนแท็บเล็ตแนวนอน จอสูงแค่ 820px แต่หน้านี้ยาว 1314px ต้องเลื่อนเกือบสองจอ
+    // จึงจัดเป็นสองคอลัมน์ ให้ของที่เคยต่อท้ายกันมาอยู่ข้างกันแทน
+    // หัวเรื่องกับการ์ดแจ้งเหตุกินเต็มความกว้าง — พระเอกของแอปไม่ควรถูกบีบครึ่ง
+    <div className="space-y-6 pb-32 pt-2 ipad:grid ipad:grid-cols-2 ipad:items-start ipad:gap-5 ipad:space-y-0">
+      <header className="flex items-start justify-between gap-3 ipad:col-span-2">
         <div>
           <p className="text-[0.78rem] text-ink-mute">ยินดีต้อนรับ 👋</p>
           <h1 className="font-display th:leading-snug text-[1.45rem] font-bold text-ink">
@@ -35,10 +38,10 @@ export default function StudentDashboardPage() {
           coin economy stays with self-care, not with reporting distress. */}
       <Link
         href="/report"
-        className="block rounded-[1.6rem] p-4 shadow-[0_16px_36px_-22px_rgba(200,74,31,0.5)] ring-1 ring-[#f0997b] transition hover:-translate-y-0.5 active:translate-y-0"
+        className="block rounded-[1.6rem] p-4 shadow-[0_16px_36px_-22px_rgba(200,74,31,0.5)] ring-1 ring-[#f0997b] transition hover:-translate-y-0.5 active:translate-y-0 ipad:col-span-2 ipad:flex ipad:items-center ipad:gap-6 ipad:p-5"
         style={{ background: "#fbe6dd" }}
       >
-        <div className="flex items-center gap-3.5">
+        <div className="flex items-center gap-3.5 ipad:min-w-0 ipad:flex-1">
           <span className="flex size-16 shrink-0 items-center justify-center rounded-full bg-white">
             <FluffyMascot size={54} floating={false} />
           </span>
@@ -57,7 +60,8 @@ export default function StudentDashboardPage() {
             </span>
           </span>
         </div>
-        <div className="mt-3 flex flex-wrap gap-1.5">
+        {/* บนแท็บเล็ตป้ายสามอันย้ายไปอยู่ข้างขวาของการ์ด แทนที่จะดันการ์ดให้สูงขึ้น */}
+        <div className="mt-3 flex flex-wrap gap-1.5 ipad:mt-0 ipad:shrink-0 ipad:flex-col ipad:items-start">
           <span
             className="rounded-full px-2.5 py-1 text-[0.7rem] font-bold text-white"
             style={{ background: "#b8431d" }}
@@ -155,7 +159,10 @@ export default function StudentDashboardPage() {
 
       <HomeGarden />
 
-      <WisdomStrip />
+      {/* แถบคำคมเลื่อนแนวนอน กินเต็มความกว้างจะเห็นการ์ดมากกว่าถูกบีบอยู่ครึ่งเดียว */}
+      <div className="ipad:col-span-2">
+        <WisdomStrip />
+      </div>
 
       {/* The classic always-visible SOS, back by request — floats above the tab
           bar (and clears the raised แจ้งเหตุ button). */}
