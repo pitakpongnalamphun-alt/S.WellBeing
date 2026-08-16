@@ -39,6 +39,29 @@ export async function fetchMyProfile(): Promise<SchoolProfile | null> {
   return { username: row.username ?? "", studentId: row.student_id ?? "" };
 }
 
+/**
+ * ลบแถวโปรไฟล์ของตัวเองออกจากเซิร์ฟเวอร์ — ใช้ตอนถอนความยินยอม
+ *
+ * ต้องมีจริง ไม่ใช่แค่ลบในเครื่องแล้วบอกว่าลบแล้ว ถ้าแถวยังอยู่บนเซิร์ฟเวอร์ หน้าจอ
+ * ที่บอกว่า "ลบชื่อและรหัสนักเรียนแล้ว" ก็เป็นคำโกหก และคนที่ล็อกอินกลับเข้ามาใหม่
+ * จะเจอ syncFromServer ดึงชื่อเดิมกลับมาให้เอง ทั้งที่เพิ่งกดลบไป
+ *
+ * คืน false เมื่อยังไม่ได้ต่อฐานข้อมูลหรือลบไม่สำเร็จ — ผู้เรียกต้องบอกผู้ใช้ตามจริง
+ */
+export async function deleteMyProfile(): Promise<boolean> {
+  const db = getClient();
+  if (!db) return false;
+  const { data: auth } = await db.auth.getUser();
+  const uid = auth.user?.id;
+  if (!uid) return false;
+  const { error } = await db.from("profiles").delete().eq("user_id", uid);
+  if (error) {
+    console.warn("[profile] delete failed:", error.message);
+    return false;
+  }
+  return true;
+}
+
 export async function upsertMyProfile(p: SchoolProfile): Promise<boolean> {
   const db = getClient();
   if (!db) return false;

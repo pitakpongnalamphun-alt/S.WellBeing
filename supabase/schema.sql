@@ -55,6 +55,8 @@ create table if not exists public.cases (
   updated_at      timestamptz not null default now(),
   category_id     text not null,
   category_label  text not null,
+  -- ลักษณะย่อยของเรื่อง เช่น verbal/exclusion/threat/physical — เลือกได้หลายข้อ ไม่บังคับ
+  sub_categories  text[],
   expectation     case_expectation not null,
   sensitive       boolean not null default false,
   contact_name    text not null default '',
@@ -81,6 +83,8 @@ create table if not exists public.anon_reports (
   created_at      timestamptz not null default now(),
   category_id     text not null,
   category_label  text not null,
+  -- เก็บได้แม้ไม่ระบุตัวตน เพราะเป็นชื่อหมวด ไม่ใช่เรื่องราวของใคร
+  sub_categories  text[],
   sensitive       boolean not null default false
 );
 create index if not exists anon_reports_created_at_idx on public.anon_reports (created_at desc);

@@ -2,11 +2,13 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Bookmark, ChevronLeft, ChevronRight, Heart, Quote, Sparkles } from "lucide-react";
+import { ArrowRight, Bookmark, ChevronLeft, ChevronRight, Heart, Lightbulb, Quote, Sparkles } from "lucide-react";
+import Link from "next/link";
 
 import {
   CATEGORY_META,
   CATEGORY_ORDER,
+  MOOD_TO_CATEGORY,
   THEMES,
   WISDOMS,
   WISDOM_BY_ID,
@@ -14,6 +16,8 @@ import {
   type WisdomCategory,
 } from "@/data/wisdom";
 import { useWisdomStore } from "@/lib/store/useWisdomStore";
+import { useMoodDiaryStore } from "@/lib/store/useMoodDiaryStore";
+import { EMOTION_WHEEL } from "@/data/emotionWheel";
 import { PsychAvatar } from "@/components/wisdom/PsychAvatar";
 import { localDay } from "@/lib/date";
 import { cn } from "@/lib/utils";
@@ -55,26 +59,68 @@ function WisdomCard({
       </div>
 
       <div className="flex flex-1 flex-col items-center justify-center py-4 text-center">
-        <Quote className="mb-2 size-6" style={{ color: theme.ink, opacity: 0.5 }} aria-hidden="true" />
+        {w.kind === "practice" ? (
+          <span className="mb-2 text-[2rem] leading-none" aria-hidden="true">
+            {w.emoji}
+          </span>
+        ) : w.verbatim === false ? (
+          // ใบสรุปแนวคิดไม่ควรมีสัญลักษณ์คำพูด มันบอกตรงข้ามกับป้ายใต้ชื่อ
+          <Lightbulb className="mb-2 size-6" style={{ color: theme.ink, opacity: 0.5 }} aria-hidden="true" />
+        ) : (
+          <Quote className="mb-2 size-6" style={{ color: theme.ink, opacity: 0.5 }} aria-hidden="true" />
+        )}
         <p className="font-display text-[1.32rem] font-medium leading-relaxed text-slate-700">
-          “{w.quote}”
+          {w.kind === "practice" || w.verbatim === false ? w.quote : `“${w.quote}”`}
         </p>
       </div>
 
-      <div className="flex items-center gap-3">
-        <PsychAvatar spec={w.avatar} size={50} />
-        <div className="min-w-0">
-          <p className="text-[0.92rem] font-bold text-slate-700">{w.name}</p>
-          <p className="text-[0.72rem] text-slate-500">{w.field} · {w.era}</p>
+      {w.kind === "quote" && w.avatar ? (
+        <div className="flex items-center gap-3">
+          <PsychAvatar spec={w.avatar} size={50} />
+          <div className="min-w-0">
+            <p className="text-[0.92rem] font-bold text-slate-700">{w.name}</p>
+            <p className="text-[0.72rem] text-slate-500">
+              {w.field} · {w.era}
+            </p>
+            {/* บอกตรง ๆ ว่าใบนี้ไม่ใช่คำพูดของเขา — คำคมของนักจิตวิทยาถูกใส่ชื่อผิดคน
+                บนอินเทอร์เน็ตบ่อยมาก การไม่แยกให้ชัดคือการรับรองสิ่งที่รับรองไม่ได้ */}
+            {w.verbatim === false ? (
+              <p className="mt-0.5 text-[0.68rem] text-slate-400">
+                สรุปแนวคิด ไม่ใช่คำพูดโดยตรง
+              </p>
+            ) : null}
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="flex items-center gap-2">
+          <span
+            className="rounded-full px-2.5 py-1 text-[0.7rem] font-bold"
+            style={{ backgroundColor: theme.chip, color: theme.chipInk }}
+          >
+            วิธีที่ลองทำได้
+          </span>
+          <p className="min-w-0 truncate text-[0.9rem] font-bold text-slate-700">{w.title}</p>
+        </div>
+      )}
 
       <div className="mt-4 rounded-2xl bg-white/55 p-3.5">
         <p className="mb-1 flex items-center gap-1.5 text-[0.72rem] font-semibold" style={{ color: theme.ink }}>
           <Sparkles className="size-3.5" aria-hidden="true" />
-          แนวทางลองปรับใช้
+          {w.kind === "practice" ? "ทำยังไง" : "แนวทางลองปรับใช้"}
         </p>
         <p className="text-[0.82rem] leading-relaxed text-slate-600">{w.application}</p>
+
+        {/* ปุ่มนี้คือความต่างระหว่าง "อ่านแล้วรู้สึกดี" กับ "ได้ลองจริง" */}
+        {w.action ? (
+          <Link
+            href={w.action.href}
+            className="mt-3 flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-[0.84rem] font-semibold text-white transition active:scale-[0.98]"
+            style={{ backgroundColor: theme.ink }}
+          >
+            {w.action.label}
+            <ArrowRight className="size-4" aria-hidden="true" />
+          </Link>
+        ) : null}
       </div>
     </div>
   );
@@ -92,6 +138,9 @@ export function WisdomDeck({ className }: { className?: string }) {
   const [mounted, setMounted] = useState(false);
   const saved = useWisdomStore((s) => s.saved);
   const toggleSave = useWisdomStore((s) => s.toggleSave);
+  const seen = useWisdomStore((s) => s.seen);
+  const markSeen = useWisdomStore((s) => s.markSeen);
+  const diary = useMoodDiaryStore((s) => s.entries);
 
   const [tab, setTab] = useState<"deck" | "saved">("deck");
   const [cat, setCat] = useState<WisdomCategory | "all">("all");
@@ -99,6 +148,26 @@ export function WisdomDeck({ className }: { className?: string }) {
   const [dir, setDir] = useState(0);
 
   const deck = useMemo(() => (cat === "all" ? WISDOMS : WISDOMS.filter((w) => w.category === cat)), [cat]);
+
+  /**
+   * อารมณ์ที่นักเรียนบันทึกไว้วันนี้ (ถ้ามี) — ใช้เสนอหมวดที่น่าอ่านก่อน
+   *
+   * ไม่หยิบมาแสดงเองโดยอัตโนมัติ แต่ขึ้นเป็นข้อเสนอให้กด เพราะบางวันคนเราบันทึกว่า
+   * เศร้าแล้วอยากอ่านอย่างอื่นก็ได้ — การเลือกให้เขาเสร็จสรรพคือการตัดสินใจแทนเขา
+   */
+  const todayMood = useMemo(() => {
+    if (!mounted) return null;
+    const today = localDay();
+    const entry = diary.find((e) => e.day === today);
+    if (!entry) return null;
+    const core = EMOTION_WHEEL.find((c) => c.key === entry.core);
+    const target = MOOD_TO_CATEGORY[entry.core];
+    if (!core || !target) return null;
+    return { core, target, tertiary: entry.tertiary };
+  }, [mounted, diary]);
+
+  // ใบที่เปิดอ่านแล้ว — ตัวเลขเฉย ๆ ไม่มีรางวัล
+  const seenCount = mounted ? seen.filter((id) => WISDOM_BY_ID[id]).length : 0;
 
   // Open on a deep-linked card (?id=) if present, else a day-rotated "today's
   // pick". Client-only so it can't cause a hydration mismatch. Category changes
@@ -141,6 +210,13 @@ export function WisdomDeck({ className }: { className?: string }) {
     setIndex((i) => (Math.min(i, deck.length - 1) + delta + deck.length) % deck.length);
   }
 
+  // เปิดค้างไว้ 1.2 วินาทีถึงนับว่าอ่าน — ปัดผ่านเร็ว ๆ ไม่ควรนับ
+  useEffect(() => {
+    if (!mounted || !current) return;
+    const t = setTimeout(() => markSeen(current.id), 1200);
+    return () => clearTimeout(t);
+  }, [mounted, current, markSeen]);
+
   return (
     <div className={cn("mx-auto w-full max-w-md ipad:max-w-3xl", className)}>
       {/* Header */}
@@ -150,6 +226,12 @@ export function WisdomDeck({ className }: { className?: string }) {
           <h1 className="font-display th:leading-snug text-[1.3rem] font-bold text-ink">แง่คิดเติมใจ</h1>
           <p className="text-[0.8rem] text-ink-soft">น้องปุยมีความคิดดี ๆ มาฝากทุกวัน</p>
         </div>
+        <span className="ml-auto shrink-0 text-right">
+          <span className="block text-[0.72rem] text-ink-mute">อ่านแล้ว</span>
+          <span className="block text-[0.95rem] font-bold tabular-nums text-ink">
+            {seenCount}/{WISDOMS.length}
+          </span>
+        </span>
       </header>
 
       {/* Tabs */}
@@ -180,6 +262,31 @@ export function WisdomDeck({ className }: { className?: string }) {
 
       {tab === "deck" ? (
         <>
+          {/*
+            สะพานระหว่างสองฟีเจอร์ที่เคยแยกกันอยู่: บันทึกอารมณ์กับแง่คิด
+            เด็กที่เพิ่งบันทึกว่าวันนี้กังวล ควรได้เจอใบที่พูดเรื่องนั้นก่อน ไม่ใช่ใบสุ่ม
+          */}
+          {todayMood && cat !== todayMood.target ? (
+            <button
+              type="button"
+              onClick={() => chooseCat(todayMood.target)}
+              className="mb-4 flex w-full items-center gap-3 rounded-2xl bg-white p-3.5 text-left ring-1 ring-lavender-200 transition active:scale-[0.99]"
+            >
+              <span className="text-[1.5rem]" aria-hidden="true">
+                {todayMood.core.emoji}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[0.84rem] font-semibold text-ink">
+                  วันนี้เธอบันทึกว่ารู้สึก{todayMood.tertiary}
+                </span>
+                <span className="block text-[0.74rem] text-ink-mute">
+                  ลองอ่านหมวด “{CATEGORY_META[todayMood.target].label}” ดูไหม
+                </span>
+              </span>
+              <ArrowRight className="size-4 shrink-0 text-lavender-500" aria-hidden="true" />
+            </button>
+          ) : null}
+
           {/* Category filter */}
           <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
             {(["all", ...CATEGORY_ORDER] as const).map((c) => {
@@ -317,10 +424,20 @@ function SavedList({
         return (
           <li key={id} className="rounded-2xl p-4 ring-1 ring-black/5" style={{ background: theme.gradient }}>
             <div className="flex items-start gap-3">
-              <PsychAvatar spec={w.avatar} size={44} />
+              {w.kind === "quote" && w.avatar ? (
+                <PsychAvatar spec={w.avatar} size={44} />
+              ) : (
+                <span className="grid size-11 shrink-0 place-items-center rounded-full bg-white/70 text-[1.3rem]" aria-hidden="true">
+                  {w.emoji}
+                </span>
+              )}
               <div className="min-w-0 flex-1">
-                <p className="font-display text-[0.95rem] font-medium leading-snug text-slate-700">“{w.quote}”</p>
-                <p className="mt-1.5 text-[0.74rem] text-slate-500">{w.name} · {w.field}</p>
+                <p className="font-display text-[0.95rem] font-medium leading-snug text-slate-700">
+                  {w.kind === "practice" || w.verbatim === false ? w.quote : `“${w.quote}”`}
+                </p>
+                <p className="mt-1.5 text-[0.74rem] text-slate-500">
+                  {w.kind === "practice" ? w.title : `${w.name} · ${w.field}`}
+                </p>
               </div>
               <button
                 type="button"

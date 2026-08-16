@@ -121,11 +121,19 @@ export function WisdomStrip() {
                     {cat.label}
                   </span>
                   <p className="relative mt-2 line-clamp-2 font-display text-[0.9rem] font-semibold leading-relaxed text-slate-700">
-                    “{w.quote}”
+                    {w.kind === "practice" || w.verbatim === false ? w.quote : `“${w.quote}”`}
                   </p>
                   <div className="relative mt-auto flex items-center gap-1.5 pt-3">
-                    <PsychAvatar spec={w.avatar} size={28} />
-                    <span className="min-w-0 truncate text-[0.7rem] font-semibold" style={{ color: theme.ink }}>{w.name}</span>
+                    {w.kind === "quote" && w.avatar ? (
+                      <PsychAvatar spec={w.avatar} size={28} />
+                    ) : (
+                      <span className="grid size-7 shrink-0 place-items-center rounded-full bg-white text-[0.95rem] ring-1 ring-black/5" aria-hidden="true">
+                        {w.emoji}
+                      </span>
+                    )}
+                    <span className="min-w-0 truncate text-[0.7rem] font-semibold" style={{ color: theme.ink }}>
+                      {w.kind === "practice" ? w.title : w.name}
+                    </span>
                   </div>
                 </div>
               </Link>

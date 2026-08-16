@@ -1,4 +1,5 @@
 import { isOpenStatus, slaState, type SafeCase } from "@/lib/store/useCasesStore";
+import { subtopicLabels, subtopicWeight } from "@/data/reportTopics";
 
 /**
  * Rule-based triage score for one case — which open case deserves eyes first.
@@ -47,6 +48,12 @@ export function triageScore(c: SafeCase, now: number): Triage {
   if (isOpenStatus(c.status) && !c.assignedTo) add(10, "ยังไม่มีผู้รับผิดชอบ");
   const catW = CATEGORY_WEIGHT[c.categoryId] ?? 3;
   add(catW, `หมวด: ${c.categoryLabel}`);
+
+  // หัวข้อย่อยที่แตะความปลอดภัยของร่างกาย (ถูกทำร้าย/ข่มขู่/รีดไถ) ต้องดันคิวขึ้น —
+  // "โดนล้อ" กับ "โดนดักตี" อยู่ในหมวดกลั่นแกล้งเหมือนกัน แต่รอได้ไม่เท่ากัน
+  // ใช้ค่าที่หนักที่สุดข้อเดียว ไม่บวกรวม เลือกหลายข้อไม่ได้แปลว่าเร่งเป็นเท่าตัว
+  const subW = subtopicWeight(c.subCategories);
+  if (subW > 0) add(subW, `ลักษณะ: ${subtopicLabels(c.subCategories).join(" · ")}`);
 
   score = Math.min(100, score);
   const band: TriageBand = score >= 70 ? "high" : score >= 40 ? "medium" : "low";

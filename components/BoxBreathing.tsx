@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, Pause, Play, RotateCcw, Timer } from "lucide-react";
+import { AlertTriangle, ChevronDown, Pause, Play, RotateCcw, Timer } from "lucide-react";
 import { motion } from "framer-motion";
 
 import { FluffyBuddy, type FluffyExpression } from "@/components/FluffyBuddy";
+import { References } from "@/components/shared/References";
+import { GUIDE_BY_ID, type Reference } from "@/data/copingGuides";
 
 /**
  * BoxBreathing — the full breathing coach.
@@ -26,6 +28,16 @@ type Phase = {
   seconds: number;
   /** true → น้องปุย sits inflated for this phase. */
   expand: boolean;
+  /**
+   * ข้อความประจำจังหวะ เมื่อคำกลาง ๆ ของ COPY ไม่พอ
+   *
+   * จำเป็นสำหรับท่าสูดสองครั้ง: สองจังหวะแรกเป็น "inhale" เหมือนกันทั้งคู่ ถ้าปล่อยให้
+   * ใช้คำเดียวกัน หน้าจอจะขึ้น "สูดลมหายใจเข้าลึกๆ..." สองรอบติดโดยไม่มีอะไรบอกว่า
+   * ต้องสูดซ้ำ — ซึ่งทำให้ทั้งเทคนิคหายไป เพราะหัวใจของมันอยู่ที่การสูดครั้งที่สอง
+   */
+  copy?: string;
+  /** ระดับการพองที่ต้องการ เมื่อ expand อย่างเดียวหยาบเกินไป (เช่น สูดเข้าสองระดับ) */
+  scaleTo?: number;
 };
 type Pattern = {
   id: string;
@@ -33,6 +45,23 @@ type Pattern = {
   hint: string;
   sessionSeconds: number;
   phases: Phase[];
+  /** ข้อควรระวังของท่านี้ — ขึ้นใต้คำอธิบาย ไม่ใช่ซ่อนไว้ในหน้าอื่น */
+  caution?: string;
+  /**
+   * การ์ดในคลังวิธีรับมือที่เป็นเจ้าของท่านี้ (data/copingGuides.ts)
+   *
+   * ขั้นตอนกับแหล่งอ้างอิงดึงมาจากที่นั่นที่เดียว ไม่พิมพ์ซ้ำ — ถ้าแยกกันเขียน วันหนึ่ง
+   * ห้องนี้กับคลังจะบอกวิธีทำไม่ตรงกัน แล้วไม่มีใครรู้ว่าอันไหนคืออันที่ถูก
+   */
+  guideId?: string;
+  /** ใช้เมื่อท่านั้นไม่มีการ์ดในคลัง (ตอนนี้มีแค่ box) */
+  references?: Reference[];
+};
+
+const STANFORD_2023: Reference = {
+  label:
+    "Balban MY และคณะ (2023) — Brief structured respiration practices enhance mood and reduce physiological arousal, Cell Reports Medicine",
+  url: "https://pubmed.ncbi.nlm.nih.gov/36630953/",
 };
 
 /** Warm, calming line for each phase. */
@@ -55,6 +84,7 @@ const PATTERNS: Pattern[] = [
     name: "Box Breathing (4-4-4-4)",
     hint: "เข้า · กลั้น · ออก · กลั้น — อย่างละ 4 วินาที",
     sessionSeconds: 120, // แนะนำ 2 นาที
+    references: [STANFORD_2023],
     phases: [
       { key: "inhale", label: "หายใจเข้า", seconds: 4, expand: true },
       { key: "hold", label: "กลั้นไว้", seconds: 4, expand: true },
@@ -67,13 +97,51 @@ const PATTERNS: Pattern[] = [
     name: "Relaxing (4-7-8)",
     hint: "เข้า 4 · กลั้น 7 · ออก 8 — ผ่อนลมหายใจออกให้ยาว",
     sessionSeconds: 60, // แนะนำ 1 นาที
+    caution:
+      "ท่านี้ต้องกลั้นหายใจ ถ้าเป็นหอบหืด มีโรคปอด หรือกำลังหายใจไม่ทันอยู่ ให้ใช้ท่าสูดสองครั้งแทน และถ้าเวียนหัวเมื่อไหร่ให้กลับมาหายใจปกติทันที",
+    guideId: "breathing-478",
     phases: [
       { key: "inhale", label: "หายใจเข้า", seconds: 4, expand: true },
       { key: "hold", label: "กลั้นไว้", seconds: 7, expand: true },
       { key: "exhale", label: "หายใจออก", seconds: 8, expand: false },
     ],
   },
+  {
+    // ท่าฉุกเฉิน — การ์ด "ใจเต้นเร็ว ตัวสั่น" ในคลังวิธีรับมือส่งคนมาที่นี่
+    id: "sigh",
+    name: "Physiological Sigh (สูดสองครั้ง)",
+    hint: "สูดเข้า 2 ครั้งติดกัน แล้วผ่อนออกทางปากยาว ๆ",
+    sessionSeconds: 60, // แนะนำ 1 นาที (รอบละ 13 วิ)
+    guideId: "sigh",
+    phases: [
+      {
+        key: "inhale",
+        label: "สูดเข้า",
+        seconds: 4,
+        expand: true,
+        scaleTo: 0.93,
+        copy: "สูดเข้าทางจมูกยาว ๆ...",
+      },
+      {
+        key: "inhale",
+        label: "สูดเข้าอีกนิด",
+        seconds: 2,
+        expand: true,
+        copy: "สูดเข้าอีกนิด สั้น ๆ ยังไม่ปล่อย...",
+      },
+      {
+        key: "exhale",
+        label: "ผ่อนออก",
+        seconds: 7,
+        expand: false,
+        copy: "ผ่อนลมออกทางปากช้า ๆ ยาว ๆ...",
+      },
+    ],
+  },
 ];
+
+/** ระดับการพองของจังหวะนี้ — scaleTo ชนะ ถ้าไม่มีก็ใช้ expand ตามเดิม */
+const targetScale = (p: Phase) => p.scaleTo ?? (p.expand ? SCALE_MAX : SCALE_MIN);
 
 const DURATIONS: { label: string; seconds: number | null }[] = [
   { label: "แนะนำ", seconds: null },
@@ -136,14 +204,22 @@ export type BoxBreathingProps = {
   onCycleComplete?: () => void;
   onSessionComplete?: () => void;
   className?: string;
+  /** ท่าที่ให้เปิดค้างไว้ตั้งแต่แรก — ใช้เมื่อมีคนลิงก์ตรงมาจากการ์ดในคลังวิธีรับมือ */
+  initialPatternId?: string;
 };
 
 export function BoxBreathing({
   onCycleComplete,
   onSessionComplete,
   className,
+  initialPatternId,
 }: BoxBreathingProps) {
-  const [patternId, setPatternId] = useState(PATTERNS[0].id);
+  const [patternId, setPatternId] = useState(
+    () =>
+      (initialPatternId && PATTERNS.some((p) => p.id === initialPatternId)
+        ? initialPatternId
+        : PATTERNS[0].id),
+  );
   const pattern = PATTERNS.find((p) => p.id === patternId) ?? PATTERNS[0];
   const phases = pattern.phases;
 
@@ -204,7 +280,7 @@ export function BoxBreathing({
 
       setPhaseIndex(nextIndex);
       setRemaining(nextPhase.seconds);
-      beginLeg(nextPhase.expand ? SCALE_MAX : SCALE_MIN, nextPhase.seconds);
+      beginLeg(targetScale(nextPhase), nextPhase.seconds);
     }, 1000);
 
     return () => window.clearInterval(id);
@@ -215,9 +291,9 @@ export function BoxBreathing({
   function startOrResume() {
     if (status === "running") return;
     if (status === "idle") {
-      beginLeg(phase.expand ? SCALE_MAX : SCALE_MIN, phase.seconds);
+      beginLeg(targetScale(phase), phase.seconds);
     } else {
-      beginLeg(phase.expand ? SCALE_MAX : SCALE_MIN, remaining);
+      beginLeg(targetScale(phase), remaining);
     }
     setStatus("running");
   }
@@ -278,6 +354,11 @@ export function BoxBreathing({
 
   const progressPct = ((sessionTotal - sessionLeft) / sessionTotal) * 100;
 
+  // ขั้นตอนกับแหล่งอ้างอิงมาจากการ์ดในคลังวิธีรับมือ ไม่ได้พิมพ์ซ้ำไว้ที่นี่
+  const guide = pattern.guideId ? GUIDE_BY_ID[pattern.guideId] : undefined;
+  const steps = guide?.steps ?? [];
+  const references = guide?.references ?? pattern.references ?? [];
+
   return (
     <div
       className={[
@@ -326,6 +407,45 @@ export function BoxBreathing({
             1 รอบ {cycleSeconds(pattern)} วิ · แนะนำ {minutesLabel(pattern.sessionSeconds)}
           </p>
         </div>
+
+        {/* ข้อควรระวังของท่าที่เลือกอยู่ ต้องอยู่ในห้องนี้ด้วย ไม่ใช่มีแต่ในคลังวิธีรับมือ —
+            ห้องนี้คือที่ที่คนกดหายใจจริง คำเตือนที่อยู่แค่หน้าอื่นคือคำเตือนที่คนส่วนใหญ่ไม่เห็น */}
+        {pattern.caution ? (
+          <p className="-mt-2 flex items-start gap-2 rounded-2xl bg-amber-50/90 px-3.5 py-2.5 text-left text-[0.74rem] leading-relaxed text-amber-900 ring-1 ring-amber-200/70">
+            <AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-amber-500" aria-hidden="true" />
+            {pattern.caution}
+          </p>
+        ) : null}
+
+        {/* วิธีทำครบทุกข้อ อยู่ก่อนปุ่มเริ่ม
+            คนที่กดเข้ามาจากการ์ด "ใจเต้นเร็ว ตัวสั่น" มาถึงที่นี่โดยยังไม่รู้ว่าท่านี้ทำยังไง
+            ถ้าห้องนี้มีแต่วงกลมกับปุ่ม เขาจะได้แค่หายใจตามจังหวะโดยไม่รู้ว่าทำไมต้อง
+            สูดสองครั้ง ซึ่งเป็นจุดเดียวที่ทำให้ท่านี้ต่างจากท่าอื่น */}
+        {steps.length ? (
+          <div className="-mt-2 w-full rounded-2xl bg-white/70 px-4 py-3 text-left ring-1 ring-slate-900/5">
+            <p className="text-[0.74rem] font-semibold text-slate-600">วิธีทำ</p>
+            <ol className="mt-1.5 space-y-1.5">
+              {steps.map((s, i) => (
+                <li key={s.title} className="flex gap-2 text-[0.76rem] leading-relaxed">
+                  <span className="mt-px font-bold tabular-nums text-pink-400">{i + 1}</span>
+                  <span className="text-slate-600">
+                    <span className="font-semibold text-slate-700">{s.title}</span>
+                    {" — "}
+                    {s.body}
+                    {/* คำเตือนประจำขั้น (เช่น วิงเวียนให้หยุด) ต้องมาด้วย ไม่ใช่ตกไว้ในคลัง
+                        ห้องนี้คือที่ที่คนทำตามขั้นตอนนั้นจริง */}
+                    {s.caution ? (
+                      <span className="mt-1 flex items-start gap-1.5 text-[0.72rem] text-amber-700">
+                        <AlertTriangle className="mt-0.5 size-3 shrink-0" aria-hidden="true" />
+                        {s.caution}
+                      </span>
+                    ) : null}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          </div>
+        ) : null}
 
         {/* Session-length picker */}
         <div className="flex w-full flex-col items-center gap-2">
@@ -395,14 +515,16 @@ export function BoxBreathing({
             <p className="text-xl font-medium text-slate-500">พร้อมหายใจไปด้วยกันไหม? 🌿</p>
           ) : (
             <div>
+              {/* key เป็นลำดับจังหวะ ไม่ใช่ชนิดจังหวะ — ท่าสูดสองครั้งมี "inhale" ติดกัน
+                  สองจังหวะ ถ้า key ไม่เปลี่ยน ข้อความจะไม่เล่นแอนิเมชันใหม่และดูเหมือนค้าง */}
               <motion.p
-                key={phase.key}
+                key={phaseIndex}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, ease: "easeInOut" }}
                 className={`text-2xl font-semibold ${TONE[phase.key]}`}
               >
-                {COPY[phase.key]}
+                {phase.copy ?? COPY[phase.key]}
               </motion.p>
               <p className="mt-1 text-4xl font-bold tabular-nums text-slate-600/80" aria-hidden="true">
                 {remaining}
@@ -467,6 +589,13 @@ export function BoxBreathing({
             <RotateCcw className="size-5" aria-hidden="true" />
           </button>
         </div>
+
+        {/* บรรทัดล่างสุดของห้อง เปลี่ยนตามท่าที่เลือกอยู่ — ห้องนี้เป็นที่ที่คนกดหายใจจริง
+            แหล่งอ้างอิงจึงควรอยู่ตรงนี้ด้วย ไม่ใช่มีแต่ในคลังวิธีรับมือ */}
+        <References
+          items={references}
+          className="w-full border-t border-slate-900/10 pt-3 text-center"
+        />
       </div>
     </div>
   );

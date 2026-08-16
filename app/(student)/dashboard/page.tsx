@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ChevronRight, MessageCircleHeart, SmilePlus, Wind } from "lucide-react";
+import { ChevronRight, ClipboardCheck, Gamepad2, SmilePlus, Wind } from "lucide-react";
 
-import { CoinBalance } from "@/components/student/CoinBalance";
 import { FluffyMascot } from "@/components/FluffyMascot";
-import { GachaButton } from "@/components/student/GachaButton";
+import { HomeHeader } from "@/components/student/HomeHeader";
 import { MyAssessProgress } from "@/components/student/MyAssessProgress";
+import { PuyInvite } from "@/components/student/PuyInvite";
 import { SosLauncher } from "@/components/student/SosLauncher";
 import { HomeGarden } from "@/components/gacha/HomeGarden";
 import { WisdomStrip } from "@/components/WisdomStrip";
@@ -16,44 +16,35 @@ export default function StudentDashboardPage() {
   return (
     // pb clears the small SOS pill + raised แจ้งเหตุ button + tab bar so the
     // last card isn't hidden behind them at the bottom of the scroll.
-    // บนแท็บเล็ตแนวนอน จอสูงแค่ 820px แต่หน้านี้ยาว 1314px ต้องเลื่อนเกือบสองจอ
+    // บนแท็บเล็ตแนวนอน จอสูงแค่ 820px แต่หน้านี้ยาวกว่านั้นมาก ต้องเลื่อนเกือบสองจอ
     // จึงจัดเป็นสองคอลัมน์ ให้ของที่เคยต่อท้ายกันมาอยู่ข้างกันแทน
-    // หัวเรื่องกับการ์ดแจ้งเหตุกินเต็มความกว้าง — พระเอกของแอปไม่ควรถูกบีบครึ่ง
+    // หัวหน้าแรกกับการ์ดแจ้งเหตุกินเต็มความกว้าง — พระเอกของแอปไม่ควรถูกบีบครึ่ง
     <div className="space-y-6 pb-32 pt-2 ipad:grid ipad:grid-cols-2 ipad:items-start ipad:gap-5 ipad:space-y-0">
-      <header className="flex items-start justify-between gap-3 ipad:col-span-2">
-        <div>
-          <p className="text-[0.78rem] text-ink-mute">ยินดีต้อนรับ 👋</p>
-          <h1 className="font-display th:leading-snug text-[1.45rem] font-bold text-ink">
-            วันนี้เป็นยังไงบ้าง
-          </h1>
-        </div>
-        <span className="flex shrink-0 items-center gap-2">
-          <GachaButton />
-          <CoinBalance />
-        </span>
-      </header>
+      <div className="ipad:col-span-2">
+        <HomeHeader />
+      </div>
 
       {/* Hero — แจ้งเหตุ. The thing this app is really for, fronted warmly by
           น้องปุย so reaching out feels safe, not alarming. Never rewarded: the
           coin economy stays with self-care, not with reporting distress. */}
       <Link
         href="/report"
-        className="block rounded-[1.6rem] p-4 shadow-[0_16px_36px_-22px_rgba(200,74,31,0.5)] ring-1 ring-[#f0997b] transition hover:-translate-y-0.5 active:translate-y-0 ipad:col-span-2 ipad:flex ipad:items-center ipad:gap-6 ipad:p-5"
+        className="block rounded-[1.75rem] p-5 shadow-[0_18px_40px_-22px_rgba(200,74,31,0.55)] ring-1 ring-[#f0997b] transition hover:-translate-y-0.5 active:translate-y-0 ipad:col-span-2 ipad:flex ipad:items-center ipad:gap-6"
         style={{ background: "#fbe6dd" }}
       >
         <div className="flex items-center gap-3.5 ipad:min-w-0 ipad:flex-1">
-          <span className="flex size-16 shrink-0 items-center justify-center rounded-full bg-white">
-            <FluffyMascot size={54} floating={false} />
+          <span className="flex size-[4.75rem] shrink-0 items-center justify-center rounded-full bg-white">
+            <FluffyMascot size={66} floating={false} />
           </span>
           <span className="min-w-0 flex-1">
             <span
-              className="block text-[1.05rem] font-bold leading-snug"
+              className="block text-[1.2rem] font-bold leading-snug"
               style={{ color: "#7a2c12" }}
             >
               วันนี้มีเรื่องไม่สบายใจไหม?
             </span>
             <span
-              className="mt-0.5 block text-[0.78rem] leading-snug"
+              className="mt-1 block text-[0.82rem] leading-snug"
               style={{ color: "#93381b" }}
             >
               บอกน้องปุยได้เลย ปลอดภัย · ไม่ต้องบอกชื่อก็ได้
@@ -82,6 +73,10 @@ export default function StudentDashboardPage() {
           </span>
         </div>
       </Link>
+
+      {/* พระรอง — ประตูของ "วันธรรมดา" ที่ยังไม่ถึงขั้นต้องแจ้งครู
+          อยู่ใต้ hero ทันที เพราะลำดับการเลื่อนคือลำดับความสำคัญ */}
+      <PuyInvite />
 
       {/* Daily self-care — the rewarded ritual, kept present but secondary. */}
       <section>
@@ -122,42 +117,49 @@ export default function StudentDashboardPage() {
               </span>
             </span>
           </Link>
+
+          <Link
+            href="/games"
+            className="flex h-full flex-col items-start gap-3 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-neutral-200/80 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0"
+          >
+            <span className="flex size-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+              <Gamepad2 className="size-6" strokeWidth={2} aria-hidden="true" />
+            </span>
+            <span className="mt-auto text-left">
+              <span className="block text-[0.92rem] font-bold text-ink">ฝึกทักษะ</span>
+              <span className="mt-0.5 block text-[0.72rem] leading-snug text-ink-soft">
+                36 ด่าน · เล่นจบได้เหรียญ
+              </span>
+            </span>
+          </Link>
+
+          <Link
+            href="/assessment"
+            className="flex h-full flex-col items-start gap-3 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-neutral-200/80 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0"
+          >
+            <span className="flex size-12 items-center justify-center rounded-xl bg-mint-50 text-mint-600">
+              <ClipboardCheck className="size-6" strokeWidth={2} aria-hidden="true" />
+            </span>
+            <span className="mt-auto text-left">
+              <span className="block text-[0.92rem] font-bold text-ink">เช็คสุขภาพใจ</span>
+              <span className="mt-0.5 block text-[0.72rem] leading-snug text-ink-soft">
+                แบบประเมินสั้น ๆ · ดูพัฒนาการได้
+              </span>
+            </span>
+          </Link>
         </div>
+
+        {/* กราฟก่อน-หลังจากประวัติประเมินส่วนตัว (อยู่แค่เครื่องนี้)
+            อยู่ใต้กริด ไม่ใช่ในกริด — ถ้าเอาไปไว้ในกริด แถวที่สองจะเหลือช่องว่าง
+            ข้าง "ฝึกทักษะ" เฉพาะคนที่เคยประเมินแล้ว ซึ่งอ่านเหมือนหน้ายังทำไม่เสร็จ */}
+        <MyAssessProgress />
       </section>
 
-      {/* พัฒนาการใจของฉัน — กราฟก่อน-หลังจากประวัติประเมินส่วนตัว (อยู่แค่เครื่องนี้) */}
-      <MyAssessProgress />
 
-      {/* A warm, standing invitation to น้องปุย — a gentle middle rung for a
-          student who's feeling off but isn't in crisis. Kept softer than the
-          แจ้งเหตุ hero: talking it out shouldn't feel like filing a report. */}
-      <Link
-        href="/chatbot"
-        className="block rounded-2xl bg-lavender-50 p-4 ring-1 ring-lavender-200/70 transition hover:-translate-y-0.5 hover:shadow-md active:translate-y-0"
-      >
-        <div className="flex items-center gap-3.5">
-          <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-white">
-            <MessageCircleHeart
-              className="size-6 text-lavender-500"
-              aria-hidden="true"
-            />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-[0.95rem] font-bold text-ink">
-              ไม่สบายใจอยู่หรือเปล่า?
-            </span>
-            <span className="mt-0.5 block text-[0.76rem] leading-snug text-ink-soft">
-              มาคุยกับน้องปุยนะ ผู้ช่วย AI ที่พร้อมรับฟังเสมอ
-            </span>
-          </span>
-          <ChevronRight
-            className="size-5 shrink-0 text-lavender-400"
-            aria-hidden="true"
-          />
-        </div>
+      {/* กดเข้าไปดูสวนเต็ม ๆ ได้ — เดิมเป็นการ์ดโชว์เฉย ๆ กดไม่ได้เลย */}
+      <Link href="/garden" className="block transition active:scale-[0.99]" aria-label="เปิดดูสวนของฉัน">
+        <HomeGarden />
       </Link>
-
-      <HomeGarden />
 
       {/* แถบคำคมเลื่อนแนวนอน กินเต็มความกว้างจะเห็นการ์ดมากกว่าถูกบีบอยู่ครึ่งเดียว */}
       <div className="ipad:col-span-2">

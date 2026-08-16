@@ -5,6 +5,7 @@ import { AnimatePresence, motion, type Transition } from "framer-motion";
 import { Coins, Check } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { DecoSprite } from "@/components/gacha/DecoSprite";
 import { DECORATIONS, DECO_SLOTS, type Decoration } from "@/data/cozyShop";
 import { useGachaStore } from "@/lib/store/useGachaStore";
 
@@ -90,7 +91,7 @@ export function CozyShop({ className }: { className?: string }) {
                       className="flex flex-col items-center gap-1.5 rounded-3xl bg-white p-3 text-center shadow-sm ring-1 ring-slate-100"
                     >
                       <span className="text-4xl leading-none" aria-hidden="true">
-                        {deco.emoji}
+                        <DecoSprite id={deco.id} size={34} fallback={deco.emoji} />
                       </span>
                       <p className="line-clamp-2 min-h-[2.5rem] text-xs font-medium text-slate-600">
                         {deco.name}

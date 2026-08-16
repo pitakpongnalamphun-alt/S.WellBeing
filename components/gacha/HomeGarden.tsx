@@ -52,10 +52,14 @@ function Tree({ x, groundY, h }: { x: number; groundY: number; h: number }) {
 export function HomeGarden({
   className,
   onOpenRewards,
+  /** "card" = ย่อบนหน้าแรก · "room" = เต็มหน้าเมื่อกดเข้ามาดู */
+  variant = "card",
 }: {
   className?: string;
   onOpenRewards?: () => void;
+  variant?: "card" | "room";
 }) {
+  const room = variant === "room";
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
   const reduce = useReducedMotion();
@@ -247,7 +251,7 @@ export function HomeGarden({
       </div>
 
       {/* ── the friends (on top of the scenery) ──────────────────────────── */}
-      <div className="relative z-10 h-[146px]">
+      <div className={room ? "relative z-10 h-[260px]" : "relative z-10 h-[146px]"}>
         {isEmpty ? (
           <div className="absolute inset-0 grid place-items-end justify-center px-6 pb-4">
             <p className="rounded-2xl bg-white/70 px-3 py-2 text-center text-xs leading-relaxed text-emerald-800 shadow-sm backdrop-blur-sm">
@@ -284,7 +288,7 @@ export function HomeGarden({
                 <FriendAvatar
                   friend={friend}
                   equipped={equipped[friend.id]}
-                  size={54}
+                  size={room ? 84 : 54}
                 />
               </motion.div>
             );
