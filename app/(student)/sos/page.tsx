@@ -465,7 +465,8 @@ export default function SosPage() {
   }
 
   return (
-    <div className="space-y-5">
+    // หน้าขอความช่วยเหลือด่วน คงคอลัมน์แคบไว้ ปุ่มโทรต้องหาเจอทันที ไม่ใช่กวาดตาหา
+    <div className="space-y-5 ipad:mx-auto ipad:w-full ipad:max-w-xl">
       <ScreenHeader title="ขอความช่วยเหลือ" />
 
       <ModeToggle mode={mode} onChange={setMode} />

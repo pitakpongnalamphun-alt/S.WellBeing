@@ -9,7 +9,9 @@ import { localDay } from "@/lib/date";
 
 export default function BreathingPage() {
   return (
-    <div className="flex flex-1 flex-col justify-center py-2">
+    // ทั้งหน้ามีหน้าที่เดียวคือให้มองวงกลมที่ขยายหด ของข้าง ๆ ทำลายมันโดยตรง
+    // บนแท็บเล็ตจึงคงคอลัมน์แคบไว้กลางแผ่น ไม่ใช้ความกว้างที่เพิ่มมา
+    <div className="flex flex-1 flex-col justify-center py-2 ipad:mx-auto ipad:w-full ipad:max-w-xl">
       {/* useSearchParams ต้องอยู่ใต้ Suspense ไม่งั้นทั้งหน้าถูกบังคับให้เรนเดอร์ฝั่งไคลเอนต์ */}
       <Suspense fallback={null}>
         <BreathingRoom />

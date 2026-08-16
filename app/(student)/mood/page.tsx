@@ -72,7 +72,7 @@ function MoodPageInner() {
   }, [reward]);
 
   return (
-    <div className="flex flex-1 flex-col gap-4 py-2">
+    <div className="flex flex-1 flex-col gap-4 py-2 ipad:mx-auto ipad:w-full ipad:max-w-2xl">
       {/* Tab switcher */}
       <div className="mx-auto flex w-full max-w-md rounded-full bg-slate-100 p-1 text-sm font-semibold">
         {(

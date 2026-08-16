@@ -222,7 +222,8 @@ export function ChatScreen() {
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col bg-linear-to-b from-mint-50/40 to-lavender-50/50">
+    // ห้องแชทคงความกว้างของบทสนทนาไว้ บรรทัดยาวเกินไปทำให้ตาหลงบรรทัด
+    <div className="mx-auto flex min-h-0 w-full flex-1 flex-col bg-linear-to-b from-mint-50/40 to-lavender-50/50 ipad:max-w-2xl">
       {/* Header — อุ่นตัวเล็กจะปรากฏตรงนี้หลังฉากเปิดย่อตัวลงไปแล้ว */}
       <header className="flex items-center gap-3 border-b border-neutral-200/80 pb-3 pt-1">
         <Link

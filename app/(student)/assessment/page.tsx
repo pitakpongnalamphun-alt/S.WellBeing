@@ -61,7 +61,7 @@ export default function AssessmentPage() {
   );
 
   return (
-    <div className="flex flex-1 flex-col justify-center py-2">
+    <div className="flex flex-1 flex-col justify-center py-2 ipad:mx-auto ipad:w-full ipad:max-w-xl">
       <MentalHealthAssessment onComplete={handleComplete} />
     </div>
   );

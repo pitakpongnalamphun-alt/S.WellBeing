@@ -1219,7 +1219,9 @@ export default function ReportPage() {
   const isLast = step === 4;
 
   return (
-    <div className="flex min-h-[calc(100dvh-8rem)] flex-col pb-4 pt-1">
+    // แจ้งเหตุคือการจดจ่อทีละอย่าง บนแท็บเล็ตจึงคงคอลัมน์แคบไว้กลางแผ่น
+    // ไม่ใช้ความกว้างที่เพิ่มมา — ของที่อยู่ข้าง ๆ ตอนกำลังจะเล่าเรื่องหนัก ๆ คือสิ่งรบกวน
+    <div className="flex min-h-[calc(100dvh-8rem)] flex-col pb-4 pt-1 ipad:mx-auto ipad:w-full ipad:max-w-xl">
       {/* Header */}
       <header className="mb-5">
         <div className="mb-3 flex items-center gap-2">

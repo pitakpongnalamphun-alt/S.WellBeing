@@ -84,7 +84,8 @@ export default function MePage() {
 
       <MyProfileCard />
 
-      <ul className="space-y-2.5">
+      {/* รายการเมนูเรียงเป็นสองแถวบนแท็บเล็ต เห็นครบโดยไม่ต้องเลื่อน */}
+      <ul className="space-y-2.5 ipad:grid ipad:grid-cols-2 ipad:gap-2.5 ipad:space-y-0">
         {ITEMS.map(({ href, title, desc, Icon, badge }) => (
           <li key={href}>
             <Link

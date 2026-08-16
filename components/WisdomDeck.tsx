@@ -218,7 +218,7 @@ export function WisdomDeck({ className }: { className?: string }) {
   }, [mounted, current, markSeen]);
 
   return (
-    <div className={cn("mx-auto w-full max-w-md", className)}>
+    <div className={cn("mx-auto w-full max-w-md ipad:max-w-3xl", className)}>
       {/* Header */}
       <header className="mb-4 flex items-center gap-2">
         <Sparkles className="size-5 text-lavender-500" aria-hidden="true" />
@@ -412,7 +412,11 @@ function SavedList({
   }
 
   return (
-    <ul ref={listRef} tabIndex={-1} className="space-y-3 focus:outline-none">
+    <ul
+      ref={listRef}
+      tabIndex={-1}
+      className="space-y-3 focus:outline-none ipad:grid ipad:grid-cols-2 ipad:gap-3 ipad:space-y-0"
+    >
       {ids.map((id) => {
         const w = WISDOM_BY_ID[id];
         if (!w) return null;

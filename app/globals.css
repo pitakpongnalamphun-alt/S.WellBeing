@@ -7,6 +7,16 @@
  */
 @custom-variant th (&:where(:lang(th), :lang(th) *));
 
+/**
+ * `ipad:` variant — แท็บเล็ตที่ใช้นิ้ว ไม่ใช่จอคอมที่กว้างเท่ากัน
+ *
+ * แยกด้วยความกว้างอย่างเดียวไม่ได้ iPad Pro แนวนอนกว้าง 1366px ซึ่งกว้างกว่า
+ * โน้ตบุ๊กหลายรุ่น ถ้าใช้ min-width เฉย ๆ จอคอมจะโดนเลย์เอาต์แท็บเล็ตไปด้วย
+ * จึงบวก pointer: coarse เข้าไป — เมาส์เป็น fine เสมอ นิ้วเป็น coarse เสมอ
+ * ฝั่งนักเรียนบนจอคอมจึงยังเป็นคอลัมน์กลางจอเหมือนเดิมทุกประการ
+ */
+@custom-variant ipad (@media (min-width: 744px) and (pointer: coarse));
+
 /* ============================================================================
    S.WELL-BEING — design tokens
    Every colour in the product derives from this block. Nothing is hard-coded
