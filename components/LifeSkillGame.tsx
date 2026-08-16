@@ -2,9 +2,10 @@
 
 import { useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, Heart, RotateCcw, Sparkles } from "lucide-react";
+import { ArrowRight, Heart, Loader2, PenLine, RotateCcw, Sparkles } from "lucide-react";
 
 import { FluffyBuddy, type FluffyExpression } from "@/components/FluffyBuddy";
+import { CRISIS_HOTLINES, detectCrisis } from "@/lib/wellai/crisis";
 
 /* ============================================================== game engine */
 
@@ -781,6 +782,11 @@ export function LifeSkillGame({
 
   const scenario = SCENARIOS[episode];
   const node = scenario.nodes[nodeId];
+  // เรื่องย่อที่ส่งไปให้โมเดลอ่านเป็นบริบท — ฉากทั้งหมดของตอนนี้ ไม่ใช่แค่ฉากสุดท้าย
+  // ถ้าส่งไปแค่ฉากเดียว โมเดลจะสะท้อนคำตอบผิดบริบทเมื่อเรื่องมีสองฉากขึ้นไป
+  const situationText = `${scenario.title}\n${Object.values(scenario.nodes)
+    .map((n) => n.text)
+    .join("\n")}`;
   const mood = moodFor(energy);
   const hasNextEpisode = episode < SCENARIOS.length - 1;
   // Sync mirror of "a choice is locked in" — state alone can't stop a double-tap
@@ -892,7 +898,9 @@ export function LifeSkillGame({
             <Summary
               energy={energy}
               tip={scenario.tip}
+              situation={situationText}
               hasNext={hasNextEpisode}
+              onEnergy={(d) => setEnergy((e) => clamp(e + d))}
               onReplay={replay}
               onNext={nextEpisode}
             />
@@ -961,16 +969,195 @@ function Outcome({ choice, onNext }: { choice: Choice; onNext: () => void }) {
   );
 }
 
+/**
+ * ป้ายที่ AI ติดให้คำตอบที่นักเรียนเขียนเอง → พลังใจ
+ *
+ * ไม่มีค่าติดลบสักตัว และนั่นคือการตัดสินใจ ไม่ใช่การลืม
+ *
+ * ตัวเลือกสำเร็จรูปที่หักพลังใจ −30 คือ "การกระทำของตัวละครที่เด็กหยิบจากเมนู"
+ * หักได้ เพราะเป็นผลในเกม แต่คำตอบที่พิมพ์เองคือเสียงของเด็กคนนั้นจริง ๆ ถ้าเขียน
+ * ตามที่รู้สึกแล้วโดนหักพลังใจ ครั้งหน้าเขาจะไม่เขียนสิ่งที่รู้สึก เขาจะเขียนสิ่งที่ได้คะแนน
+ * ซึ่งทำลายเหตุผลทั้งหมดที่มีช่องนี้อยู่
+ *
+ * และโมเดลไม่ได้เป็นคนกำหนดตัวเลข มันเลือกได้แค่ป้าย ตัวเลขอยู่ในโค้ดตรงนี้ที่เดียว
+ */
+const ENERGY_BY_KIND: Record<string, number> = {
+  "cares-for-self": 15,
+  "cares-for-others": 15,
+  avoids: 0,
+  escalates: 0,
+  unsafe: 0,
+};
+
+type Reflection = {
+  strength: string;
+  outcome: string;
+  tryNext: string;
+  kind: string;
+};
+
+/**
+ * ช่อง "เขียนคำตอบของตัวเอง" ท้ายตอน
+ *
+ * อยู่ท้ายตอน ไม่ใช่ทุกฉาก เพราะเด็กเห็นเรื่องทั้งเรื่องแล้วจึงเขียนได้ลึกกว่า
+ * และเรียกโมเดลน้อยลงราวสามเท่า ซึ่งสำคัญเมื่อใช้โควตาฟรี
+ *
+ * ตรวจคำเสี่ยงในเครื่องก่อนส่ง — ทำงานทันทีและทำงานแม้เน็ตหลุด ส่วนฝั่งเซิร์ฟเวอร์
+ * ตรวจซ้ำอีกชั้นเผื่อมีคนยิง API ตรง
+ *
+ * ไม่มีเหรียญเพิ่มจากช่องนี้โดยตั้งใจ ถ้าให้เหรียญ เด็กจะพิมพ์อะไรก็ได้รัว ๆ เพื่อเก็บแต้ม
+ */
+function MyAnswerBox({
+  situation,
+  onEnergy,
+}: {
+  situation: string;
+  onEnergy: (delta: number) => void;
+}) {
+  const [text, setText] = useState("");
+  const [state, setState] = useState<"idle" | "loading" | "done" | "crisis">("idle");
+  const [result, setResult] = useState<Reflection | null>(null);
+
+  async function submit() {
+    const answer = text.trim();
+    if (!answer || state === "loading") return;
+
+    // ตรวจในเครื่องก่อน — ไม่ต้องรอเน็ต และเป็นด่านที่ทำงานแม้ API ล่ม
+    if (detectCrisis(answer)) {
+      setState("crisis");
+      return;
+    }
+
+    setState("loading");
+    try {
+      const res = await fetch("/api/game-reflect", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ situation, answer }),
+      });
+      const data = (await res.json()) as
+        | { type: "crisis" }
+        | { type: "ok"; reflection: Reflection };
+      if (data.type === "crisis") {
+        setState("crisis");
+        return;
+      }
+      setResult(data.reflection);
+      onEnergy(ENERGY_BY_KIND[data.reflection.kind] ?? 0);
+      setState("done");
+    } catch {
+      // เขียนความรู้สึกออกมาแล้วเจอ error คืออ่านว่า "เขียนแล้วไม่มีใครอ่าน"
+      // จึงรับคำตอบไว้เสมอ ไม่มีทางตัน
+      setResult({
+        strength: "เธอหยุดคิดกับเรื่องนี้จริง ๆ แล้วเขียนออกมาเป็นคำของตัวเอง",
+        outcome: "ตอนนี้ต่อเน็ตไม่ได้ ระบบเลยอ่านละเอียดไม่ได้ แต่สิ่งที่เธอเขียนไม่ได้หายไปไหน",
+        tryNext: "ลองอ่านสิ่งที่ตัวเองเขียนอีกรอบ แล้วถามตัวเองว่าตอนนั้นเราต้องการอะไรมากที่สุด",
+        kind: "avoids",
+      });
+      setState("done");
+    }
+  }
+
+  if (state === "crisis") {
+    return (
+      <div className="w-full rounded-2xl bg-rose-50 p-4 text-left ring-1 ring-rose-200">
+        <p className="text-[0.88rem] font-bold text-rose-900">
+          สิ่งที่เธอเขียนสำคัญกว่าเกมนี้มาก
+        </p>
+        <p className="mt-1.5 text-[0.82rem] leading-[1.9] text-rose-900/90">
+          ตอนนี้อุ่นอยากให้เธอได้คุยกับคนที่ช่วยได้จริง โทรได้ตลอด 24 ชั่วโมงเลยนะ
+        </p>
+        <div className="mt-3 flex flex-col gap-2">
+          {CRISIS_HOTLINES.map((h) => (
+            <a
+              key={h.tel}
+              href={`tel:${h.tel}`}
+              className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-rose-600 px-4 text-[0.88rem] font-bold text-white active:scale-95"
+            >
+              📞 {h.label} {h.number}
+            </a>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (state === "done" && result) {
+    return (
+      <div className="w-full rounded-2xl bg-white p-4 text-left ring-1 ring-violet-100">
+        <p className="text-[0.8rem] font-bold text-violet-600">สิ่งที่เธอทำได้ดี</p>
+        <p className="mt-1 text-[0.86rem] leading-[1.9] text-slate-700">{result.strength}</p>
+
+        <p className="mt-3 text-[0.8rem] font-bold text-violet-600">สิ่งที่น่าจะตามมา</p>
+        <p className="mt-1 text-[0.86rem] leading-[1.9] text-slate-700">{result.outcome}</p>
+
+        <p className="mt-3 text-[0.8rem] font-bold text-violet-600">ลองเพิ่มได้อีก</p>
+        <p className="mt-1 text-[0.86rem] leading-[1.9] text-slate-700">{result.tryNext}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full rounded-2xl border border-dashed border-violet-200 bg-white/70 p-4 text-left">
+      <label
+        htmlFor="my-answer"
+        className="flex items-center gap-1.5 text-[0.85rem] font-bold text-slate-700"
+      >
+        <PenLine className="size-4 text-violet-500" aria-hidden="true" />
+        ถ้าเป็นเธอจริง ๆ เธอจะทำยังไง
+      </label>
+      <p className="mt-0.5 text-[0.75rem] text-slate-500">
+        เขียนด้วยคำของตัวเองได้เลย ไม่มีคำตอบถูกผิด
+      </p>
+      <textarea
+        id="my-answer"
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        rows={3}
+        maxLength={1200}
+        disabled={state === "loading"}
+        placeholder="เช่น เราคงเงียบไปก่อน แล้วค่อยหาจังหวะบอกเขาตอนอยู่กันสองคน…"
+        className="mt-2.5 w-full resize-none rounded-xl border border-slate-200 bg-white p-3 text-[0.88rem] leading-[1.9] text-slate-800 placeholder:text-slate-400 focus:border-violet-300 focus:outline-none focus:ring-4 focus:ring-violet-100 disabled:opacity-60"
+      />
+      <div className="mt-2 flex items-center justify-between gap-3">
+        {/* เด็กที่ไม่แน่ใจว่าครูจะเห็นไหม จะไม่เขียนสิ่งที่รู้สึกจริง จึงต้องบอกตรงนี้ */}
+        <p className="text-[0.7rem] leading-snug text-slate-400">
+          ครูไม่เห็นข้อความนี้ และระบบไม่ได้เก็บไว้
+        </p>
+        <button
+          type="button"
+          onClick={submit}
+          disabled={!text.trim() || state === "loading"}
+          className="flex min-h-10 shrink-0 items-center gap-1.5 rounded-full bg-violet-500 px-4 text-[0.85rem] font-semibold text-white transition hover:bg-violet-600 active:scale-95 disabled:bg-slate-200 disabled:text-slate-400"
+        >
+          {state === "loading" ? (
+            <>
+              <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+              กำลังอ่าน…
+            </>
+          ) : (
+            "ส่งให้อุ่นอ่าน"
+          )}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function Summary({
   energy,
   tip,
+  situation,
   hasNext,
+  onEnergy,
   onReplay,
   onNext,
 }: {
   energy: number;
   tip: string;
+  situation: string;
   hasNext: boolean;
+  onEnergy: (delta: number) => void;
   onReplay: () => void;
   onNext: () => void;
 }) {
@@ -999,6 +1186,8 @@ function Summary({
         </p>
         <p className="text-[0.85rem] leading-relaxed text-emerald-800">{tip}</p>
       </div>
+
+      <MyAnswerBox situation={situation} onEnergy={onEnergy} />
 
       <div className="flex w-full gap-2.5">
         <button
